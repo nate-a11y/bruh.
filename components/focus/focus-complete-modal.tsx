@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { Coffee, Zap, CheckCircle2 } from "lucide-react";
 import {
@@ -42,8 +43,12 @@ export function FocusCompleteModal({
   sessionsCompleted,
   isLongBreak,
 }: FocusCompleteModalProps) {
-  const message =
-    encouragingMessages[Math.floor(Math.random() * encouragingMessages.length)];
+  // Use useMemo to compute message once when modal opens
+  const message = useMemo(
+    () => encouragingMessages[Math.floor(Math.random() * encouragingMessages.length)],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [open]
+  );
 
   return (
     <Dialog open={open} onOpenChange={onClose}>

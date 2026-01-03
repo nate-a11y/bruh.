@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Timer, Pause, Play } from "lucide-react";
+import { Timer, Pause, Play, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTimerStore } from "@/lib/hooks/use-timer";
 import { formatTimerDisplay } from "@/lib/utils";
@@ -11,22 +11,37 @@ import { CommandMenu } from "./command-menu";
 interface HeaderProps {
   title: string;
   showTimer?: boolean;
+  onMenuClick?: () => void;
 }
 
-export function Header({ title, showTimer = true }: HeaderProps) {
+export function Header({ title, showTimer = true, onMenuClick }: HeaderProps) {
   const { state, timeRemaining, task, pauseTimer, resumeTimer } =
     useTimerStore();
   const [mounted, setMounted] = useState(false);
 
+  // Set mounted state for hydration safety
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
   const isTimerActive = state === "running" || state === "paused" || state === "break";
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-border bg-card px-6">
-      <h1 className="text-lg font-semibold">{title}</h1>
+    <header className="flex h-14 items-center justify-between border-b border-border bg-card px-4 md:px-6">
+      <div className="flex items-center gap-3">
+        {onMenuClick && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={onMenuClick}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        )}
+        <h1 className="text-lg font-semibold">{title}</h1>
+      </div>
 
       <div className="flex items-center gap-4">
         {/* Active Timer Indicator */}

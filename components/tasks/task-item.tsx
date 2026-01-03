@@ -27,6 +27,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { completeTask, deleteTask } from "@/app/(dashboard)/actions";
 import { useTimerStore } from "@/lib/hooks/use-timer";
+import { playCompletionSound } from "@/lib/sounds";
 import { PRIORITY_COLORS, type TaskPriority } from "@/lib/constants";
 import type { Task } from "@/lib/supabase/types";
 
@@ -50,6 +51,9 @@ export function TaskItem({ task, onEdit }: TaskItemProps) {
     const result = await completeTask(task.id);
     if (result.error) {
       toast.error(result.error);
+    } else if (!isCompleted) {
+      // Play sound only when completing, not uncompleting
+      playCompletionSound();
     }
     setIsCompleting(false);
   }

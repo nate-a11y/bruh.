@@ -43,6 +43,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       zeroed_tasks: {
         Row: {
@@ -96,6 +97,15 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "zeroed_tasks_list_id_fkey";
+            columns: ["list_id"];
+            isOneToOne: false;
+            referencedRelation: "zeroed_lists";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       zeroed_focus_sessions: {
         Row: {
@@ -131,6 +141,15 @@ export type Database = {
           session_type?: "focus" | "short_break" | "long_break";
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "zeroed_focus_sessions_task_id_fkey";
+            columns: ["task_id"];
+            isOneToOne: false;
+            referencedRelation: "zeroed_tasks";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       zeroed_user_preferences: {
         Row: {
@@ -172,6 +191,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       zeroed_daily_stats: {
         Row: {
@@ -213,11 +233,23 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      zeroed_increment_daily_stat: {
+        Args: {
+          p_user_id: string;
+          p_date: string;
+          p_field: string;
+          p_value?: number;
+        };
+        Returns: undefined;
+      };
+    };
     Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 };
 
