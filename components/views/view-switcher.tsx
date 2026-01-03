@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutGrid, Calendar, Table2, List } from "lucide-react";
+import { LayoutGrid, Calendar, Table2, List, Grid2X2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,6 +16,7 @@ const viewOptions = [
   { value: "kanban", label: "Kanban", icon: LayoutGrid },
   { value: "calendar", label: "Calendar", icon: Calendar },
   { value: "table", label: "Table", icon: Table2 },
+  { value: "matrix", label: "Matrix", icon: Grid2X2 },
 ] as const;
 
 interface ViewSwitcherProps {

@@ -10,11 +10,13 @@ import { createQuickTask } from "@/app/(dashboard)/actions";
 interface QuickAddProps {
   defaultListId: string;
   placeholder?: string;
+  showHint?: boolean;
 }
 
 export function QuickAdd({
   defaultListId,
-  placeholder = "Add a task for today...",
+  placeholder = "Try: Call mom tomorrow at 3pm !high #personal",
+  showHint = false,
 }: QuickAddProps) {
   const [value, setValue] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);

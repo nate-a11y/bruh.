@@ -5,6 +5,7 @@ import { ViewSwitcher } from "./view-switcher";
 import { KanbanBoard } from "./kanban-board";
 import { CalendarView } from "./calendar-view";
 import { TableView } from "./table-view";
+import { EisenhowerMatrix } from "./eisenhower-matrix";
 import { TaskList } from "@/components/tasks/task-list";
 import {
   Select,
@@ -79,6 +80,10 @@ export function TaskViews({
 
       {currentView === "table" && (
         <TableView tasks={mainTasks} lists={lists} onTaskClick={onTaskClick} />
+      )}
+
+      {currentView === "matrix" && (
+        <EisenhowerMatrix tasks={mainTasks} onTaskClick={onTaskClick} />
       )}
     </div>
   );

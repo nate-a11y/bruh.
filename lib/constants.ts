@@ -41,7 +41,7 @@ export const LIST_COLORS = [
 // SPRINT 2: VIEW CONSTANTS
 // ============================================================================
 
-export const VIEW_TYPES = ["list", "kanban", "calendar", "table"] as const;
+export const VIEW_TYPES = ["list", "kanban", "calendar", "table", "matrix"] as const;
 export type ViewType = (typeof VIEW_TYPES)[number];
 
 export const KANBAN_GROUP_OPTIONS = ["status", "priority", "list"] as const;

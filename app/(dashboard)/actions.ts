@@ -12,6 +12,7 @@ import { executeFilter } from "@/lib/filters/engine";
 import { syncTaskToCalendar, removeTaskFromCalendar } from "@/lib/integrations/calendar-sync";
 import { syncTaskToNotion, completeTaskInNotion, uncompleteTaskInNotion, archiveTaskInNotion } from "@/lib/integrations/notion-sync";
 import { notifyTaskCreated, notifyTaskCompleted } from "@/lib/integrations/slack-notifications";
+import { parseNaturalLanguageTask } from "@/lib/utils/natural-language-parser";
 
 type TaskPriority = "low" | "normal" | "high" | "urgent";
 type GoalTargetType = "tasks_completed" | "focus_minutes" | "focus_sessions" | "streak_days" | "custom";
@@ -159,6 +160,8 @@ export async function createQuickTask(title: string, listId: string) {
     return { error: "Unauthorized" };
   }
 
+  // Parse natural language input
+  const parsed = parseNaturalLanguageTask(title);
   const today = format(new Date(), "yyyy-MM-dd");
 
   // Get max position for this list
@@ -173,10 +176,11 @@ export async function createQuickTask(title: string, listId: string) {
   const { data: task, error } = await supabase.from("zeroed_tasks").insert({
     user_id: user.id,
     list_id: listId,
-    title,
-    estimated_minutes: 25,
-    priority: "normal",
-    due_date: today,
+    title: parsed.title || title,
+    estimated_minutes: parsed.estimatedMinutes || 25,
+    priority: (parsed.priority || "normal") as TaskPriority,
+    due_date: parsed.dueDate || today,
+    due_time: parsed.dueTime || null,
     position: (maxPosition?.position || 0) + 1,
   }).select().single();
 
