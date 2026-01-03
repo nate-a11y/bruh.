@@ -9,6 +9,7 @@ import type {
   SmartFilterConfig,
 } from "@/lib/supabase/types";
 import { executeFilter } from "@/lib/filters/engine";
+import { syncTaskToCalendar, removeTaskFromCalendar } from "@/lib/integrations/calendar-sync";
 
 type TaskPriority = "low" | "normal" | "high" | "urgent";
 type GoalTargetType = "tasks_completed" | "focus_minutes" | "focus_sessions" | "streak_days" | "custom";
@@ -88,7 +89,7 @@ export async function createTask(formData: FormData) {
     .limit(1)
     .single();
 
-  const { error } = await supabase.from("zeroed_tasks").insert({
+  const { data: task, error } = await supabase.from("zeroed_tasks").insert({
     user_id: user.id,
     list_id: listId,
     title,
@@ -98,7 +99,7 @@ export async function createTask(formData: FormData) {
     due_date: dueDate || null,
     due_time: dueTime || null,
     position: (maxPosition?.position || 0) + 1,
-  });
+  }).select().single();
 
   if (error) {
     return { error: error.message };
@@ -106,6 +107,19 @@ export async function createTask(formData: FormData) {
 
   // Update daily stats
   await incrementDailyStat(supabase, user.id, "tasks_created");
+
+  // Sync to Google Calendar (fire and forget)
+  if (task && dueDate) {
+    syncTaskToCalendar(user.id, {
+      id: task.id,
+      title: task.title,
+      notes: task.notes,
+      due_date: task.due_date,
+      due_time: task.due_time,
+      estimated_minutes: task.estimated_minutes,
+      status: task.status,
+    }).catch(console.error);
+  }
 
   revalidatePath("/today");
   revalidatePath("/lists");
@@ -133,7 +147,7 @@ export async function createQuickTask(title: string, listId: string) {
     .limit(1)
     .single();
 
-  const { error } = await supabase.from("zeroed_tasks").insert({
+  const { data: task, error } = await supabase.from("zeroed_tasks").insert({
     user_id: user.id,
     list_id: listId,
     title,
@@ -141,7 +155,7 @@ export async function createQuickTask(title: string, listId: string) {
     priority: "normal",
     due_date: today,
     position: (maxPosition?.position || 0) + 1,
-  });
+  }).select().single();
 
   if (error) {
     return { error: error.message };
@@ -149,6 +163,19 @@ export async function createQuickTask(title: string, listId: string) {
 
   // Update daily stats
   await incrementDailyStat(supabase, user.id, "tasks_created");
+
+  // Sync to Google Calendar (fire and forget)
+  if (task) {
+    syncTaskToCalendar(user.id, {
+      id: task.id,
+      title: task.title,
+      notes: task.notes,
+      due_date: task.due_date,
+      due_time: task.due_time,
+      estimated_minutes: task.estimated_minutes,
+      status: task.status,
+    }).catch(console.error);
+  }
 
   revalidatePath("/today");
   revalidatePath("/lists");
@@ -165,14 +192,29 @@ export async function updateTask(taskId: string, updates: Record<string, unknown
     return { error: "Unauthorized" };
   }
 
-  const { error } = await supabase
+  const { data: task, error } = await supabase
     .from("zeroed_tasks")
     .update(updates)
     .eq("id", taskId)
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .select()
+    .single();
 
   if (error) {
     return { error: error.message };
+  }
+
+  // Sync to Google Calendar (fire and forget)
+  if (task && task.due_date) {
+    syncTaskToCalendar(user.id, {
+      id: task.id,
+      title: task.title,
+      notes: task.notes,
+      due_date: task.due_date,
+      due_time: task.due_time,
+      estimated_minutes: task.estimated_minutes,
+      status: task.status,
+    }).catch(console.error);
   }
 
   revalidatePath("/today");
@@ -192,7 +234,7 @@ export async function completeTask(taskId: string) {
 
   const { data: task, error: fetchError } = await supabase
     .from("zeroed_tasks")
-    .select("status, estimated_minutes, actual_minutes")
+    .select("*")
     .eq("id", taskId)
     .eq("user_id", user.id)
     .single();
@@ -227,6 +269,19 @@ export async function completeTask(taskId: string) {
     }
   }
 
+  // Sync to Google Calendar (fire and forget)
+  if (task.due_date) {
+    syncTaskToCalendar(user.id, {
+      id: task.id,
+      title: task.title,
+      notes: task.notes,
+      due_date: task.due_date,
+      due_time: task.due_time,
+      estimated_minutes: task.estimated_minutes,
+      status: newStatus,
+    }).catch(console.error);
+  }
+
   revalidatePath("/today");
   revalidatePath("/lists");
   revalidatePath("/stats");
@@ -242,6 +297,9 @@ export async function deleteTask(taskId: string) {
   if (!user) {
     return { error: "Unauthorized" };
   }
+
+  // Remove from Google Calendar before deleting (fire and forget)
+  removeTaskFromCalendar(user.id, taskId).catch(console.error);
 
   const { error } = await supabase
     .from("zeroed_tasks")
