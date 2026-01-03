@@ -2,9 +2,10 @@ import { format } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/dashboard/header";
 import { TaskList } from "@/components/tasks/task-list";
+import { QuickAdd } from "@/components/tasks/quick-add";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Timer, CheckCircle2, Clock } from "lucide-react";
+import { Timer, CheckCircle2, Clock, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 export default async function DashboardPage() {
@@ -27,9 +28,10 @@ export default async function DashboardPage() {
     .eq("user_id", user.id)
     .eq("due_date", today)
     .neq("status", "cancelled")
+    .order("status", { ascending: true })
     .order("position", { ascending: true });
 
-  // Fetch pending tasks without due date
+  // Fetch pending tasks without due date (inbox)
   const { data: pendingTasks } = await supabase
     .from("zeroed_tasks")
     .select("*, zeroed_lists(name, color)")
@@ -48,9 +50,8 @@ export default async function DashboardPage() {
     .single();
 
   // Calculate stats
-  const completedToday = todayTasks?.filter(
-    (t) => t.status === "completed"
-  ).length || 0;
+  const completedToday =
+    todayTasks?.filter((t) => t.status === "completed").length || 0;
   const totalToday = todayTasks?.length || 0;
   const focusMinutes = todayStats?.focus_minutes || 0;
 
@@ -62,13 +63,16 @@ export default async function DashboardPage() {
     .eq("is_archived", false)
     .order("position", { ascending: true });
 
+  // Get default list (Inbox or first list)
+  const inboxList = lists?.find((l) => l.name === "Inbox") || lists?.[0];
+
   return (
     <div className="flex flex-col h-full">
       <Header title={`Today — ${format(new Date(), "EEEE, MMMM d")}`} />
 
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-4 md:p-6">
         {/* Quick Stats */}
-        <div className="grid gap-4 md:grid-cols-3 mb-6">
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-3 mb-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -95,7 +99,7 @@ export default async function DashboardPage() {
               <p className="text-xs text-muted-foreground">today</p>
             </CardContent>
           </Card>
-          <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
+          <Card className="col-span-2 md:col-span-1 cursor-pointer hover:bg-muted/50 transition-colors">
             <Link href="/focus" className="block">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
@@ -112,15 +116,42 @@ export default async function DashboardPage() {
           </Card>
         </div>
 
+        {/* Quick Add */}
+        {inboxList && (
+          <div className="mb-6">
+            <QuickAdd
+              defaultListId={inboxList.id}
+              placeholder="Quick add a task for today... (press Enter)"
+            />
+          </div>
+        )}
+
         {/* Today's Tasks */}
         <div className="space-y-6">
           <div>
             <h2 className="text-lg font-semibold mb-4">Today&apos;s Tasks</h2>
-            <TaskList
-              tasks={todayTasks || []}
-              lists={lists || []}
-              emptyMessage="No tasks scheduled for today. Add some tasks or check your lists!"
-            />
+            {todayTasks?.length === 0 ? (
+              <Card className="border-dashed">
+                <CardContent className="flex flex-col items-center justify-center py-8 text-center">
+                  <Sparkles className="h-10 w-10 text-muted-foreground mb-3" />
+                  <h3 className="font-medium mb-1">Your day is clear!</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Add a task above or check your lists for things to work on.
+                  </p>
+                  <Link href="/lists">
+                    <Button variant="outline" size="sm">
+                      View Lists
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            ) : (
+              <TaskList
+                tasks={todayTasks || []}
+                lists={lists || []}
+                showAddButton={false}
+              />
+            )}
           </div>
 
           {/* Inbox / Pending Tasks */}
@@ -130,7 +161,7 @@ export default async function DashboardPage() {
               <TaskList
                 tasks={pendingTasks}
                 lists={lists || []}
-                emptyMessage=""
+                showAddButton={false}
               />
             </div>
           )}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -11,11 +12,16 @@ import {
   Settings,
   LogOut,
   Plus,
+  X,
+  Menu,
 } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { signOut } from "@/app/(auth)/actions";
+import { createListDirect } from "@/app/(dashboard)/actions";
 import type { List } from "@/lib/supabase/types";
 
 interface SidebarProps {
@@ -31,6 +37,32 @@ const navigation = [
 
 export function Sidebar({ lists }: SidebarProps) {
   const pathname = usePathname();
+  const [showNewList, setShowNewList] = useState(false);
+  const [newListName, setNewListName] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (showNewList && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [showNewList]);
+
+  async function handleCreateList() {
+    if (!newListName.trim()) return;
+
+    setIsCreating(true);
+    const result = await createListDirect(newListName.trim());
+    setIsCreating(false);
+
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      toast.success("List created");
+      setNewListName("");
+      setShowNewList(false);
+    }
+  }
 
   return (
     <div className="flex h-full w-64 flex-col border-r border-border bg-card">
@@ -45,7 +77,7 @@ export function Sidebar({ lists }: SidebarProps) {
       <Separator />
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 p-2">
+      <nav className="flex-1 space-y-1 p-2 overflow-y-auto">
         {navigation.map((item) => {
           const isActive =
             item.href === "/today"
@@ -76,10 +108,50 @@ export function Sidebar({ lists }: SidebarProps) {
             <span className="text-xs font-semibold uppercase text-muted-foreground">
               Lists
             </span>
-            <Button variant="ghost" size="icon" className="h-5 w-5">
-              <Plus className="h-3 w-3" />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-5 w-5"
+              onClick={() => setShowNewList(!showNewList)}
+            >
+              {showNewList ? (
+                <X className="h-3 w-3" />
+              ) : (
+                <Plus className="h-3 w-3" />
+              )}
             </Button>
           </div>
+
+          {/* Inline new list form */}
+          {showNewList && (
+            <div className="px-3 py-1">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleCreateList();
+                }}
+                className="flex gap-1"
+              >
+                <Input
+                  ref={inputRef}
+                  value={newListName}
+                  onChange={(e) => setNewListName(e.target.value)}
+                  placeholder="List name"
+                  className="h-7 text-sm"
+                  disabled={isCreating}
+                />
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="h-7 px-2"
+                  disabled={isCreating || !newListName.trim()}
+                >
+                  <Plus className="h-3 w-3" />
+                </Button>
+              </form>
+            </div>
+          )}
+
           {lists.map((list) => {
             const isActive = pathname === `/lists/${list.id}`;
             return (
@@ -94,10 +166,10 @@ export function Sidebar({ lists }: SidebarProps) {
                 )}
               >
                 <div
-                  className="h-2 w-2 rounded-full"
+                  className="h-2 w-2 rounded-full shrink-0"
                   style={{ backgroundColor: list.color }}
                 />
-                {list.name}
+                <span className="truncate">{list.name}</span>
               </Link>
             );
           })}
@@ -131,5 +203,55 @@ export function Sidebar({ lists }: SidebarProps) {
         </form>
       </div>
     </div>
+  );
+}
+
+// Mobile sidebar wrapper with hamburger menu
+interface MobileSidebarProps {
+  lists: List[];
+}
+
+export function MobileSidebar({ lists }: MobileSidebarProps) {
+  const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Close on route change
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setOpen(false);
+  }, [pathname]);
+
+  return (
+    <>
+      {/* Hamburger button - fixed position in top-left for mobile */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="fixed top-3 left-3 z-30 md:hidden"
+        onClick={() => setOpen(true)}
+        aria-label="Open menu"
+      >
+        <Menu className="h-5 w-5" />
+      </Button>
+
+      {/* Overlay */}
+      {open && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          onClick={() => setOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Sidebar drawer */}
+      <div
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-200 ease-in-out md:hidden",
+          open ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <Sidebar lists={lists} />
+      </div>
+    </>
   );
 }

@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
+type Theme = "dark" | "light" | "system";
+
 export async function updatePreferences(formData: FormData) {
   const supabase = await createClient();
   const {
@@ -14,7 +16,7 @@ export async function updatePreferences(formData: FormData) {
   }
 
   const updates = {
-    theme: formData.get("theme") as string,
+    theme: (formData.get("theme") as string) as Theme,
     default_focus_minutes: parseInt(
       formData.get("defaultFocusMinutes") as string
     ),

@@ -1,14 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useCallback, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Pause, Square, SkipForward, ChevronDown, Volume2, VolumeX } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import { formatTimerDisplay } from "@/lib/utils";
+import { cn, formatTimerDisplay } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,10 +15,13 @@ import {
 import { useTimerStore } from "@/lib/hooks/use-timer";
 import { createFocusSession, completeFocusSession } from "@/app/(dashboard)/actions";
 import { FocusCompleteModal } from "./focus-complete-modal";
+import { playTimerEndSound } from "@/lib/sounds";
 import type { Task } from "@/lib/supabase/types";
 
+type TaskWithList = Task & { zeroed_lists?: { name: string; color: string } | null };
+
 interface FocusTimerProps {
-  tasks: (Task & { zeroed_lists?: { name: string; color: string } | null })[];
+  tasks: TaskWithList[];
   defaultFocusMinutes: number;
   shortBreakMinutes: number;
   longBreakMinutes: number;
@@ -37,7 +37,6 @@ export function FocusTimer({
   sessionsBeforeLongBreak,
   soundEnabled: initialSoundEnabled,
 }: FocusTimerProps) {
-  const router = useRouter();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const sessionIdRef = useRef<string | null>(null);
   const startTimeRef = useRef<Date | null>(null);
@@ -63,19 +62,51 @@ export function FocusTimer({
   } = useTimerStore();
 
   const [showCompleteModal, setShowCompleteModal] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(task);
+  const [selectedTask, setSelectedTask] = useState<TaskWithList | null>(task as TaskWithList | null);
   const [mounted, setMounted] = useState(false);
 
   // Initialize sound setting
   useEffect(() => {
     setSoundEnabled(initialSoundEnabled);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, [initialSoundEnabled, setSoundEnabled]);
+
+  // Update tab title when timer is running
+  useEffect(() => {
+    if (state === "running" || state === "break" || state === "paused") {
+      const prefix = state === "paused" ? "⏸ " : sessionType === "focus" ? "🎯 " : "☕ ";
+      const time = formatTimerDisplay(timeRemaining);
+      const taskName = selectedTask ? ` - ${selectedTask.title}` : "";
+      document.title = `${prefix}${time}${taskName} | Zeroed`;
+    } else {
+      document.title = "Focus Mode | Zeroed";
+    }
+
+    return () => {
+      document.title = "Focus Mode | Zeroed";
+    };
+  }, [state, timeRemaining, sessionType, selectedTask]);
+
+  // Warn before leaving when timer is running
+  useEffect(() => {
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      if (state === "running" || state === "break") {
+        e.preventDefault();
+        e.returnValue = "You have a focus session in progress. Are you sure you want to leave?";
+        return e.returnValue;
+      }
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [state]);
 
   // Sync selected task with store
   useEffect(() => {
     if (task) {
-      setSelectedTask(task);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedTask(task as TaskWithList);
     }
   }, [task]);
 
@@ -103,10 +134,11 @@ export function FocusTimer({
   useEffect(() => {
     if (state === "completed") {
       if (soundEnabled) {
-        playSound();
+        playTimerEndSound();
       }
       if (sessionType === "focus") {
         incrementSessions();
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setShowCompleteModal(true);
         // Save session
         if (sessionIdRef.current && startTimeRef.current) {
@@ -126,6 +158,23 @@ export function FocusTimer({
       }
     }
   }, [state, sessionType, soundEnabled, selectedTask, incrementSessions, reset]);
+
+  // Handler functions using useCallback to avoid hoisting issues
+  const handleStop = useCallback(() => {
+    if (sessionIdRef.current && startTimeRef.current && sessionType === "focus") {
+      const actualMinutes = Math.ceil(
+        (Date.now() - startTimeRef.current.getTime()) / 1000 / 60
+      );
+      completeFocusSession(
+        sessionIdRef.current,
+        actualMinutes,
+        selectedTask?.id
+      );
+    }
+    stopTimer();
+    sessionIdRef.current = null;
+    startTimeRef.current = null;
+  }, [sessionType, selectedTask?.id, stopTimer]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -150,13 +199,7 @@ export function FocusTimer({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [state, pauseTimer, resumeTimer]);
-
-  function playSound() {
-    const audio = new Audio("/sounds/complete.mp3");
-    audio.volume = 0.5;
-    audio.play().catch(() => {});
-  }
+  }, [state, pauseTimer, resumeTimer, handleStop]);
 
   async function handleStart() {
     if (!selectedTask && tasks.length > 0) {
@@ -172,22 +215,6 @@ export function FocusTimer({
     if (result.session) {
       sessionIdRef.current = result.session.id;
     }
-  }
-
-  function handleStop() {
-    if (sessionIdRef.current && startTimeRef.current && sessionType === "focus") {
-      const actualMinutes = Math.ceil(
-        (Date.now() - startTimeRef.current.getTime()) / 1000 / 60
-      );
-      completeFocusSession(
-        sessionIdRef.current,
-        actualMinutes,
-        selectedTask?.id
-      );
-    }
-    stopTimer();
-    sessionIdRef.current = null;
-    startTimeRef.current = null;
   }
 
   function handleStartBreak() {
@@ -259,7 +286,7 @@ export function FocusTimer({
               {tasks.map((t) => (
                 <DropdownMenuItem
                   key={t.id}
-                  onClick={() => setSelectedTask(t as Task)}
+                  onClick={() => setSelectedTask(t)}
                 >
                   <div className="flex items-center gap-2">
                     <div

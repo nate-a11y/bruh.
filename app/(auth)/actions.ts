@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import type { Insertable } from "@/lib/supabase/types";
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
@@ -40,23 +41,25 @@ export async function signup(formData: FormData) {
 
   // Create default Inbox list and user preferences for new users
   if (data.user) {
-    const { error: listError } = await supabase.from("zeroed_lists").insert({
+    const listData: Insertable<"zeroed_lists"> = {
       user_id: data.user.id,
       name: "Inbox",
       color: "#6366f1",
       icon: "inbox",
       position: 0,
-    });
+    };
+    const { error: listError } = await supabase.from("zeroed_lists").insert(listData);
 
     if (listError) {
       console.error("Failed to create default list:", listError);
     }
 
+    const prefsData: Insertable<"zeroed_user_preferences"> = {
+      user_id: data.user.id,
+    };
     const { error: prefsError } = await supabase
       .from("zeroed_user_preferences")
-      .insert({
-        user_id: data.user.id,
-      });
+      .insert(prefsData);
 
     if (prefsError) {
       console.error("Failed to create user preferences:", prefsError);

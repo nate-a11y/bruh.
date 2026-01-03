@@ -4,6 +4,51 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { format } from "date-fns";
 
+type TaskPriority = "low" | "normal" | "high" | "urgent";
+
+// Helper to increment daily stats via RPC
+async function incrementDailyStat(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  field: string,
+  value: number = 1
+) {
+  const today = format(new Date(), "yyyy-MM-dd");
+
+  // Try RPC first (if the function exists in Supabase)
+  const { error: rpcError } = await supabase.rpc("zeroed_increment_daily_stat", {
+    p_user_id: userId,
+    p_date: today,
+    p_field: field,
+    p_value: value,
+  });
+
+  // Fallback: manual upsert if RPC doesn't exist
+  if (rpcError) {
+    // First ensure the row exists
+    await supabase.from("zeroed_daily_stats").upsert(
+      { user_id: userId, date: today },
+      { onConflict: "user_id,date", ignoreDuplicates: true }
+    );
+
+    // Then increment the field
+    const { data: current } = await supabase
+      .from("zeroed_daily_stats")
+      .select(field)
+      .eq("user_id", userId)
+      .eq("date", today)
+      .single();
+
+    const currentRecord = current as Record<string, number> | null;
+    const currentValue = currentRecord?.[field] ?? 0;
+    await supabase
+      .from("zeroed_daily_stats")
+      .update({ [field]: currentValue + value })
+      .eq("user_id", userId)
+      .eq("date", today);
+  }
+}
+
 // Task Actions
 export async function createTask(formData: FormData) {
   const supabase = await createClient();
@@ -21,7 +66,7 @@ export async function createTask(formData: FormData) {
   const estimatedMinutes = parseInt(
     (formData.get("estimatedMinutes") as string) || "25"
   );
-  const priority = (formData.get("priority") as string) || "normal";
+  const priority = ((formData.get("priority") as string) || "normal") as TaskPriority;
   const dueDate = formData.get("dueDate") as string | null;
   const dueTime = formData.get("dueTime") as string | null;
 
@@ -51,14 +96,52 @@ export async function createTask(formData: FormData) {
   }
 
   // Update daily stats
+  await incrementDailyStat(supabase, user.id, "tasks_created");
+
+  revalidatePath("/today");
+  revalidatePath("/lists");
+  return { success: true };
+}
+
+export async function createQuickTask(title: string, listId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Unauthorized" };
+  }
+
   const today = format(new Date(), "yyyy-MM-dd");
-  await supabase.rpc("zeroed_increment_daily_stat", {
-    p_user_id: user.id,
-    p_date: today,
-    p_field: "tasks_created",
+
+  // Get max position for this list
+  const { data: maxPosition } = await supabase
+    .from("zeroed_tasks")
+    .select("position")
+    .eq("list_id", listId)
+    .order("position", { ascending: false })
+    .limit(1)
+    .single();
+
+  const { error } = await supabase.from("zeroed_tasks").insert({
+    user_id: user.id,
+    list_id: listId,
+    title,
+    estimated_minutes: 25,
+    priority: "normal",
+    due_date: today,
+    position: (maxPosition?.position || 0) + 1,
   });
 
-  revalidatePath("/");
+  if (error) {
+    return { error: error.message };
+  }
+
+  // Update daily stats
+  await incrementDailyStat(supabase, user.id, "tasks_created");
+
+  revalidatePath("/today");
   revalidatePath("/lists");
   return { success: true };
 }
@@ -83,7 +166,7 @@ export async function updateTask(taskId: string, updates: Record<string, unknown
     return { error: error.message };
   }
 
-  revalidatePath("/");
+  revalidatePath("/today");
   revalidatePath("/lists");
   return { success: true };
 }
@@ -124,28 +207,20 @@ export async function completeTask(taskId: string) {
     return { error: error.message };
   }
 
-  // Update daily stats if completing
+  // Update daily stats if completing (not uncompleting)
   if (newStatus === "completed") {
-    const today = format(new Date(), "yyyy-MM-dd");
-
-    // Upsert daily stats
-    await supabase.from("zeroed_daily_stats").upsert(
-      {
-        user_id: user.id,
-        date: today,
-        tasks_completed: 1,
-        estimated_minutes: task.estimated_minutes || 0,
-        actual_minutes: task.actual_minutes || 0,
-      },
-      {
-        onConflict: "user_id,date",
-        ignoreDuplicates: false,
-      }
-    );
+    await incrementDailyStat(supabase, user.id, "tasks_completed");
+    if (task.estimated_minutes) {
+      await incrementDailyStat(supabase, user.id, "estimated_minutes", task.estimated_minutes);
+    }
+    if (task.actual_minutes) {
+      await incrementDailyStat(supabase, user.id, "actual_minutes", task.actual_minutes);
+    }
   }
 
-  revalidatePath("/");
+  revalidatePath("/today");
   revalidatePath("/lists");
+  revalidatePath("/stats");
   return { success: true };
 }
 
@@ -169,7 +244,7 @@ export async function deleteTask(taskId: string) {
     return { error: error.message };
   }
 
-  revalidatePath("/");
+  revalidatePath("/today");
   revalidatePath("/lists");
   return { success: true };
 }
@@ -212,7 +287,46 @@ export async function createList(formData: FormData) {
     return { error: error.message };
   }
 
-  revalidatePath("/");
+  revalidatePath("/today");
+  revalidatePath("/lists");
+  return { success: true, list: data };
+}
+
+export async function createListDirect(name: string, color: string = "#6366f1") {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Unauthorized" };
+  }
+
+  // Get max position
+  const { data: maxPosition } = await supabase
+    .from("zeroed_lists")
+    .select("position")
+    .eq("user_id", user.id)
+    .order("position", { ascending: false })
+    .limit(1)
+    .single();
+
+  const { data, error } = await supabase
+    .from("zeroed_lists")
+    .insert({
+      user_id: user.id,
+      name,
+      color,
+      position: (maxPosition?.position || 0) + 1,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/today");
   revalidatePath("/lists");
   return { success: true, list: data };
 }
@@ -240,7 +354,7 @@ export async function updateList(
     return { error: error.message };
   }
 
-  revalidatePath("/");
+  revalidatePath("/today");
   revalidatePath("/lists");
   return { success: true };
 }
@@ -276,7 +390,7 @@ export async function deleteList(listId: string) {
     return { error: error.message };
   }
 
-  revalidatePath("/");
+  revalidatePath("/today");
   revalidatePath("/lists");
   return { success: true };
 }
@@ -357,22 +471,11 @@ export async function completeFocusSession(
       .eq("id", taskId);
   }
 
-  // Update daily stats
-  const today = format(new Date(), "yyyy-MM-dd");
-  await supabase.from("zeroed_daily_stats").upsert(
-    {
-      user_id: user.id,
-      date: today,
-      focus_minutes: actualMinutes,
-      sessions_completed: 1,
-    },
-    {
-      onConflict: "user_id,date",
-      ignoreDuplicates: false,
-    }
-  );
+  // Update daily stats using the increment helper
+  await incrementDailyStat(supabase, user.id, "focus_minutes", actualMinutes);
+  await incrementDailyStat(supabase, user.id, "sessions_completed");
 
-  revalidatePath("/");
+  revalidatePath("/today");
   revalidatePath("/focus");
   revalidatePath("/stats");
   return { success: true };
