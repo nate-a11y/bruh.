@@ -1,6 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { sendSlackDM, formatTodaySummary } from "@/lib/integrations/slack";
+import { sendSlackDM, sendSlackMessage, formatTodaySummary, SlackBlock } from "@/lib/integrations/slack";
+
+// Send notification to configured channel or DM
+async function sendNotification(
+  accessToken: string,
+  settings: Record<string, unknown>,
+  text: string,
+  blocks?: SlackBlock[]
+) {
+  const channelId = settings?.notification_channel_id as string | undefined;
+  const slackUserId = settings?.slack_user_id as string | undefined;
+
+  if (channelId && channelId !== "dm") {
+    return sendSlackMessage(accessToken, { channel: channelId, text, blocks });
+  } else if (slackUserId) {
+    return sendSlackDM(accessToken, slackUserId, text, blocks);
+  }
+  return { ok: false, error: "No destination configured" };
+}
 
 export async function GET(request: NextRequest) {
   // Use service role for cron jobs (no user context)
@@ -37,8 +55,7 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
-      const slackUserId = settings.slack_user_id as string;
-      if (!slackUserId || !integration.access_token) {
+      if (!integration.access_token) {
         continue;
       }
 
@@ -54,9 +71,9 @@ export async function GET(request: NextRequest) {
 
         // Send the summary
         const blocks = formatTodaySummary(tasks || []);
-        await sendSlackDM(
+        await sendNotification(
           integration.access_token,
-          slackUserId,
+          settings,
           `Good morning! Here's your task summary for today.`,
           blocks
         );

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { syncAllTasksToCalendar } from "@/lib/integrations/calendar-sync";
+import { pullChangesFromCalendar } from "@/lib/integrations/google-calendar";
 
 export async function POST() {
   const supabase = await createClient();
@@ -23,8 +24,11 @@ export async function POST() {
       return NextResponse.json({ error: "Calendar sync not enabled" }, { status: 400 });
     }
 
-    // Sync all tasks
-    const result = await syncAllTasksToCalendar(user.id);
+    // Step 1: Pull changes from Calendar first
+    const pullResult = await pullChangesFromCalendar(user.id);
+
+    // Step 2: Push our tasks to Calendar
+    const pushResult = await syncAllTasksToCalendar(user.id);
 
     // Update last sync time
     await supabase
@@ -33,10 +37,13 @@ export async function POST() {
       .eq("user_id", user.id)
       .eq("provider", "google_calendar");
 
+    const totalSynced = pushResult.synced + pullResult.updated + pullResult.created;
     return NextResponse.json({
-      synced: result.synced,
-      errors: result.errors,
-      message: `Synced ${result.synced} tasks${result.errors > 0 ? `, ${result.errors} failed` : ""}`
+      synced: totalSynced,
+      pushed: pushResult.synced,
+      pulled: pullResult.updated + pullResult.created,
+      errors: pushResult.errors,
+      message: `Synced ${totalSynced} tasks (${pushResult.synced} pushed, ${pullResult.updated + pullResult.created} pulled)${pushResult.errors > 0 ? `, ${pushResult.errors} failed` : ""}`
     });
   } catch (error) {
     console.error("Calendar sync error:", error);

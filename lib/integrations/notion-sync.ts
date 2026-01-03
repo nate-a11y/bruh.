@@ -232,3 +232,153 @@ export async function archiveTaskInNotion(userId: string, taskId: string) {
     console.error("Failed to archive task in Notion:", error);
   }
 }
+
+// Helper to extract text from Notion rich_text
+function extractText(richText: Array<{ plain_text?: string }> | undefined): string {
+  if (!richText || !Array.isArray(richText)) return "";
+  return richText.map((t) => t.plain_text || "").join("");
+}
+
+// Pull changes from Notion and update Bruh tasks
+export async function pullChangesFromNotion(userId: string): Promise<{ updated: number; created: number }> {
+  const supabase = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const { data: integrationData } = await supabase
+    .from("zeroed_integrations")
+    .select("access_token, settings, sync_enabled, last_sync_at")
+    .eq("user_id", userId)
+    .eq("provider", "notion")
+    .single();
+
+  if (!integrationData?.access_token || !integrationData?.sync_enabled) {
+    return { updated: 0, created: 0 };
+  }
+
+  const settings = integrationData.settings as NotionSettings | null;
+  if (!settings?.database_id) {
+    return { updated: 0, created: 0 };
+  }
+
+  const { access_token: accessToken, last_sync_at: lastSyncAt } = integrationData;
+  const databaseId = settings.database_id;
+  const taskMappings = settings.task_mappings || {};
+
+  // Reverse mapping: notionPageId -> taskId
+  const reverseMapping: Record<string, string> = {};
+  for (const [taskId, pageId] of Object.entries(taskMappings)) {
+    reverseMapping[pageId] = taskId;
+  }
+
+  let updated = 0;
+  let created = 0;
+
+  try {
+    // Query Notion database for recently updated pages
+    const filter = lastSyncAt
+      ? {
+          timestamp: "last_edited_time",
+          last_edited_time: { after: lastSyncAt },
+        }
+      : undefined;
+
+    const response = await notionRequest(accessToken, `/databases/${databaseId}/query`, "POST", {
+      filter,
+      page_size: 100,
+    });
+
+    const pages = response.results || [];
+
+    for (const page of pages) {
+      if (page.archived) continue;
+
+      const props = page.properties || {};
+      const pageId = page.id;
+
+      // Extract properties
+      const title = extractText(props.Name?.title);
+      const description = extractText(props.Description?.rich_text);
+      const dueDate = props["Due Date"]?.date?.start || null;
+      const isCompleted = props.Status?.checkbox === true;
+      const priority = props.Priority?.select?.name?.toLowerCase() || "normal";
+
+      // Map priority
+      const priorityMap: Record<string, string> = {
+        low: "low",
+        medium: "normal",
+        high: "high",
+        urgent: "urgent",
+      };
+      const mappedPriority = priorityMap[priority] || "normal";
+
+      // Check if we have a mapping for this page
+      const existingTaskId = reverseMapping[pageId];
+
+      if (existingTaskId) {
+        // Update existing task
+        const { error } = await supabase
+          .from("zeroed_tasks")
+          .update({
+            title,
+            notes: description || null,
+            due_date: dueDate,
+            priority: mappedPriority,
+            status: isCompleted ? "completed" : "pending",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existingTaskId)
+          .eq("user_id", userId);
+
+        if (!error) updated++;
+      } else {
+        // Get user's default list (Inbox or first list)
+        const { data: defaultList } = await supabase
+          .from("zeroed_lists")
+          .select("id")
+          .eq("user_id", userId)
+          .or("name.eq.Inbox,is_default.eq.true")
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .single();
+
+        if (!defaultList) continue;
+
+        // Create new task from Notion page
+        const { data: newTask, error } = await supabase
+          .from("zeroed_tasks")
+          .insert({
+            user_id: userId,
+            list_id: defaultList.id,
+            title,
+            notes: description || null,
+            due_date: dueDate,
+            priority: mappedPriority,
+            status: isCompleted ? "completed" : "pending",
+          })
+          .select("id")
+          .single();
+
+        if (!error && newTask) {
+          // Store the mapping
+          await storeTaskMapping(userId, newTask.id, pageId);
+          created++;
+        }
+      }
+    }
+
+    // Update last_sync_at
+    await supabase
+      .from("zeroed_integrations")
+      .update({ last_sync_at: new Date().toISOString() })
+      .eq("user_id", userId)
+      .eq("provider", "notion");
+
+    console.log(`Notion sync: updated ${updated}, created ${created} tasks`);
+  } catch (error) {
+    console.error("Failed to pull changes from Notion:", error);
+  }
+
+  return { updated, created };
+}

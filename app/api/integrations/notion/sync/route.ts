@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { syncTaskToNotion } from "@/lib/integrations/notion-sync";
+import { syncTaskToNotion, pullChangesFromNotion } from "@/lib/integrations/notion-sync";
 
 export async function POST() {
   const supabase = await createClient();
@@ -28,7 +28,10 @@ export async function POST() {
       return NextResponse.json({ error: "No database selected" }, { status: 400 });
     }
 
-    // Get all pending/in_progress tasks
+    // Step 1: Pull changes from Notion first
+    const pullResult = await pullChangesFromNotion(user.id);
+
+    // Step 2: Push our tasks to Notion
     const { data: tasks } = await supabase
       .from("zeroed_tasks")
       .select("id, title, notes, due_date, priority, status")
@@ -37,26 +40,24 @@ export async function POST() {
       .order("created_at", { ascending: false })
       .limit(50);
 
-    if (!tasks || tasks.length === 0) {
-      return NextResponse.json({ synced: 0, message: "No tasks to sync" });
-    }
-
-    let synced = 0;
+    let pushed = 0;
     let errors = 0;
 
-    for (const task of tasks) {
-      try {
-        await syncTaskToNotion(user.id, {
-          id: task.id,
-          title: task.title,
-          notes: task.notes,
-          due_date: task.due_date,
-          priority: task.priority,
-          status: task.status,
-        });
-        synced++;
-      } catch {
-        errors++;
+    if (tasks && tasks.length > 0) {
+      for (const task of tasks) {
+        try {
+          await syncTaskToNotion(user.id, {
+            id: task.id,
+            title: task.title,
+            notes: task.notes,
+            due_date: task.due_date,
+            priority: task.priority,
+            status: task.status,
+          });
+          pushed++;
+        } catch {
+          errors++;
+        }
       }
     }
 
@@ -67,10 +68,13 @@ export async function POST() {
       .eq("user_id", user.id)
       .eq("provider", "notion");
 
+    const totalSynced = pushed + pullResult.updated + pullResult.created;
     return NextResponse.json({
-      synced,
+      synced: totalSynced,
+      pushed,
+      pulled: pullResult.updated + pullResult.created,
       errors,
-      message: `Synced ${synced} tasks${errors > 0 ? `, ${errors} failed` : ""}`
+      message: `Synced ${totalSynced} tasks (${pushed} pushed, ${pullResult.updated + pullResult.created} pulled)${errors > 0 ? `, ${errors} failed` : ""}`
     });
   } catch (error) {
     console.error("Notion sync error:", error);

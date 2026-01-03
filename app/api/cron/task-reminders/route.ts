@@ -1,6 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { sendSlackDM } from "@/lib/integrations/slack";
+import { sendSlackDM, sendSlackMessage, SlackBlock } from "@/lib/integrations/slack";
+
+// Send notification to configured channel or DM
+async function sendNotification(
+  accessToken: string,
+  settings: Record<string, unknown>,
+  text: string,
+  blocks?: SlackBlock[]
+) {
+  const channelId = settings?.notification_channel_id as string | undefined;
+  const slackUserId = settings?.slack_user_id as string | undefined;
+
+  if (channelId && channelId !== "dm") {
+    return sendSlackMessage(accessToken, { channel: channelId, text, blocks });
+  } else if (slackUserId) {
+    return sendSlackDM(accessToken, slackUserId, text, blocks);
+  }
+  return { ok: false, error: "No destination configured" };
+}
 
 export async function GET(request: NextRequest) {
   // Use service role for cron jobs (no user context)
@@ -46,8 +64,7 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
-      const slackUserId = settings.slack_user_id as string;
-      if (!slackUserId || !integration.access_token) {
+      if (!integration.access_token) {
         continue;
       }
 
@@ -67,30 +84,31 @@ export async function GET(request: NextRequest) {
 
         // Send reminder for each task
         for (const task of tasks) {
-          await sendSlackDM(
-            integration.access_token,
-            slackUserId,
-            `⏰ Reminder: *${task.title}* is due now!`,
-            [
-              {
-                type: "section",
-                text: {
-                  type: "mrkdwn",
-                  text: `⏰ *${task.title}*\nDue: ${task.due_time}`,
-                },
-                accessory: {
-                  type: "button",
-                  text: {
-                    type: "plain_text",
-                    text: "Mark Done",
-                    emoji: true,
-                  },
-                  action_id: "complete_task",
-                  value: task.id,
-                  style: "primary",
-                },
+          const blocks: SlackBlock[] = [
+            {
+              type: "section",
+              text: {
+                type: "mrkdwn",
+                text: `⏰ *${task.title}*\nDue: ${task.due_time}`,
               },
-            ]
+              accessory: {
+                type: "button",
+                text: {
+                  type: "plain_text",
+                  text: "Mark Done",
+                  emoji: true,
+                },
+                action_id: "complete_task",
+                value: task.id,
+                style: "primary",
+              },
+            },
+          ];
+          await sendNotification(
+            integration.access_token,
+            settings,
+            `⏰ Reminder: *${task.title}* is due now!`,
+            blocks
           );
           sent++;
         }

@@ -5,6 +5,7 @@ import { GoogleCalendarSettings } from "@/components/settings/google-calendar-se
 import { SlackSettings } from "@/components/settings/slack-settings";
 import { NotionSettings } from "@/components/settings/notion-settings";
 import { IntegrationsSettings } from "@/components/settings/integrations-settings";
+import { IntegrationHealth } from "@/components/settings/integration-health";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -73,6 +74,7 @@ export default async function SettingsPage() {
                 Connect your favorite tools
               </p>
             </div>
+            <IntegrationHealth />
             <div className="space-y-4">
               <GoogleCalendarSettings integration={googleIntegration} />
               <SlackSettings integration={slackIntegration} />
