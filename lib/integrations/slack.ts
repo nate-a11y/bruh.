@@ -59,7 +59,7 @@ export interface SlackBlock {
 export function getSlackAuthUrl(state: string): string {
   const params = new URLSearchParams({
     client_id: SLACK_CLIENT_ID,
-    scope: "chat:write,commands,users:read",
+    scope: "chat:write,commands,users:read,channels:read,groups:read",
     redirect_uri: `${APP_URL}/api/integrations/slack/callback`,
     state,
   });
@@ -202,6 +202,36 @@ export function formatTaskForSlack(task: {
       },
     },
   ];
+}
+
+/**
+ * List available channels in the workspace
+ */
+export async function listChannels(
+  accessToken: string
+): Promise<{ ok: boolean; channels?: Array<{ id: string; name: string; is_private: boolean }>; error?: string }> {
+  const response = await fetch(
+    "https://slack.com/api/conversations.list?types=public_channel,private_channel&exclude_archived=true&limit=100",
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+
+  const data = await response.json();
+  if (!data.ok) {
+    return { ok: false, error: data.error };
+  }
+
+  return {
+    ok: true,
+    channels: data.channels?.map((ch: { id: string; name: string; is_private: boolean }) => ({
+      id: ch.id,
+      name: ch.name,
+      is_private: ch.is_private,
+    })) || [],
+  };
 }
 
 /**

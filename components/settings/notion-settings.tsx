@@ -1,9 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { Check, Loader2, Unlink, FileText } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Check, Loader2, Unlink, FileText, RefreshCw, Database } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import type { Json } from "@/lib/supabase/types";
 
@@ -12,10 +21,16 @@ interface NotionSettingsProps {
     id: string;
     settings: Json;
     sync_enabled: boolean;
+    last_sync_at: string | null;
   } | null;
 }
 
-// Helper to safely access settings from Json type
+interface NotionDatabase {
+  id: string;
+  title: string;
+  icon: string;
+}
+
 function getSettingsValue<T>(settings: Json, key: string, defaultValue: T): T {
   if (!settings || typeof settings !== "object" || Array.isArray(settings)) return defaultValue;
   const value = (settings as Record<string, unknown>)[key];
@@ -24,6 +39,36 @@ function getSettingsValue<T>(settings: Json, key: string, defaultValue: T): T {
 
 export function NotionSettings({ integration }: NotionSettingsProps) {
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [databases, setDatabases] = useState<NotionDatabase[]>([]);
+  const [isLoadingDatabases, setIsLoadingDatabases] = useState(false);
+  const [selectedDatabase, setSelectedDatabase] = useState<string>(
+    getSettingsValue(integration?.settings ?? null, "database_id", "")
+  );
+  const [syncEnabled, setSyncEnabled] = useState(integration?.sync_enabled ?? false);
+  const [autoSync, setAutoSync] = useState(
+    getSettingsValue(integration?.settings ?? null, "auto_sync", true)
+  );
+
+  useEffect(() => {
+    if (integration?.sync_enabled) {
+      fetchDatabases();
+    }
+  }, [integration?.sync_enabled]);
+
+  async function fetchDatabases() {
+    setIsLoadingDatabases(true);
+    try {
+      const res = await fetch("/api/integrations/notion/databases");
+      const data = await res.json();
+      if (data.databases) {
+        setDatabases(data.databases);
+      }
+    } catch {
+      toast.error("Failed to load databases");
+    } finally {
+      setIsLoadingDatabases(false);
+    }
+  }
 
   async function handleDisconnect() {
     if (!confirm("Disconnect Notion? Your tasks will no longer sync.")) {
@@ -44,8 +89,46 @@ export function NotionSettings({ integration }: NotionSettingsProps) {
     }
   }
 
+  async function updateSettings(settings: Record<string, unknown>) {
+    try {
+      const res = await fetch("/api/integrations/notion/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ settings }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Settings updated");
+    } catch {
+      toast.error("Failed to update settings");
+    }
+  }
+
+  async function handleDatabaseSelect(databaseId: string) {
+    setSelectedDatabase(databaseId);
+    const db = databases.find(d => d.id === databaseId);
+    await updateSettings({
+      database_id: databaseId,
+      database_name: db?.title || "Unknown",
+    });
+  }
+
+  async function handleSyncToggle(enabled: boolean) {
+    setSyncEnabled(enabled);
+    try {
+      const res = await fetch("/api/integrations/notion/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sync_enabled: enabled }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success(enabled ? "Sync enabled" : "Sync disabled");
+    } catch {
+      toast.error("Failed to update sync");
+      setSyncEnabled(!enabled);
+    }
+  }
+
   if (!integration || !integration.sync_enabled) {
-    // Not connected state
     return (
       <Card>
         <CardHeader>
@@ -75,8 +158,8 @@ export function NotionSettings({ integration }: NotionSettingsProps) {
   }
 
   const workspaceName = getSettingsValue(integration.settings, "workspace_name", "Notion Workspace");
+  const databaseName = getSettingsValue(integration.settings, "database_name", "");
 
-  // Connected state
   return (
     <Card>
       <CardHeader>
@@ -91,13 +174,97 @@ export function NotionSettings({ integration }: NotionSettingsProps) {
         <CardDescription>Connected to {workspaceName}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Info */}
-        <div className="p-3 rounded-lg bg-muted/50">
-          <p className="font-medium text-sm mb-2">Sync Status</p>
+        {/* Database Selection */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>Sync Database</Label>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={fetchDatabases}
+              disabled={isLoadingDatabases}
+            >
+              <RefreshCw className={`h-3 w-3 ${isLoadingDatabases ? "animate-spin" : ""}`} />
+            </Button>
+          </div>
+          <Select value={selectedDatabase} onValueChange={handleDatabaseSelect}>
+            <SelectTrigger>
+              <SelectValue placeholder={isLoadingDatabases ? "Loading..." : "Select a database"} />
+            </SelectTrigger>
+            <SelectContent>
+              {databases.map((db) => (
+                <SelectItem key={db.id} value={db.id}>
+                  <span className="flex items-center gap-2">
+                    <span>{db.icon}</span>
+                    <span>{db.title}</span>
+                  </span>
+                </SelectItem>
+              ))}
+              {databases.length === 0 && !isLoadingDatabases && (
+                <div className="p-2 text-sm text-muted-foreground text-center">
+                  No databases found. Share databases with Bruh in Notion.
+                </div>
+              )}
+            </SelectContent>
+          </Select>
+          {databaseName && (
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <Database className="h-3 w-3" />
+              Syncing to: {databaseName}
+            </p>
+          )}
           <p className="text-xs text-muted-foreground">
-            Tasks will sync to your selected Notion database. Database selection coming soon.
+            {integration.last_sync_at
+              ? `Last synced ${new Date(integration.last_sync_at).toLocaleString()}`
+              : "Not synced yet"}
           </p>
         </div>
+
+        {/* Sync Settings */}
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="notion-sync-enabled">Enable Sync</Label>
+              <p className="text-xs text-muted-foreground">
+                Sync tasks to Notion
+              </p>
+            </div>
+            <Switch
+              id="notion-sync-enabled"
+              checked={syncEnabled}
+              onCheckedChange={handleSyncToggle}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="notion-auto-sync">Auto-sync</Label>
+              <p className="text-xs text-muted-foreground">
+                Sync when tasks change
+              </p>
+            </div>
+            <Switch
+              id="notion-auto-sync"
+              checked={autoSync}
+              onCheckedChange={(checked) => {
+                setAutoSync(checked);
+                updateSettings({ auto_sync: checked });
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Sync Info */}
+        {selectedDatabase && (
+          <div className="p-3 rounded-lg bg-muted/50">
+            <p className="font-medium text-sm mb-1">How it works</p>
+            <ul className="text-xs text-muted-foreground space-y-1">
+              <li>• New tasks → Create page in Notion</li>
+              <li>• Complete task → Mark done in Notion</li>
+              <li>• Delete task → Archive in Notion</li>
+            </ul>
+          </div>
+        )}
 
         {/* Disconnect */}
         <div className="pt-2 border-t">

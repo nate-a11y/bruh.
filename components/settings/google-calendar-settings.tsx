@@ -1,11 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { Calendar, Check, ExternalLink, Loader2, Unlink } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Calendar, Check, ExternalLink, Loader2, Unlink, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import type { Json } from "@/lib/supabase/types";
 
@@ -19,6 +26,13 @@ interface GoogleCalendarSettingsProps {
   } | null;
 }
 
+interface CalendarItem {
+  id: string;
+  name: string;
+  primary: boolean;
+  color: string;
+}
+
 // Helper to safely access settings from Json type
 function getSettingsValue<T>(settings: Json, key: string, defaultValue: T): T {
   if (!settings || typeof settings !== 'object' || Array.isArray(settings)) return defaultValue;
@@ -29,6 +43,58 @@ function getSettingsValue<T>(settings: Json, key: string, defaultValue: T): T {
 export function GoogleCalendarSettings({ integration }: GoogleCalendarSettingsProps) {
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [syncEnabled, setSyncEnabled] = useState(integration?.sync_enabled ?? false);
+  const [calendars, setCalendars] = useState<CalendarItem[]>([]);
+  const [isLoadingCalendars, setIsLoadingCalendars] = useState(false);
+  const [selectedCalendar, setSelectedCalendar] = useState<string>(
+    getSettingsValue(integration?.settings ?? null, "calendar_id", "primary")
+  );
+  const [syncCompletedTasks, setSyncCompletedTasks] = useState(
+    getSettingsValue(integration?.settings ?? null, "sync_completed_tasks", false)
+  );
+
+  useEffect(() => {
+    if (integration?.sync_enabled) {
+      fetchCalendars();
+    }
+  }, [integration?.sync_enabled]);
+
+  async function fetchCalendars() {
+    setIsLoadingCalendars(true);
+    try {
+      const res = await fetch("/api/integrations/google/calendars");
+      const data = await res.json();
+      if (data.calendars) {
+        setCalendars(data.calendars);
+      }
+    } catch {
+      toast.error("Failed to load calendars");
+    } finally {
+      setIsLoadingCalendars(false);
+    }
+  }
+
+  async function handleCalendarSelect(calendarId: string) {
+    setSelectedCalendar(calendarId);
+    const cal = calendars.find(c => c.id === calendarId);
+    await updateSettings({
+      calendar_id: calendarId,
+      calendar_name: cal?.name || "Google Calendar",
+    });
+  }
+
+  async function updateSettings(settings: Record<string, unknown>) {
+    try {
+      const res = await fetch("/api/integrations/google/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ settings }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Settings updated");
+    } catch {
+      toast.error("Failed to update settings");
+    }
+  }
 
   async function handleDisconnect() {
     if (!confirm("Disconnect Google Calendar? Your synced events won't be deleted from your calendar.")) {
@@ -127,14 +193,92 @@ export function GoogleCalendarSettings({ integration }: GoogleCalendarSettingsPr
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Calendar info */}
+        {/* Calendar Selection */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>Sync Calendar</Label>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={fetchCalendars}
+              disabled={isLoadingCalendars}
+            >
+              <RefreshCw className={`h-3 w-3 ${isLoadingCalendars ? "animate-spin" : ""}`} />
+            </Button>
+          </div>
+          <Select value={selectedCalendar} onValueChange={handleCalendarSelect}>
+            <SelectTrigger>
+              <SelectValue placeholder={isLoadingCalendars ? "Loading..." : "Select a calendar"} />
+            </SelectTrigger>
+            <SelectContent>
+              {calendars.map((cal) => (
+                <SelectItem key={cal.id} value={cal.id}>
+                  <span className="flex items-center gap-2">
+                    <span
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: cal.color }}
+                    />
+                    <span>{cal.name}</span>
+                    {cal.primary && (
+                      <span className="text-xs text-muted-foreground">(Primary)</span>
+                    )}
+                  </span>
+                </SelectItem>
+              ))}
+              {calendars.length === 0 && !isLoadingCalendars && (
+                <div className="p-2 text-sm text-muted-foreground text-center">
+                  No calendars found
+                </div>
+              )}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            {integration.last_sync_at
+              ? `Last synced ${new Date(integration.last_sync_at).toLocaleString()}`
+              : "Not synced yet"}
+          </p>
+        </div>
+
+        {/* Sync settings */}
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="sync-enabled">Enable Sync</Label>
+              <p className="text-xs text-muted-foreground">
+                Sync tasks with due dates to calendar
+              </p>
+            </div>
+            <Switch
+              id="sync-enabled"
+              checked={syncEnabled}
+              onCheckedChange={handleToggleSync}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="sync-completed">Sync Completed Tasks</Label>
+              <p className="text-xs text-muted-foreground">
+                Keep completed tasks in calendar
+              </p>
+            </div>
+            <Switch
+              id="sync-completed"
+              checked={syncCompletedTasks}
+              onCheckedChange={(checked) => {
+                setSyncCompletedTasks(checked);
+                updateSettings({ sync_completed_tasks: checked });
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Open in Calendar */}
         <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
           <div>
-            <p className="font-medium text-sm">{getSettingsValue(integration.settings, "calendar_name", "Primary Calendar")}</p>
+            <p className="font-medium text-sm">View in Google Calendar</p>
             <p className="text-xs text-muted-foreground">
-              {integration.last_sync_at
-                ? `Last synced ${new Date(integration.last_sync_at).toLocaleString()}`
-                : "Not synced yet"}
+              Open your calendar in a new tab
             </p>
           </div>
           <Button variant="ghost" size="sm" asChild>
@@ -146,23 +290,6 @@ export function GoogleCalendarSettings({ integration }: GoogleCalendarSettingsPr
               <ExternalLink className="h-4 w-4" />
             </a>
           </Button>
-        </div>
-
-        {/* Sync settings */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label htmlFor="sync-enabled">Enable Sync</Label>
-              <p className="text-xs text-muted-foreground">
-                Automatically sync tasks to calendar
-              </p>
-            </div>
-            <Switch
-              id="sync-enabled"
-              checked={syncEnabled}
-              onCheckedChange={handleToggleSync}
-            />
-          </div>
         </div>
 
         {/* Disconnect */}

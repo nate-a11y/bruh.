@@ -10,6 +10,7 @@ import type {
 } from "@/lib/supabase/types";
 import { executeFilter } from "@/lib/filters/engine";
 import { syncTaskToCalendar, removeTaskFromCalendar } from "@/lib/integrations/calendar-sync";
+import { syncTaskToNotion, completeTaskInNotion, uncompleteTaskInNotion, archiveTaskInNotion } from "@/lib/integrations/notion-sync";
 
 type TaskPriority = "low" | "normal" | "high" | "urgent";
 type GoalTargetType = "tasks_completed" | "focus_minutes" | "focus_sessions" | "streak_days" | "custom";
@@ -121,6 +122,18 @@ export async function createTask(formData: FormData) {
     }).catch(console.error);
   }
 
+  // Sync to Notion (fire and forget)
+  if (task) {
+    syncTaskToNotion(user.id, {
+      id: task.id,
+      title: task.title,
+      notes: task.notes,
+      due_date: task.due_date,
+      priority: task.priority,
+      status: task.status,
+    }).catch(console.error);
+  }
+
   revalidatePath("/today");
   revalidatePath("/lists");
   return { success: true };
@@ -177,6 +190,18 @@ export async function createQuickTask(title: string, listId: string) {
     }).catch(console.error);
   }
 
+  // Sync to Notion (fire and forget)
+  if (task) {
+    syncTaskToNotion(user.id, {
+      id: task.id,
+      title: task.title,
+      notes: task.notes,
+      due_date: task.due_date,
+      priority: task.priority,
+      status: task.status,
+    }).catch(console.error);
+  }
+
   revalidatePath("/today");
   revalidatePath("/lists");
   return { success: true };
@@ -213,6 +238,18 @@ export async function updateTask(taskId: string, updates: Record<string, unknown
       due_date: task.due_date,
       due_time: task.due_time,
       estimated_minutes: task.estimated_minutes,
+      status: task.status,
+    }).catch(console.error);
+  }
+
+  // Sync to Notion (fire and forget)
+  if (task) {
+    syncTaskToNotion(user.id, {
+      id: task.id,
+      title: task.title,
+      notes: task.notes,
+      due_date: task.due_date,
+      priority: task.priority,
       status: task.status,
     }).catch(console.error);
   }
@@ -282,6 +319,13 @@ export async function completeTask(taskId: string) {
     }).catch(console.error);
   }
 
+  // Sync to Notion (fire and forget)
+  if (newStatus === "completed") {
+    completeTaskInNotion(user.id, task.id).catch(console.error);
+  } else {
+    uncompleteTaskInNotion(user.id, task.id).catch(console.error);
+  }
+
   revalidatePath("/today");
   revalidatePath("/lists");
   revalidatePath("/stats");
@@ -300,6 +344,9 @@ export async function deleteTask(taskId: string) {
 
   // Remove from Google Calendar before deleting (fire and forget)
   removeTaskFromCalendar(user.id, taskId).catch(console.error);
+
+  // Archive in Notion before deleting (fire and forget)
+  archiveTaskInNotion(user.id, taskId).catch(console.error);
 
   const { error } = await supabase
     .from("zeroed_tasks")

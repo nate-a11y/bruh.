@@ -1,11 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { Check, Loader2, MessageSquare, Unlink } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Check, Loader2, MessageSquare, Unlink, RefreshCw, Hash, Lock } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import type { Json } from "@/lib/supabase/types";
 
@@ -17,6 +24,12 @@ interface SlackSettingsProps {
   } | null;
 }
 
+interface SlackChannel {
+  id: string;
+  name: string;
+  is_private: boolean;
+}
+
 // Helper to safely access settings from Json type
 function getSettingsValue<T>(settings: Json, key: string, defaultValue: T): T {
   if (!settings || typeof settings !== "object" || Array.isArray(settings)) return defaultValue;
@@ -26,12 +39,47 @@ function getSettingsValue<T>(settings: Json, key: string, defaultValue: T): T {
 
 export function SlackSettings({ integration }: SlackSettingsProps) {
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [channels, setChannels] = useState<SlackChannel[]>([]);
+  const [isLoadingChannels, setIsLoadingChannels] = useState(false);
+  const [selectedChannel, setSelectedChannel] = useState<string>(
+    getSettingsValue(integration?.settings ?? null, "notification_channel_id", "dm")
+  );
   const [notifyTaskDue, setNotifyTaskDue] = useState(
     getSettingsValue(integration?.settings ?? null, "notify_task_due", true)
   );
   const [notifyDailySummary, setNotifyDailySummary] = useState(
     getSettingsValue(integration?.settings ?? null, "notify_daily_summary", true)
   );
+
+  useEffect(() => {
+    if (integration) {
+      fetchChannels();
+    }
+  }, [integration]);
+
+  async function fetchChannels() {
+    setIsLoadingChannels(true);
+    try {
+      const res = await fetch("/api/integrations/slack/channels");
+      const data = await res.json();
+      if (data.channels) {
+        setChannels(data.channels);
+      }
+    } catch {
+      // Silent fail - channels list is optional
+    } finally {
+      setIsLoadingChannels(false);
+    }
+  }
+
+  async function handleChannelSelect(channelId: string) {
+    setSelectedChannel(channelId);
+    const channel = channels.find(c => c.id === channelId);
+    await updateSettings({
+      notification_channel_id: channelId,
+      notification_channel_name: channelId === "dm" ? "Direct Message" : channel?.name || "Unknown",
+    });
+  }
 
   async function handleDisconnect() {
     if (!confirm("Disconnect Slack? You won't receive notifications anymore.")) {
@@ -113,6 +161,49 @@ export function SlackSettings({ integration }: SlackSettingsProps) {
         <CardDescription>Connected to {teamName}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Notification Channel Selection */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>Notification Channel</Label>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={fetchChannels}
+              disabled={isLoadingChannels}
+            >
+              <RefreshCw className={`h-3 w-3 ${isLoadingChannels ? "animate-spin" : ""}`} />
+            </Button>
+          </div>
+          <Select value={selectedChannel} onValueChange={handleChannelSelect}>
+            <SelectTrigger>
+              <SelectValue placeholder={isLoadingChannels ? "Loading..." : "Select where to send notifications"} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="dm">
+                <span className="flex items-center gap-2">
+                  <MessageSquare className="h-3 w-3" />
+                  <span>Direct Message (DM)</span>
+                </span>
+              </SelectItem>
+              {channels.map((channel) => (
+                <SelectItem key={channel.id} value={channel.id}>
+                  <span className="flex items-center gap-2">
+                    {channel.is_private ? (
+                      <Lock className="h-3 w-3" />
+                    ) : (
+                      <Hash className="h-3 w-3" />
+                    )}
+                    <span>{channel.name}</span>
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Where you&apos;ll receive task reminders and summaries
+          </p>
+        </div>
+
         {/* Slash commands info */}
         <div className="p-3 rounded-lg bg-muted/50">
           <p className="font-medium text-sm mb-2">Slash Commands</p>
@@ -124,7 +215,7 @@ export function SlackSettings({ integration }: SlackSettingsProps) {
         </div>
 
         {/* Notification settings */}
-        <div className="space-y-3">
+        <div className="space-y-3 pt-2">
           <div className="flex items-center justify-between">
             <div>
               <Label htmlFor="notify-due">Task Due Reminders</Label>
