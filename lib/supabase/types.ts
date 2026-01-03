@@ -221,6 +221,13 @@ export type Database = {
           onboarding_completed: boolean;
           created_at: string;
           updated_at: string;
+          // Sprint 8 fields
+          daily_intention: string | null;
+          last_daily_planning_at: string | null;
+          last_shutdown_at: string | null;
+          planning_preferences: Record<string, unknown> | null;
+          focus_sound: string;
+          focus_sound_volume: number;
         };
         Insert: {
           id?: string;
@@ -239,6 +246,13 @@ export type Database = {
           onboarding_completed?: boolean;
           created_at?: string;
           updated_at?: string;
+          // Sprint 8 fields
+          daily_intention?: string | null;
+          last_daily_planning_at?: string | null;
+          last_shutdown_at?: string | null;
+          planning_preferences?: Record<string, unknown> | null;
+          focus_sound?: string;
+          focus_sound_volume?: number;
         };
         Update: {
           id?: string;
@@ -257,6 +271,13 @@ export type Database = {
           onboarding_completed?: boolean;
           created_at?: string;
           updated_at?: string;
+          // Sprint 8 fields
+          daily_intention?: string | null;
+          last_daily_planning_at?: string | null;
+          last_shutdown_at?: string | null;
+          planning_preferences?: Record<string, unknown> | null;
+          focus_sound?: string;
+          focus_sound_volume?: number;
         };
         Relationships: [];
       };
@@ -872,6 +893,138 @@ export type Database = {
         };
         Relationships: [];
       };
+      // Sprint 8: Smart Filters
+      zeroed_smart_filters: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          icon: string;
+          color: string;
+          filter_config: Json;
+          position: number;
+          is_pinned: boolean;
+          use_count: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          icon?: string;
+          color?: string;
+          filter_config: Json;
+          position?: number;
+          is_pinned?: boolean;
+          use_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          icon?: string;
+          color?: string;
+          filter_config?: Json;
+          position?: number;
+          is_pinned?: boolean;
+          use_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      // Sprint 8: Archive
+      zeroed_archive: {
+        Row: {
+          id: string;
+          user_id: string;
+          task_id: string;
+          title: string;
+          notes: string | null;
+          list_name: string | null;
+          list_color: string | null;
+          priority: string | null;
+          tags: string[] | null;
+          estimated_minutes: number | null;
+          actual_minutes: number | null;
+          completed_at: string;
+          created_at: string | null;
+          focus_sessions_count: number;
+          focus_total_minutes: number;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          task_id: string;
+          title: string;
+          notes?: string | null;
+          list_name?: string | null;
+          list_color?: string | null;
+          priority?: string | null;
+          tags?: string[] | null;
+          estimated_minutes?: number | null;
+          actual_minutes?: number | null;
+          completed_at: string;
+          created_at?: string | null;
+          focus_sessions_count?: number;
+          focus_total_minutes?: number;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          task_id?: string;
+          title?: string;
+          notes?: string | null;
+          list_name?: string | null;
+          list_color?: string | null;
+          priority?: string | null;
+          tags?: string[] | null;
+          estimated_minutes?: number | null;
+          actual_minutes?: number | null;
+          completed_at?: string;
+          created_at?: string | null;
+          focus_sessions_count?: number;
+          focus_total_minutes?: number;
+        };
+        Relationships: [];
+      };
+      // Sprint 8: Undo History
+      zeroed_undo_history: {
+        Row: {
+          id: string;
+          user_id: string;
+          action_type: string;
+          entity_type: string;
+          entity_id: string;
+          previous_state: Json;
+          created_at: string;
+          expires_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          action_type: string;
+          entity_type: string;
+          entity_id: string;
+          previous_state: Json;
+          created_at?: string;
+          expires_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          action_type?: string;
+          entity_type?: string;
+          entity_id?: string;
+          previous_state?: Json;
+          created_at?: string;
+          expires_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -1153,3 +1306,118 @@ export interface CategoryBreakdown {
   focusMinutes: number;
   percentage: number;
 }
+
+// ============================================================================
+// SPRINT 8: SMART FILTERS, SNOOZE, RITUALS
+// ============================================================================
+
+export interface FilterCondition {
+  field: 'priority' | 'status' | 'list_id' | 'due_date' | 'start_date' | 'tags' | 'estimated_minutes' | 'has_subtasks' | 'is_recurring';
+  operator: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'in' | 'not_in' | 'is_null' | 'is_not_null' | 'contains';
+  value: unknown;
+}
+
+export interface SmartFilterConfig {
+  conditions: FilterCondition[];
+  logic: 'and' | 'or';
+  sort?: {
+    field: string;
+    direction: 'asc' | 'desc';
+  };
+}
+
+export interface SmartFilter {
+  id: string;
+  user_id: string;
+  name: string;
+  icon: string;
+  color: string;
+  filter_config: SmartFilterConfig;
+  position: number;
+  is_pinned: boolean;
+  use_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ArchivedTask {
+  id: string;
+  user_id: string;
+  task_id: string;
+  title: string;
+  notes: string | null;
+  list_name: string | null;
+  list_color: string | null;
+  priority: string | null;
+  tags: string[] | null;
+  estimated_minutes: number | null;
+  actual_minutes: number | null;
+  completed_at: string;
+  created_at: string | null;
+  focus_sessions_count: number;
+  focus_total_minutes: number;
+}
+
+export interface UndoAction {
+  id: string;
+  user_id: string;
+  action_type: 'complete' | 'delete' | 'snooze' | 'move' | 'update';
+  entity_type: 'task' | 'list';
+  entity_id: string;
+  previous_state: Record<string, unknown>;
+  created_at: string;
+  expires_at: string;
+}
+
+export interface PlanningPreferences {
+  autoShowMorning: boolean;
+  autoShowEvening: boolean;
+  morningTime: string;
+  eveningTime: string;
+}
+
+export type FocusSoundType = 'none' | 'rain' | 'cafe' | 'lofi' | 'whitenoise' | 'nature';
+
+// Preset filters
+export const PRESET_FILTERS: Record<string, SmartFilterConfig> = {
+  'high-priority': {
+    conditions: [
+      { field: 'priority', operator: 'in', value: ['high', 'urgent'] },
+      { field: 'status', operator: 'neq', value: 'completed' },
+    ],
+    logic: 'and',
+    sort: { field: 'priority', direction: 'desc' },
+  },
+  'due-this-week': {
+    conditions: [
+      { field: 'due_date', operator: 'gte', value: 'today' },
+      { field: 'due_date', operator: 'lte', value: 'end_of_week' },
+      { field: 'status', operator: 'neq', value: 'completed' },
+    ],
+    logic: 'and',
+    sort: { field: 'due_date', direction: 'asc' },
+  },
+  'overdue': {
+    conditions: [
+      { field: 'due_date', operator: 'lt', value: 'today' },
+      { field: 'status', operator: 'neq', value: 'completed' },
+    ],
+    logic: 'and',
+    sort: { field: 'due_date', direction: 'asc' },
+  },
+  'no-due-date': {
+    conditions: [
+      { field: 'due_date', operator: 'is_null', value: null },
+      { field: 'status', operator: 'neq', value: 'completed' },
+    ],
+    logic: 'and',
+  },
+  'quick-wins': {
+    conditions: [
+      { field: 'estimated_minutes', operator: 'lte', value: 15 },
+      { field: 'status', operator: 'neq', value: 'completed' },
+    ],
+    logic: 'and',
+    sort: { field: 'estimated_minutes', direction: 'asc' },
+  },
+};

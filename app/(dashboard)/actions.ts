@@ -2,11 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { format } from "date-fns";
+import { format, addDays, startOfWeek, addMonths, startOfMonth } from "date-fns";
 import type {
   RecurrenceRule,
   Insertable,
+  SmartFilterConfig,
 } from "@/lib/supabase/types";
+import { executeFilter } from "@/lib/filters/engine";
 
 type TaskPriority = "low" | "normal" | "high" | "urgent";
 type GoalTargetType = "tasks_completed" | "focus_minutes" | "focus_sessions" | "streak_days" | "custom";
@@ -1904,5 +1906,348 @@ export async function completeOnboarding(preferences: Record<string, unknown>, f
   }
 
   revalidatePath("/");
+  return { success: true };
+}
+
+// ============================================================================
+// SPRINT 8: SMART FILTER ACTIONS
+// ============================================================================
+
+export async function createSmartFilter(data: {
+  name: string;
+  icon: string;
+  color: string;
+  filter_config: SmartFilterConfig;
+  is_pinned: boolean;
+}) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  // Get next position
+  const { data: existing } = await supabase
+    .from("zeroed_smart_filters")
+    .select("position")
+    .eq("user_id", user.id)
+    .order("position", { ascending: false })
+    .limit(1);
+
+  const position = (existing?.[0]?.position ?? -1) + 1;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: filter, error } = await (supabase as any)
+    .from("zeroed_smart_filters")
+    .insert({
+      user_id: user.id,
+      name: data.name,
+      icon: data.icon,
+      color: data.color,
+      filter_config: data.filter_config,
+      is_pinned: data.is_pinned,
+      position,
+    })
+    .select()
+    .single();
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/");
+  return { success: true, filter };
+}
+
+export async function getSmartFilters() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data } = await supabase
+    .from("zeroed_smart_filters")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("position");
+
+  return data || [];
+}
+
+export async function deleteSmartFilter(id: string) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("zeroed_smart_filters")
+    .delete()
+    .eq("id", id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function executeSmartFilter(filterId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  // Get filter config
+  const { data: filter } = await supabase
+    .from("zeroed_smart_filters")
+    .select("filter_config")
+    .eq("id", filterId)
+    .single();
+
+  if (!filter) return { error: "Filter not found" };
+
+  // Increment use count - we'd need an RPC for atomic increment, but for now just note it
+  // Could be done via: await supabase.rpc("increment_filter_use_count", { filter_id: filterId });
+
+  // Execute filter
+  const tasks = await executeFilter(user.id, filter.filter_config as unknown as SmartFilterConfig);
+  return { success: true, tasks };
+}
+
+// ============================================================================
+// SPRINT 8: SNOOZE ACTIONS
+// ============================================================================
+
+export async function snoozeTask(
+  taskId: string,
+  until: Date | 'tomorrow' | 'next_week' | 'next_month'
+) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  // Get current task state for undo
+  const { data: task } = await supabase
+    .from("zeroed_tasks")
+    .select("*")
+    .eq("id", taskId)
+    .single();
+
+  if (!task) return { error: "Task not found" };
+
+  // Calculate snooze date
+  let snoozeDate: Date;
+  if (until === 'tomorrow') {
+    snoozeDate = addDays(new Date(), 1);
+  } else if (until === 'next_week') {
+    snoozeDate = addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), 7);
+  } else if (until === 'next_month') {
+    snoozeDate = startOfMonth(addMonths(new Date(), 1));
+  } else {
+    snoozeDate = until;
+  }
+
+  // Save undo state
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase as any).from("zeroed_undo_history").insert({
+    user_id: user.id,
+    action_type: "snooze",
+    entity_type: "task",
+    entity_id: taskId,
+    previous_state: task,
+  });
+
+  // Update task
+  const { error } = await supabase
+    .from("zeroed_tasks")
+    .update({
+      snoozed_until: format(snoozeDate, "yyyy-MM-dd"),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", taskId);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/");
+  return { success: true, snoozedUntil: snoozeDate };
+}
+
+export async function unsnoozeTask(taskId: string) {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("zeroed_tasks")
+    .update({
+      snoozed_until: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", taskId);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function getSnoozedTasks() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data } = await supabase
+    .from("zeroed_tasks")
+    .select("*, zeroed_lists(name, color)")
+    .eq("user_id", user.id)
+    .not("snoozed_until", "is", null)
+    .neq("status", "completed")
+    .order("snoozed_until");
+
+  return data || [];
+}
+
+// ============================================================================
+// SPRINT 8: UNDO ACTIONS
+// ============================================================================
+
+export async function getUndoAction() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  // Get most recent non-expired undo action
+  const { data } = await supabase
+    .from("zeroed_undo_history")
+    .select("*")
+    .eq("user_id", user.id)
+    .gt("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  return data;
+}
+
+export async function executeUndo(undoId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  // Get undo action
+  const { data: undo } = await supabase
+    .from("zeroed_undo_history")
+    .select("*")
+    .eq("id", undoId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!undo) return { error: "Undo action not found or expired" };
+
+  const previousState = undo.previous_state as Record<string, unknown>;
+
+  // Restore previous state based on entity type
+  if (undo.entity_type === "task") {
+    const { error } = await supabase
+      .from("zeroed_tasks")
+      .update({
+        status: previousState.status as "pending" | "in_progress" | "completed" | "cancelled",
+        snoozed_until: previousState.snoozed_until as string | null,
+        list_id: previousState.list_id as string,
+        priority: previousState.priority as "low" | "normal" | "high" | "urgent",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", undo.entity_id);
+
+    if (error) return { error: error.message };
+  }
+
+  // Delete the undo action
+  await supabase
+    .from("zeroed_undo_history")
+    .delete()
+    .eq("id", undoId);
+
+  revalidatePath("/");
+  return { success: true };
+}
+
+// ============================================================================
+// SPRINT 8: ARCHIVE/LOGBOOK ACTIONS
+// ============================================================================
+
+export async function getArchivedTasks(startDate?: string, endDate?: string, search?: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  let query = supabase
+    .from("zeroed_archive")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("completed_at", { ascending: false });
+
+  if (startDate) {
+    query = query.gte("completed_at", startDate);
+  }
+  if (endDate) {
+    query = query.lte("completed_at", endDate);
+  }
+  if (search) {
+    query = query.ilike("title", `%${search}%`);
+  }
+
+  const { data } = await query.limit(100);
+
+  return data || [];
+}
+
+// ============================================================================
+// SPRINT 8: DAILY PLANNING & SHUTDOWN ACTIONS
+// ============================================================================
+
+export async function saveDailyIntention(intention: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const today = format(new Date(), "yyyy-MM-dd");
+
+  const { error } = await supabase
+    .from("zeroed_user_preferences")
+    .update({
+      daily_intention: intention,
+      last_daily_planning_at: today,
+    })
+    .eq("user_id", user.id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function completeShutdownRoutine() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const today = format(new Date(), "yyyy-MM-dd");
+
+  const { error } = await supabase
+    .from("zeroed_user_preferences")
+    .update({
+      last_shutdown_at: today,
+    })
+    .eq("user_id", user.id);
+
+  if (error) return { error: error.message };
+
+  return { success: true };
+}
+
+export async function updateFocusSoundPreference(sound: string, volume: number) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const { error } = await supabase
+    .from("zeroed_user_preferences")
+    .update({
+      focus_sound: sound,
+      focus_sound_volume: volume,
+    })
+    .eq("user_id", user.id);
+
+  if (error) return { error: error.message };
+
   return { success: true };
 }
