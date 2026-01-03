@@ -11,6 +11,11 @@ import {
   Trash2,
   Timer,
   Calendar,
+  Repeat,
+  ChevronDown,
+  ChevronRight,
+  SkipForward,
+  StopCircle,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -25,37 +30,72 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { completeTask, deleteTask } from "@/app/(dashboard)/actions";
+import {
+  completeTask,
+  deleteTask,
+  completeRecurringTask,
+  skipRecurringOccurrence,
+  stopRecurring,
+} from "@/app/(dashboard)/actions";
 import { useTimerStore } from "@/lib/hooks/use-timer";
 import { playCompletionSound } from "@/lib/sounds";
 import { PRIORITY_COLORS, type TaskPriority } from "@/lib/constants";
-import type { Task } from "@/lib/supabase/types";
+import { SubtaskList } from "./subtask-list";
+import { TagBadge } from "@/components/tags/tag-badge";
+import type { Task, Tag } from "@/lib/supabase/types";
 
 interface TaskItemProps {
   task: Task & {
     zeroed_lists?: { name: string; color: string } | null;
+    tags?: Tag[];
+    subtasks?: Task[];
   };
   onEdit?: (task: Task) => void;
+  onUpdate?: () => void;
 }
 
-export function TaskItem({ task, onEdit }: TaskItemProps) {
+export function TaskItem({ task, onEdit, onUpdate }: TaskItemProps) {
   const [isCompleting, setIsCompleting] = useState(false);
+  const [showSubtasks, setShowSubtasks] = useState(false);
   const router = useRouter();
   const { startTimer, state: timerState } = useTimerStore();
 
   const isCompleted = task.status === "completed";
   const priorityColor = PRIORITY_COLORS[task.priority as TaskPriority];
+  const hasSubtasks = task.subtasks && task.subtasks.length > 0;
+  const completedSubtasks = task.subtasks?.filter((s) => s.status === "completed").length ?? 0;
+  const totalSubtasks = task.subtasks?.length ?? 0;
 
   async function handleComplete() {
     setIsCompleting(true);
-    const result = await completeTask(task.id);
+    // Use recurring-specific action if task is recurring
+    const result = task.is_recurring
+      ? await completeRecurringTask(task.id)
+      : await completeTask(task.id);
     if (result.error) {
       toast.error(result.error);
     } else if (!isCompleted) {
-      // Play sound only when completing, not uncompleting
       playCompletionSound();
     }
     setIsCompleting(false);
+  }
+
+  async function handleSkipOccurrence() {
+    const result = await skipRecurringOccurrence(task.id);
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      toast.success("Occurrence skipped");
+    }
+  }
+
+  async function handleStopRecurring() {
+    const result = await stopRecurring(task.id);
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      toast.success("Recurrence stopped");
+    }
   }
 
   async function handleDelete() {
@@ -87,6 +127,20 @@ export function TaskItem({ task, onEdit }: TaskItemProps) {
           isCompleted && "opacity-60"
         )}
       >
+        {/* Expand subtasks button */}
+        {hasSubtasks && (
+          <button
+            onClick={() => setShowSubtasks(!showSubtasks)}
+            className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {showSubtasks ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
+          </button>
+        )}
+
         {/* Checkbox */}
         <button
           onClick={handleComplete}
@@ -146,6 +200,19 @@ export function TaskItem({ task, onEdit }: TaskItemProps) {
                     <Timer className="mr-2 h-4 w-4" />
                     Start Focus
                   </DropdownMenuItem>
+                  {task.is_recurring && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleSkipOccurrence}>
+                        <SkipForward className="mr-2 h-4 w-4" />
+                        Skip Occurrence
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleStopRecurring}>
+                        <StopCircle className="mr-2 h-4 w-4" />
+                        Stop Recurring
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleDelete}
@@ -158,6 +225,15 @@ export function TaskItem({ task, onEdit }: TaskItemProps) {
               </DropdownMenu>
             </div>
           </div>
+
+          {/* Tags */}
+          {task.tags && task.tags.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {task.tags.map((tag) => (
+                <TagBadge key={tag.id} tag={tag} size="sm" />
+              ))}
+            </div>
+          )}
 
           {/* Meta */}
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -194,7 +270,29 @@ export function TaskItem({ task, onEdit }: TaskItemProps) {
                 {task.priority}
               </Badge>
             )}
+            {task.is_recurring && (
+              <div className="flex items-center gap-1 text-primary">
+                <Repeat className="h-3 w-3" />
+                <span>Recurring</span>
+              </div>
+            )}
+            {hasSubtasks && (
+              <div className="flex items-center gap-1">
+                <span>
+                  {completedSubtasks}/{totalSubtasks} subtasks
+                </span>
+              </div>
+            )}
           </div>
+
+          {/* Subtasks */}
+          {showSubtasks && hasSubtasks && (
+            <SubtaskList
+              parentId={task.id}
+              subtasks={task.subtasks!}
+              onUpdate={onUpdate}
+            />
+          )}
         </div>
       </motion.div>
     </AnimatePresence>
