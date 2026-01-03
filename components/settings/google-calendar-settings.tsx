@@ -7,21 +7,23 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import type { Json } from "@/lib/supabase/types";
 
 interface GoogleCalendarSettingsProps {
   integration: {
     id: string;
     provider_email: string | null;
-    settings: Record<string, unknown> | null;
+    settings: Json;
     sync_enabled: boolean;
     last_sync_at: string | null;
   } | null;
 }
 
-// Helper to safely access settings
-function getSettingsValue<T>(settings: Record<string, unknown> | null, key: string, defaultValue: T): T {
-  if (!settings || typeof settings !== 'object') return defaultValue;
-  return (settings[key] as T) ?? defaultValue;
+// Helper to safely access settings from Json type
+function getSettingsValue<T>(settings: Json, key: string, defaultValue: T): T {
+  if (!settings || typeof settings !== 'object' || Array.isArray(settings)) return defaultValue;
+  const value = (settings as Record<string, unknown>)[key];
+  return (value as T) ?? defaultValue;
 }
 
 export function GoogleCalendarSettings({ integration }: GoogleCalendarSettingsProps) {
