@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/dashboard/header";
 import { SettingsForm } from "@/components/settings/settings-form";
 import { GoogleCalendarSettings } from "@/components/settings/google-calendar-settings";
+import { SlackSettings } from "@/components/settings/slack-settings";
 import { IntegrationsSettings } from "@/components/settings/integrations-settings";
 
 export default async function SettingsPage() {
@@ -22,12 +23,19 @@ export default async function SettingsPage() {
     .eq("user_id", user.id)
     .single();
 
-  // Fetch Google Calendar integration
+  // Fetch integrations
   const { data: googleIntegration } = await supabase
     .from("zeroed_integrations")
     .select("*")
     .eq("user_id", user.id)
     .eq("provider", "google_calendar")
+    .single();
+
+  const { data: slackIntegration } = await supabase
+    .from("zeroed_integrations")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("provider", "slack")
     .single();
 
   // Default preferences if none exist
@@ -59,6 +67,7 @@ export default async function SettingsPage() {
             </div>
             <div className="space-y-4">
               <GoogleCalendarSettings integration={googleIntegration} />
+              <SlackSettings integration={slackIntegration} />
               <IntegrationsSettings />
             </div>
           </div>
