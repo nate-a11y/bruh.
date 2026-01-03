@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
@@ -24,22 +24,31 @@ export async function login(formData: FormData) {
 }
 
 export async function signup(formData: FormData) {
-  const supabase = await createClient();
-
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
 
-  const { data, error } = await supabase.auth.signUp({
+  // Use admin API to create user (bypasses GoTrue's normal flow)
+  const adminClient = createServiceClient();
+  const { data, error } = await adminClient.auth.admin.createUser({
     email,
     password,
+    email_confirm: true, // Auto-confirm email
   });
 
   if (error) {
     return { error: error.message };
   }
 
-  // User setup (Inbox list, preferences) is now handled on first login
-  // via ensureUserSetup() to avoid conflicts with other app triggers
+  // Now sign in the user
+  const supabase = await createClient();
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (signInError) {
+    return { error: signInError.message };
+  }
 
   revalidatePath("/", "layout");
   redirect("/");
