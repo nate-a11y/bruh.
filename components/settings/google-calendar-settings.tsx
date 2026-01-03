@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Calendar, Check, ExternalLink, Loader2, Unlink, RefreshCw } from "lucide-react";
+import { Calendar, Check, ExternalLink, Loader2, Unlink, RefreshCw, Play } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -42,6 +42,7 @@ function getSettingsValue<T>(settings: Json, key: string, defaultValue: T): T {
 
 export function GoogleCalendarSettings({ integration }: GoogleCalendarSettingsProps) {
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [syncEnabled, setSyncEnabled] = useState(integration?.sync_enabled ?? false);
   const [calendars, setCalendars] = useState<CalendarItem[]>([]);
   const [isLoadingCalendars, setIsLoadingCalendars] = useState(false);
@@ -51,6 +52,26 @@ export function GoogleCalendarSettings({ integration }: GoogleCalendarSettingsPr
   const [syncCompletedTasks, setSyncCompletedTasks] = useState(
     getSettingsValue(integration?.settings ?? null, "sync_completed_tasks", false)
   );
+  const [lastSyncAt, setLastSyncAt] = useState(integration?.last_sync_at);
+
+  async function handleSyncNow() {
+    setIsSyncing(true);
+    try {
+      const res = await fetch("/api/integrations/google/sync", { method: "POST" });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Sync failed");
+      }
+
+      setLastSyncAt(new Date().toISOString());
+      toast.success(data.message || `Synced ${data.synced} tasks`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Sync failed");
+    } finally {
+      setIsSyncing(false);
+    }
+  }
 
   useEffect(() => {
     if (integration?.sync_enabled) {
@@ -233,11 +254,27 @@ export function GoogleCalendarSettings({ integration }: GoogleCalendarSettingsPr
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground">
-            {integration.last_sync_at
-              ? `Last synced ${new Date(integration.last_sync_at).toLocaleString()}`
+            {lastSyncAt
+              ? `Last synced ${new Date(lastSyncAt).toLocaleString()}`
               : "Not synced yet"}
           </p>
         </div>
+
+        {/* Sync Now Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleSyncNow}
+          disabled={isSyncing || !syncEnabled}
+          className="w-full"
+        >
+          {isSyncing ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Play className="h-4 w-4 mr-2" />
+          )}
+          {isSyncing ? "Syncing..." : "Sync Now"}
+        </Button>
 
         {/* Sync settings */}
         <div className="space-y-3 pt-2">

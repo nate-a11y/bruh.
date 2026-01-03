@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, Loader2, Unlink, FileText, RefreshCw, Database } from "lucide-react";
+import { Check, Loader2, Unlink, FileText, RefreshCw, Database, Play } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -39,6 +39,7 @@ function getSettingsValue<T>(settings: Json, key: string, defaultValue: T): T {
 
 export function NotionSettings({ integration }: NotionSettingsProps) {
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [databases, setDatabases] = useState<NotionDatabase[]>([]);
   const [isLoadingDatabases, setIsLoadingDatabases] = useState(false);
   const [selectedDatabase, setSelectedDatabase] = useState<string>(
@@ -48,6 +49,31 @@ export function NotionSettings({ integration }: NotionSettingsProps) {
   const [autoSync, setAutoSync] = useState(
     getSettingsValue(integration?.settings ?? null, "auto_sync", true)
   );
+  const [lastSyncAt, setLastSyncAt] = useState(integration?.last_sync_at);
+
+  async function handleSyncNow() {
+    if (!selectedDatabase) {
+      toast.error("Select a database first");
+      return;
+    }
+
+    setIsSyncing(true);
+    try {
+      const res = await fetch("/api/integrations/notion/sync", { method: "POST" });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Sync failed");
+      }
+
+      setLastSyncAt(new Date().toISOString());
+      toast.success(data.message || `Synced ${data.synced} tasks`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Sync failed");
+    } finally {
+      setIsSyncing(false);
+    }
+  }
 
   useEffect(() => {
     if (integration?.sync_enabled) {
@@ -214,11 +240,29 @@ export function NotionSettings({ integration }: NotionSettingsProps) {
             </p>
           )}
           <p className="text-xs text-muted-foreground">
-            {integration.last_sync_at
-              ? `Last synced ${new Date(integration.last_sync_at).toLocaleString()}`
+            {lastSyncAt
+              ? `Last synced ${new Date(lastSyncAt).toLocaleString()}`
               : "Not synced yet"}
           </p>
         </div>
+
+        {/* Sync Now Button */}
+        {selectedDatabase && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSyncNow}
+            disabled={isSyncing}
+            className="w-full"
+          >
+            {isSyncing ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Play className="h-4 w-4 mr-2" />
+            )}
+            {isSyncing ? "Syncing..." : "Sync Now"}
+          </Button>
+        )}
 
         {/* Sync Settings */}
         <div className="space-y-3 pt-2">
