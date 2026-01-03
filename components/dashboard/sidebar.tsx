@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { signOut } from "@/app/(auth)/actions";
 import { createListDirect } from "@/app/(dashboard)/actions";
+import { KeyboardShortcutsModal } from "./keyboard-shortcuts-modal";
 import type { List } from "@/lib/supabase/types";
 
 interface SidebarProps {
@@ -184,6 +185,9 @@ export function Sidebar({ lists }: SidebarProps) {
 
       {/* Footer */}
       <div className="p-2 space-y-1">
+        <div className="px-3 py-1">
+          <KeyboardShortcutsModal />
+        </div>
         <Link
           href="/settings"
           className={cn(

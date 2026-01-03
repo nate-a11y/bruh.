@@ -15,6 +15,7 @@ import {
 import { useTimerStore } from "@/lib/hooks/use-timer";
 import { createFocusSession, completeFocusSession } from "@/app/(dashboard)/actions";
 import { FocusCompleteModal } from "./focus-complete-modal";
+import { FocusSounds } from "./focus-sounds";
 import { playTimerEndSound } from "@/lib/sounds";
 import type { Task } from "@/lib/supabase/types";
 
@@ -27,6 +28,8 @@ interface FocusTimerProps {
   longBreakMinutes: number;
   sessionsBeforeLongBreak: number;
   soundEnabled: boolean;
+  focusSound?: string;
+  focusSoundVolume?: number;
 }
 
 export function FocusTimer({
@@ -36,6 +39,8 @@ export function FocusTimer({
   longBreakMinutes,
   sessionsBeforeLongBreak,
   soundEnabled: initialSoundEnabled,
+  focusSound = "none",
+  focusSoundVolume = 50,
 }: FocusTimerProps) {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const sessionIdRef = useRef<string | null>(null);
@@ -431,20 +436,27 @@ export function FocusTimer({
           )}
         </div>
 
-        {/* Sound Toggle */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setSoundEnabled(!soundEnabled)}
-          className="text-muted-foreground"
-        >
-          {soundEnabled ? (
-            <Volume2 className="h-4 w-4 mr-2" />
-          ) : (
-            <VolumeX className="h-4 w-4 mr-2" />
-          )}
-          Sound {soundEnabled ? "On" : "Off"}
-        </Button>
+        {/* Sound Controls */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            className="text-muted-foreground"
+          >
+            {soundEnabled ? (
+              <Volume2 className="h-4 w-4 mr-2" />
+            ) : (
+              <VolumeX className="h-4 w-4 mr-2" />
+            )}
+            Alert {soundEnabled ? "On" : "Off"}
+          </Button>
+          <FocusSounds
+            defaultSound={focusSound as "none" | "rain" | "cafe" | "lofi" | "whitenoise" | "nature"}
+            defaultVolume={focusSoundVolume}
+            isPlaying={state === "running" || state === "break"}
+          />
+        </div>
 
         {/* Keyboard Hints */}
         <p className="text-xs text-muted-foreground">

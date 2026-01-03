@@ -6,6 +6,7 @@ import { SlackSettings } from "@/components/settings/slack-settings";
 import { NotionSettings } from "@/components/settings/notion-settings";
 import { IntegrationsSettings } from "@/components/settings/integrations-settings";
 import { IntegrationHealth } from "@/components/settings/integration-health";
+import { ExportButton } from "@/components/data/export-button";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -65,6 +66,25 @@ export default async function SettingsPage() {
       <div className="flex-1 overflow-auto p-6">
         <div className="max-w-2xl space-y-8">
           <SettingsForm preferences={prefs} userEmail={user.email || ""} />
+
+          {/* Data Section */}
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-xl font-semibold">Data</h2>
+              <p className="text-sm text-muted-foreground">
+                Export or manage your data
+              </p>
+            </div>
+            <div className="flex items-center justify-between p-4 rounded-lg border">
+              <div>
+                <p className="font-medium">Export Data</p>
+                <p className="text-sm text-muted-foreground">
+                  Download all your tasks, lists, and stats
+                </p>
+              </div>
+              <ExportButton />
+            </div>
+          </div>
 
           {/* Integrations Section */}
           <div className="space-y-4">

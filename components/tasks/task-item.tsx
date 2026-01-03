@@ -43,6 +43,7 @@ import { PRIORITY_COLORS, type TaskPriority } from "@/lib/constants";
 import { getCompletionMessage } from "@/lib/copy/completion";
 import { SubtaskList } from "./subtask-list";
 import { TagBadge } from "@/components/tags/tag-badge";
+import { TaskTimer } from "./task-timer";
 import type { Task, Tag } from "@/lib/supabase/types";
 
 interface TaskItemProps {
@@ -235,6 +236,18 @@ export function TaskItem({ task, onEdit, onUpdate }: TaskItemProps) {
               {task.tags.map((tag) => (
                 <TagBadge key={tag.id} tag={tag} size="sm" />
               ))}
+            </div>
+          )}
+
+          {/* Task Timer - inline time tracking */}
+          {!isCompleted && (
+            <div className="mt-2">
+              <TaskTimer
+                taskId={task.id}
+                taskTitle={task.title}
+                initialMinutes={task.actual_minutes || 0}
+                compact
+              />
             </div>
           )}
 
