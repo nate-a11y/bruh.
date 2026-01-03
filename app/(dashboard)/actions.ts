@@ -2251,3 +2251,89 @@ export async function updateFocusSoundPreference(sound: string, volume: number) 
 
   return { success: true };
 }
+
+// ============================================================================
+// BRAIN DUMP - AI-powered task parsing
+// ============================================================================
+
+import { parseBrainDump, type ParsedTask } from "@/lib/ai/parse-brain-dump";
+
+export async function processBrainDump(text: string, listId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  try {
+    // Parse the brain dump with AI
+    const parsed = await parseBrainDump(text);
+
+    if (parsed.tasks.length === 0) {
+      return { error: "No tasks found. Try being more specific." };
+    }
+
+    // Get current max position for the list
+    const { data: maxPos } = await supabase
+      .from("zeroed_tasks")
+      .select("position")
+      .eq("list_id", listId)
+      .order("position", { ascending: false })
+      .limit(1)
+      .single();
+
+    let position = (maxPos?.position || 0) + 1;
+    const createdTasks: { id: string; title: string }[] = [];
+
+    // Create tasks
+    for (const task of parsed.tasks) {
+      const { data: newTask, error } = await supabase
+        .from("zeroed_tasks")
+        .insert({
+          user_id: user.id,
+          list_id: listId,
+          title: task.title,
+          notes: task.notes || null,
+          priority: task.priority || "normal",
+          due_date: task.due_date || null,
+          estimated_minutes: task.estimated_minutes || 25,
+          position: position++,
+        })
+        .select("id, title")
+        .single();
+
+      if (error) {
+        console.error("Error creating task:", error);
+        continue;
+      }
+
+      if (newTask) {
+        createdTasks.push(newTask);
+
+        // Create subtasks if any
+        if (task.subtasks && task.subtasks.length > 0) {
+          let subPosition = 0;
+          for (const subtaskTitle of task.subtasks) {
+            await supabase.from("zeroed_tasks").insert({
+              user_id: user.id,
+              list_id: listId,
+              title: subtaskTitle,
+              parent_id: newTask.id,
+              priority: "normal",
+              position: subPosition++,
+            });
+          }
+        }
+      }
+    }
+
+    revalidatePath("/");
+    return {
+      success: true,
+      tasksCreated: createdTasks.length,
+      tasks: createdTasks,
+      notes: parsed.notes,
+    };
+  } catch (error) {
+    console.error("Brain dump processing failed:", error);
+    return { error: "Failed to process brain dump. Try again." };
+  }
+}

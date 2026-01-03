@@ -12,6 +12,9 @@ import {
   Sun,
   Moon,
   Laptop,
+  Brain,
+  Target,
+  Flame,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import {
@@ -46,6 +49,11 @@ export function CommandMenu() {
       if (e.key === "f" && (e.metaKey || e.ctrlKey) && e.shiftKey) {
         e.preventDefault();
         router.push("/focus");
+      }
+      // Brain dump shortcut
+      if (e.key === "b" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent("open-brain-dump"));
       }
     };
 
@@ -117,11 +125,32 @@ export function CommandMenu() {
               <CommandShortcut>⌘N</CommandShortcut>
             </CommandItem>
             <CommandItem
+              onSelect={() => runCommand(() => {
+                // Dispatch custom event for brain dump
+                window.dispatchEvent(new CustomEvent("open-brain-dump"));
+              })}
+            >
+              <Brain className="mr-2 h-4 w-4" />
+              Brain Dump
+              <CommandShortcut>⌘B</CommandShortcut>
+            </CommandItem>
+            <CommandItem
               onSelect={() => runCommand(() => router.push("/focus"))}
             >
               <Timer className="mr-2 h-4 w-4" />
               Start Focus Session
               <CommandShortcut>⌘⇧F</CommandShortcut>
+            </CommandItem>
+          </CommandGroup>
+          <CommandSeparator />
+          <CommandGroup heading="Track">
+            <CommandItem onSelect={() => runCommand(() => router.push("/goals"))}>
+              <Target className="mr-2 h-4 w-4" />
+              Goals
+            </CommandItem>
+            <CommandItem onSelect={() => runCommand(() => router.push("/habits"))}>
+              <Flame className="mr-2 h-4 w-4" />
+              Habits
             </CommandItem>
           </CommandGroup>
           <CommandSeparator />

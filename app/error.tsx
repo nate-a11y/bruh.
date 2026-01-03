@@ -2,9 +2,10 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { Target, AlertTriangle, RefreshCw, Home } from "lucide-react";
+import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Logo } from "@/components/brand/logo";
 
 export default function GlobalError({
   error,
@@ -23,9 +24,8 @@ export default function GlobalError({
       {/* Header */}
       <header className="border-b border-border">
         <div className="container mx-auto px-4 py-4 flex items-center">
-          <Link href="/" className="flex items-center gap-2">
-            <Target className="h-6 w-6 text-primary" />
-            <span className="text-xl font-semibold">Zeroed</span>
+          <Link href="/" className="hover:opacity-80 transition-opacity">
+            <Logo />
           </Link>
         </div>
       </header>
@@ -41,7 +41,7 @@ export default function GlobalError({
           </CardHeader>
           <CardContent className="text-center space-y-6">
             <p className="text-muted-foreground">
-              We encountered an unexpected error. Our team has been notified.
+              Something broke. We&apos;re on it.
             </p>
             {error.digest && (
               <p className="text-xs text-muted-foreground font-mono bg-muted p-2 rounded">

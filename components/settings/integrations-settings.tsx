@@ -43,14 +43,14 @@ export function IntegrationsSettings() {
       <CardHeader>
         <CardTitle>Raycast Extension</CardTitle>
         <CardDescription>
-          Quick capture tasks from anywhere with the Zeroed Raycast extension
+          Quick capture tasks from anywhere with the Bruh Raycast extension
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center gap-2">
           <Button variant="outline" asChild>
             <a
-              href="raycast://extensions/zeroed"
+              href="raycast://extensions/bruh"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -63,7 +63,7 @@ export function IntegrationsSettings() {
         <div className="space-y-2">
           <Label>Access Token</Label>
           <p className="text-sm text-muted-foreground">
-            Generate a token to connect Raycast to your Zeroed account
+            Generate a token to connect Raycast to your Bruh account
           </p>
 
           {token ? (

@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Target, FileQuestion, Home } from "lucide-react";
+import { FileQuestion, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Logo } from "@/components/brand/logo";
 
 export default function NotFound() {
   return (
@@ -9,9 +10,8 @@ export default function NotFound() {
       {/* Header */}
       <header className="border-b border-border">
         <div className="container mx-auto px-4 py-4 flex items-center">
-          <Link href="/" className="flex items-center gap-2">
-            <Target className="h-6 w-6 text-primary" />
-            <span className="text-xl font-semibold">Zeroed</span>
+          <Link href="/" className="hover:opacity-80 transition-opacity">
+            <Logo />
           </Link>
         </div>
       </header>
@@ -23,12 +23,11 @@ export default function NotFound() {
             <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
               <FileQuestion className="h-8 w-8 text-muted-foreground" />
             </div>
-            <CardTitle className="text-2xl">404 - Page not found</CardTitle>
+            <CardTitle className="text-2xl">404 - Lost</CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-6">
             <p className="text-muted-foreground">
-              Oops! The page you&apos;re looking for doesn&apos;t exist or has
-              been moved.
+              This page doesn&apos;t exist. Maybe you made it up.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/">

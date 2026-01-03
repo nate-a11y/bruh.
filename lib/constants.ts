@@ -1,5 +1,5 @@
-export const APP_NAME = "Zeroed";
-export const APP_TAGLINE = "Zero in. Get it done.";
+export const APP_NAME = "Bruh";
+export const APP_TAGLINE = "Get your shit together.";
 
 export const DEFAULT_FOCUS_MINUTES = 25;
 export const DEFAULT_SHORT_BREAK_MINUTES = 5;
@@ -95,7 +95,7 @@ export const LEVELS = [
   { level: 7, name: "Expert", pointsRequired: 2500, color: "#ef4444" },
   { level: 8, name: "Guru", pointsRequired: 4000, color: "#6366f1" },
   { level: 9, name: "Legend", pointsRequired: 6000, color: "#14b8a6" },
-  { level: 10, name: "Zero Master", pointsRequired: 10000, color: "#fbbf24" },
+  { level: 10, name: "Bruh Master", pointsRequired: 10000, color: "#fbbf24" },
 ] as const;
 
 export const ACHIEVEMENTS = {

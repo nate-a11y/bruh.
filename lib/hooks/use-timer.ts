@@ -119,7 +119,7 @@ export const useTimerStore = create<TimerStore>()(
       },
     }),
     {
-      name: "zeroed-timer",
+      name: "bruh-timer",
       partialize: (state) => ({
         soundEnabled: state.soundEnabled,
         sessionsCompleted: state.sessionsCompleted,

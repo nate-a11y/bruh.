@@ -2,7 +2,7 @@ import { format } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/dashboard/header";
 import { TaskList } from "@/components/tasks/task-list";
-import { QuickAdd } from "@/components/tasks/quick-add";
+import { QuickCaptureBar } from "@/components/tasks/quick-capture-bar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Timer, CheckCircle2, Clock, Sparkles } from "lucide-react";
@@ -59,7 +59,7 @@ export default async function DashboardPage() {
   // Fetch user's lists for task creation
   const { data: lists } = await supabase
     .from("zeroed_lists")
-    .select("id, name")
+    .select("*")
     .eq("user_id", user.id)
     .eq("is_archived", false)
     .order("position", { ascending: true });
@@ -117,10 +117,11 @@ export default async function DashboardPage() {
           </Card>
         </div>
 
-        {/* Quick Add */}
-        {inboxList && (
+        {/* Quick Capture */}
+        {inboxList && lists && (
           <div className="mb-6">
-            <QuickAdd
+            <QuickCaptureBar
+              lists={lists}
               defaultListId={inboxList.id}
               placeholder="Quick add a task for today... (press Enter)"
             />
