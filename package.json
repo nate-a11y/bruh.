@@ -1,6 +1,7 @@
 {
-  "name": "productivity",
-  "version": "0.1.0",
+  "name": "bruh",
+  "version": "1.0.0",
+  "description": "Get your shit together. A task manager that doesn't take itself too seriously.",
   "private": true,
   "scripts": {
     "dev": "next dev",

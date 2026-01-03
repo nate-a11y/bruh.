@@ -40,6 +40,7 @@ import {
 import { useTimerStore } from "@/lib/hooks/use-timer";
 import { playCompletionSound } from "@/lib/sounds";
 import { PRIORITY_COLORS, type TaskPriority } from "@/lib/constants";
+import { getCompletionMessage } from "@/lib/copy/completion";
 import { SubtaskList } from "./subtask-list";
 import { TagBadge } from "@/components/tags/tag-badge";
 import type { Task, Tag } from "@/lib/supabase/types";
@@ -76,6 +77,8 @@ export function TaskItem({ task, onEdit, onUpdate }: TaskItemProps) {
       toast.error(result.error);
     } else if (!isCompleted) {
       playCompletionSound();
+      // Show Bruh-style completion message
+      toast.success(getCompletionMessage('single'));
     }
     setIsCompleting(false);
   }
