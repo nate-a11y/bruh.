@@ -7,7 +7,9 @@ A task manager that doesn't take itself too seriously. But takes your productivi
 ## Features
 
 - **Fast af**: Add tasks in seconds. No friction. No forms. Just type and go.
+- **Brain Dump**: Paste your messy thoughts. AI turns them into organized tasks.
 - **Focus Mode**: Pomodoro timer built in. Lock in and get it done.
+- **Floating Timer**: Draggable widget that stays with you while you work.
 - **Recurring Tasks**: Daily, weekly, monthly. Set it and forget it.
 - **Projects**: Group tasks. Stay organized. Or don't. We're not judging.
 - **Stats**: See your productivity trends. Flex on yourself.
@@ -48,7 +50,12 @@ NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Optional: For AI Brain Dump feature
+ANTHROPIC_API_KEY=your_anthropic_api_key
 ```
+
+> **Note**: The Brain Dump feature works without an API key using a fallback parser, but works much better with Claude AI.
 
 ## Brand
 

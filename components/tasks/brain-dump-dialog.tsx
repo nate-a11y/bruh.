@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Brain, Loader2, Sparkles, CheckCircle2 } from "lucide-react";
+import { Brain, Loader2, Sparkles, CheckCircle2, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { processBrainDump } from "@/app/(dashboard)/actions";
+import { useRouter } from "next/navigation";
 import type { List } from "@/lib/supabase/types";
 
 interface BrainDumpDialogProps {
@@ -56,6 +57,7 @@ export function BrainDumpDialog({
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
 }: BrainDumpDialogProps) {
+  const router = useRouter();
   const [internalOpen, setInternalOpen] = useState(false);
 
   // Support both controlled and uncontrolled modes
@@ -89,7 +91,7 @@ export function BrainDumpDialog({
           tasksCreated: response.tasksCreated || 0,
           tasks: response.tasks || [],
         });
-        toast.success(`Created ${response.tasksCreated} task${response.tasksCreated !== 1 ? "s" : ""}. Get after it.`);
+        toast.success(`${response.tasksCreated} task${response.tasksCreated !== 1 ? "s" : ""} extracted. Nice.`);
       }
     } catch (error) {
       toast.error("Something broke. Try again.");
@@ -209,49 +211,63 @@ export function BrainDumpDialog({
               className="space-y-4"
             >
               {/* Success state */}
-              <div className="text-center py-6">
-                <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle2 className="h-8 w-8 text-green-500" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">
-                  {result.tasksCreated} task{result.tasksCreated !== 1 ? "s" : ""} created
+              <div className="text-center py-4">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                  className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3"
+                >
+                  <CheckCircle2 className="h-7 w-7 text-primary" />
+                </motion.div>
+                <h3 className="text-xl font-bold mb-1">
+                  {result.tasksCreated} task{result.tasksCreated !== 1 ? "s" : ""} extracted
                 </h3>
                 <p className="text-muted-foreground text-sm">
-                  Your brain dump has been organized.
+                  Chaos → Order. You&apos;re welcome.
                 </p>
               </div>
 
               {/* Task list preview */}
-              <div className="max-h-[200px] overflow-auto rounded-lg border bg-muted/30">
+              <div className="max-h-[180px] overflow-auto rounded-lg border bg-muted/30">
                 <ul className="divide-y divide-border">
                   {result.tasks.map((task, i) => (
                     <motion.li
                       key={task.id}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                      className="px-4 py-2 flex items-center gap-2"
+                      transition={{ delay: i * 0.03 }}
+                      className="px-4 py-2.5 flex items-center gap-3"
                     >
-                      <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                      <span className="text-sm">{task.title}</span>
+                      <div className="h-2 w-2 rounded-full bg-primary shrink-0" />
+                      <span className="text-sm truncate">{task.title}</span>
                     </motion.li>
                   ))}
                 </ul>
               </div>
 
               {/* Actions */}
-              <div className="flex justify-between pt-2">
+              <div className="flex gap-2 pt-3">
                 <Button
                   variant="outline"
+                  className="flex-1"
                   onClick={() => {
                     setResult(null);
                     setText("");
                   }}
                 >
+                  <Brain className="h-4 w-4 mr-2" />
                   Dump More
                 </Button>
-                <Button onClick={handleDone}>
-                  Done
+                <Button
+                  className="flex-1"
+                  onClick={() => {
+                    handleClose();
+                    router.push("/today");
+                  }}
+                >
+                  Get Started
+                  <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </div>
             </motion.div>
