@@ -256,7 +256,7 @@ export function GoogleCalendarSettings({ integration }: GoogleCalendarSettingsPr
           <p className="text-xs text-muted-foreground">
             {lastSyncAt
               ? `Last synced ${new Date(lastSyncAt).toLocaleString()}`
-              : "Not synced yet"}
+              : "Connected - click Sync Now to sync tasks"}
           </p>
         </div>
 

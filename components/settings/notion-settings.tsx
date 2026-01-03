@@ -242,7 +242,7 @@ export function NotionSettings({ integration }: NotionSettingsProps) {
           <p className="text-xs text-muted-foreground">
             {lastSyncAt
               ? `Last synced ${new Date(lastSyncAt).toLocaleString()}`
-              : "Not synced yet"}
+              : "Connected - select a database and sync"}
           </p>
         </div>
 
