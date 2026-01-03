@@ -5,6 +5,9 @@ const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_CALENDAR_API = "https://www.googleapis.com/calendar/v3";
 
+// Remove trailing slash from app URL
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/$/, "");
+
 // Scopes needed for calendar access
 const SCOPES = [
   "https://www.googleapis.com/auth/calendar.events",
@@ -56,7 +59,7 @@ export interface Calendar {
  */
 export function getGoogleAuthUrl(state?: string): string {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/integrations/google/callback`;
+  const redirectUri = `${APP_URL}/api/integrations/google/callback`;
 
   if (!clientId) {
     throw new Error("GOOGLE_CLIENT_ID not configured");
@@ -81,7 +84,7 @@ export function getGoogleAuthUrl(state?: string): string {
 export async function exchangeCodeForTokens(code: string): Promise<GoogleTokens> {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/integrations/google/callback`;
+  const redirectUri = `${APP_URL}/api/integrations/google/callback`;
 
   if (!clientId || !clientSecret) {
     throw new Error("Google OAuth credentials not configured");
