@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 interface LogoProps {
@@ -15,21 +16,13 @@ const sizes = {
 export function Logo({ size = 'md', showText = true, className }: LogoProps) {
   return (
     <div className={cn('flex items-center gap-2', className)}>
-      {/* Icon: stylized "B" mark */}
-      <div
-        className="flex items-center justify-center rounded-lg bg-primary"
-        style={{
-          width: sizes[size].icon,
-          height: sizes[size].icon,
-        }}
-      >
-        <span
-          className="font-display font-bold text-primary-foreground"
-          style={{ fontSize: sizes[size].icon * 0.5 }}
-        >
-          B
-        </span>
-      </div>
+      <Image
+        src="/icon-192.png"
+        alt="Bruh logo"
+        width={sizes[size].icon}
+        height={sizes[size].icon}
+        className="rounded-lg"
+      />
 
       {showText && (
         <span
