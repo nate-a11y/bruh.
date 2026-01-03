@@ -4,6 +4,7 @@ import { Sidebar, MobileSidebar } from "@/components/dashboard/sidebar";
 import { FloatingTimerWrapper } from "@/components/focus/floating-timer-wrapper";
 import { BrainDumpProvider } from "@/components/tasks/brain-dump-provider";
 import { WelcomeModal } from "@/components/onboarding/welcome-modal";
+import { PWAProvider } from "@/components/pwa/pwa-provider";
 
 export default async function DashboardLayout({
   children,
@@ -63,23 +64,25 @@ export default async function DashboardLayout({
   const needsName = !prefs?.display_name;
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Desktop sidebar */}
-      <div className="hidden md:block">
-        <Sidebar lists={lists || []} />
+    <PWAProvider>
+      <div className="flex h-screen overflow-hidden">
+        {/* Desktop sidebar */}
+        <div className="hidden md:block">
+          <Sidebar lists={lists || []} />
+        </div>
+        {/* Mobile sidebar */}
+        <MobileSidebar lists={lists || []} />
+        <main className="flex-1 overflow-auto">{children}</main>
+        {/* Floating timer - shows when focus session is active */}
+        <FloatingTimerWrapper />
+        {/* Global brain dump dialog - triggered via ⌘B or command menu */}
+        <BrainDumpProvider
+          lists={lists || []}
+          defaultListId={lists?.find(l => l.name === "Inbox")?.id || lists?.[0]?.id}
+        />
+        {/* Welcome modal for first-time users */}
+        {needsName && <WelcomeModal open={true} />}
       </div>
-      {/* Mobile sidebar */}
-      <MobileSidebar lists={lists || []} />
-      <main className="flex-1 overflow-auto">{children}</main>
-      {/* Floating timer - shows when focus session is active */}
-      <FloatingTimerWrapper />
-      {/* Global brain dump dialog - triggered via ⌘B or command menu */}
-      <BrainDumpProvider
-        lists={lists || []}
-        defaultListId={lists?.find(l => l.name === "Inbox")?.id || lists?.[0]?.id}
-      />
-      {/* Welcome modal for first-time users */}
-      {needsName && <WelcomeModal open={true} />}
-    </div>
+    </PWAProvider>
   );
 }
