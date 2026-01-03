@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Sidebar, MobileSidebar } from "@/components/dashboard/sidebar";
 import { FloatingTimerWrapper } from "@/components/focus/floating-timer-wrapper";
 import { BrainDumpProvider } from "@/components/tasks/brain-dump-provider";
+import { WelcomeModal } from "@/components/onboarding/welcome-modal";
 
 export default async function DashboardLayout({
   children,
@@ -52,6 +53,15 @@ export default async function DashboardLayout({
       .upsert({ user_id: user.id }, { onConflict: "user_id" });
   }
 
+  // Check if user has set their display name
+  const { data: prefs } = await supabase
+    .from("zeroed_user_preferences")
+    .select("display_name")
+    .eq("user_id", user.id)
+    .single();
+
+  const needsName = !prefs?.display_name;
+
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Desktop sidebar */}
@@ -68,6 +78,8 @@ export default async function DashboardLayout({
         lists={lists || []}
         defaultListId={lists?.find(l => l.name === "Inbox")?.id || lists?.[0]?.id}
       />
+      {/* Welcome modal for first-time users */}
+      {needsName && <WelcomeModal open={true} />}
     </div>
   );
 }

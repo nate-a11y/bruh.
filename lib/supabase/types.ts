@@ -207,6 +207,7 @@ export type Database = {
         Row: {
           id: string;
           user_id: string;
+          display_name: string | null;
           theme: "dark" | "light" | "system";
           default_focus_minutes: number;
           short_break_minutes: number;
@@ -232,6 +233,7 @@ export type Database = {
         Insert: {
           id?: string;
           user_id: string;
+          display_name?: string | null;
           theme?: "dark" | "light" | "system";
           default_focus_minutes?: number;
           short_break_minutes?: number;
@@ -257,6 +259,7 @@ export type Database = {
         Update: {
           id?: string;
           user_id?: string;
+          display_name?: string | null;
           theme?: "dark" | "light" | "system";
           default_focus_minutes?: number;
           short_break_minutes?: number;

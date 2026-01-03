@@ -2469,3 +2469,25 @@ export async function processBrainDump(text: string, listId: string) {
     return { error: "Failed to process brain dump. Try again." };
   }
 }
+
+// ============================================================================
+// ONBOARDING: UPDATE DISPLAY NAME
+// ============================================================================
+
+export async function updateDisplayName(name: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const { error } = await supabase
+    .from("zeroed_user_preferences")
+    .upsert({
+      user_id: user.id,
+      display_name: name.trim(),
+    }, { onConflict: "user_id" });
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/");
+  return { success: true };
+}
