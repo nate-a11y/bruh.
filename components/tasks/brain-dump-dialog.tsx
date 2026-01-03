@@ -113,16 +113,22 @@ export function BrainDumpDialog({
     handleClose();
   }
 
+  // In controlled mode (when open/onOpenChange are passed), don't render a trigger
+  // The dialog is controlled externally (e.g., via keyboard shortcut or command menu)
+  const showTrigger = !isControlled || trigger;
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button variant="outline" className="gap-2">
-            <Brain className="h-4 w-4" />
-            Brain Dump
-          </Button>
-        )}
-      </DialogTrigger>
+      {showTrigger && (
+        <DialogTrigger asChild>
+          {trigger || (
+            <Button variant="outline" className="gap-2">
+              <Brain className="h-4 w-4" />
+              Brain Dump
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
