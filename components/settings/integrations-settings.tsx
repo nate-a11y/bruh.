@@ -1,16 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, ExternalLink, RefreshCw } from "lucide-react";
+import { Check, Copy, ExternalLink, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+
 export function IntegrationsSettings() {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
 
   async function generateToken() {
     setIsLoading(true);
@@ -31,10 +35,16 @@ export function IntegrationsSettings() {
     }
   }
 
+  function copyToClipboard(text: string, label: string) {
+    navigator.clipboard.writeText(text);
+    setCopied(label);
+    toast.success(`${label} copied!`);
+    setTimeout(() => setCopied(null), 2000);
+  }
+
   function copyToken() {
     if (token) {
-      navigator.clipboard.writeText(token);
-      toast.success("Token copied to clipboard!");
+      copyToClipboard(token, "Token");
     }
   }
 
@@ -83,13 +93,42 @@ export function IntegrationsSettings() {
           )}
         </div>
 
-        <div className="text-xs text-muted-foreground space-y-1">
-          <p>In Raycast extension preferences, enter:</p>
-          <ul className="list-disc list-inside">
-            <li>Supabase URL: <code className="bg-muted px-1 rounded">{process.env.NEXT_PUBLIC_SUPABASE_URL || "[Your Supabase URL]"}</code></li>
-            <li>Supabase Anon Key: <code className="bg-muted px-1 rounded">{process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "[Your Anon Key]"}</code></li>
-            <li>Access Token: <code className="bg-muted px-1 rounded">[generated above]</code></li>
-          </ul>
+        <div className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            In Raycast extension preferences, paste these values:
+          </p>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+              <span className="text-sm">Supabase URL</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => copyToClipboard(SUPABASE_URL, "URL")}
+                disabled={!SUPABASE_URL}
+              >
+                {copied === "URL" ? (
+                  <Check className="h-4 w-4 text-green-500" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+            <div className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+              <span className="text-sm">Supabase Anon Key</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => copyToClipboard(SUPABASE_ANON_KEY, "Anon Key")}
+                disabled={!SUPABASE_ANON_KEY}
+              >
+                {copied === "Anon Key" ? (
+                  <Check className="h-4 w-4 text-green-500" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>
