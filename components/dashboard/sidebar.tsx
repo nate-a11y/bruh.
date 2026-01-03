@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Target,
   LayoutDashboard,
   FolderOpen,
   Timer,
@@ -16,7 +15,9 @@ import {
   Menu,
   Trophy,
   Repeat,
+  Target,
 } from "lucide-react";
+import { Logo } from "@/components/brand/logo";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -72,9 +73,8 @@ export function Sidebar({ lists }: SidebarProps) {
     <div className="flex h-full w-64 flex-col border-r border-border bg-card">
       {/* Logo */}
       <div className="flex h-14 items-center px-4">
-        <Link href="/today" className="flex items-center gap-2">
-          <Target className="h-6 w-6 text-primary" />
-          <span className="text-lg font-semibold">Zeroed</span>
+        <Link href="/today">
+          <Logo size="sm" />
         </Link>
       </div>
 

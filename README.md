@@ -1,16 +1,17 @@
-# Zeroed
+# Bruh
 
-> Zero in. Get it done.
+> Get your shit together.
 
-A productivity and focus app built with Next.js, Supabase, and Tailwind CSS.
+A task manager that doesn't take itself too seriously. But takes your productivity very seriously.
 
 ## Features
 
-- **Task Management**: Organize tasks in lists, set priorities, and track time estimates
-- **Focus Timer**: Pomodoro-style focus sessions with customizable durations
-- **Analytics**: Track completed tasks, focus time, and estimation accuracy
-- **Dark Mode**: Beautiful dark theme with light mode support
-- **Keyboard First**: Global shortcuts for quick navigation
+- **Fast af**: Add tasks in seconds. No friction. No forms. Just type and go.
+- **Focus Mode**: Pomodoro timer built in. Lock in and get it done.
+- **Recurring Tasks**: Daily, weekly, monthly. Set it and forget it.
+- **Projects**: Group tasks. Stay organized. Or don't. We're not judging.
+- **Stats**: See your productivity trends. Flex on yourself.
+- **Works Everywhere**: Web, mobile, offline. Your tasks follow you.
 
 ## Tech Stack
 
@@ -25,7 +26,7 @@ A productivity and focus app built with Next.js, Supabase, and Tailwind CSS.
 
 1. Clone the repository
 2. Copy `.env.local.example` to `.env.local` and fill in your Supabase credentials
-3. Run the database migrations in Supabase (see `zeroed-claude-code-prompt.md` for schema)
+3. Run the database migrations in Supabase
 4. Install dependencies:
 
 ```bash
@@ -48,6 +49,14 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
+
+## Brand
+
+- **Name**: Bruh
+- **Domain**: getbruh.app
+- **Tagline**: "Get your shit together."
+- **Colors**: Black (#0a0a0a) + Orange (#ff6b00)
+- **Fonts**: Inter, Space Grotesk, JetBrains Mono
 
 ## License
 
