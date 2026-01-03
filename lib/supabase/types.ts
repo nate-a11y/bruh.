@@ -1113,6 +1113,115 @@ export type Database = {
         };
         Relationships: [];
       };
+      // Webhooks & API
+      zeroed_api_keys: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          key_hash: string;
+          key_prefix: string;
+          last_used_at: string | null;
+          expires_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          key_hash: string;
+          key_prefix: string;
+          last_used_at?: string | null;
+          expires_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          key_hash?: string;
+          key_prefix?: string;
+          last_used_at?: string | null;
+          expires_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      zeroed_outgoing_webhooks: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          url: string;
+          secret: string;
+          events: string[];
+          is_active: boolean;
+          last_triggered_at: string | null;
+          failure_count: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          url: string;
+          secret: string;
+          events: string[];
+          is_active?: boolean;
+          last_triggered_at?: string | null;
+          failure_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          url?: string;
+          secret?: string;
+          events?: string[];
+          is_active?: boolean;
+          last_triggered_at?: string | null;
+          failure_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      zeroed_webhook_logs: {
+        Row: {
+          id: string;
+          webhook_id: string;
+          event_type: string;
+          payload: Record<string, unknown>;
+          response_status: number | null;
+          response_body: string | null;
+          success: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          webhook_id: string;
+          event_type: string;
+          payload: Record<string, unknown>;
+          response_status?: number | null;
+          response_body?: string | null;
+          success: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          webhook_id?: string;
+          event_type?: string;
+          payload?: Record<string, unknown>;
+          response_status?: number | null;
+          response_body?: string | null;
+          success?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -1549,4 +1658,70 @@ export interface CalendarEventMapping {
   last_synced_at: string;
   sync_direction: 'outbound' | 'inbound';
   created_at: string;
+}
+
+// ============================================================================
+// WEBHOOKS & API
+// ============================================================================
+
+export type WebhookEventType =
+  | 'task.created'
+  | 'task.updated'
+  | 'task.completed'
+  | 'task.deleted'
+  | 'list.created'
+  | 'list.updated'
+  | 'focus.started'
+  | 'focus.completed'
+  | 'habit.completed'
+  | 'goal.completed';
+
+export interface ApiKey {
+  id: string;
+  user_id: string;
+  name: string;
+  key_hash: string;
+  key_prefix: string;
+  last_used_at: string | null;
+  expires_at: string | null;
+  created_at: string;
+}
+
+export interface OutgoingWebhook {
+  id: string;
+  user_id: string;
+  name: string;
+  url: string;
+  secret: string;
+  events: string[];
+  is_active: boolean;
+  last_triggered_at: string | null;
+  failure_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WebhookLog {
+  id: string;
+  webhook_id: string;
+  event_type: WebhookEventType;
+  payload: Record<string, unknown>;
+  response_status: number | null;
+  response_body: string | null;
+  success: boolean;
+  created_at: string;
+}
+
+export interface IncomingWebhookPayload {
+  action: 'create_task' | 'update_task' | 'complete_task' | 'delete_task';
+  data: {
+    title?: string;
+    notes?: string;
+    due_date?: string;
+    due_time?: string;
+    priority?: 'low' | 'normal' | 'high' | 'urgent';
+    list_name?: string;
+    task_id?: string;
+    tags?: string[];
+  };
 }

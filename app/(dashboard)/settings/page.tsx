@@ -7,6 +7,7 @@ import { NotionSettings } from "@/components/settings/notion-settings";
 import { IntegrationsSettings } from "@/components/settings/integrations-settings";
 import { IntegrationHealth } from "@/components/settings/integration-health";
 import { ExportButton } from "@/components/data/export-button";
+import { WebhookSettings } from "@/components/settings/webhook-settings";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -101,6 +102,17 @@ export default async function SettingsPage() {
               <NotionSettings integration={notionIntegration} />
               <IntegrationsSettings />
             </div>
+          </div>
+
+          {/* Webhooks & API Section */}
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-xl font-semibold">Webhooks & API</h2>
+              <p className="text-sm text-muted-foreground">
+                Connect with Zapier, Make, n8n, and custom integrations
+              </p>
+            </div>
+            <WebhookSettings />
           </div>
         </div>
       </div>
