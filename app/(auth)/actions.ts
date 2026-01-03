@@ -2,8 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
-import type { Insertable } from "@/lib/supabase/types";
+import { createClient } from "@/lib/supabase/server";
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
@@ -39,45 +38,8 @@ export async function signup(formData: FormData) {
     return { error: error.message };
   }
 
-  // Create default Inbox list and user preferences for new users
-  // Use service client to bypass RLS (user session not established yet)
-  if (data.user) {
-    try {
-      const adminClient = createServiceClient();
-
-      // Create default Inbox list
-      const listData: Insertable<"zeroed_lists"> = {
-        user_id: data.user.id,
-        name: "Inbox",
-        color: "#6366f1",
-        icon: "inbox",
-        position: 0,
-      };
-      const { error: listError } = await adminClient.from("zeroed_lists").insert(listData);
-
-      if (listError) {
-        console.error("Failed to create default list:", listError);
-        return { error: `List error: ${listError.message}` };
-      }
-
-      // Upsert user preferences (may already exist from DB trigger)
-      const prefsData: Insertable<"zeroed_user_preferences"> = {
-        user_id: data.user.id,
-      };
-      const { error: prefsError } = await adminClient
-        .from("zeroed_user_preferences")
-        .upsert(prefsData, { onConflict: "user_id" });
-
-      if (prefsError) {
-        console.error("Failed to create user preferences:", prefsError);
-        return { error: `Prefs error: ${prefsError.message}` };
-      }
-    } catch (dbError: unknown) {
-      console.error("Database error during signup setup:", dbError);
-      const message = dbError instanceof Error ? dbError.message : "Unknown error";
-      return { error: `Setup error: ${message}` };
-    }
-  }
+  // User setup (Inbox list, preferences) is now handled on first login
+  // via ensureUserSetup() to avoid conflicts with other app triggers
 
   revalidatePath("/", "layout");
   redirect("/");
