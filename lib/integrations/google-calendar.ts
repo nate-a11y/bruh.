@@ -169,6 +169,31 @@ export async function getValidAccessToken(userId: string): Promise<string | null
   }
 
   // Check if token is expired (with 5 min buffer)
+  // If token_expires_at is null, treat as expired
+  if (!integration.token_expires_at) {
+    if (!integration.refresh_token) {
+      return null;
+    }
+    // Try to refresh
+    try {
+      const tokens = await refreshAccessToken(integration.refresh_token);
+      const newExpiresAt = new Date(Date.now() + tokens.expires_in * 1000);
+
+      await supabase
+        .from("zeroed_integrations")
+        .update({
+          access_token: tokens.access_token,
+          token_expires_at: newExpiresAt.toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", integration.id);
+
+      return tokens.access_token;
+    } catch {
+      return null;
+    }
+  }
+
   const expiresAt = new Date(integration.token_expires_at);
   const now = new Date();
   const bufferMs = 5 * 60 * 1000;
