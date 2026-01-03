@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { Insertable } from "@/lib/supabase/types";
 
 export async function login(formData: FormData) {
@@ -40,8 +40,11 @@ export async function signup(formData: FormData) {
   }
 
   // Create default Inbox list and user preferences for new users
+  // Use service client to bypass RLS (user session not established yet)
   if (data.user) {
     try {
+      const adminClient = createServiceClient();
+
       // Create default Inbox list
       const listData: Insertable<"zeroed_lists"> = {
         user_id: data.user.id,
@@ -50,7 +53,7 @@ export async function signup(formData: FormData) {
         icon: "inbox",
         position: 0,
       };
-      const { error: listError } = await supabase.from("zeroed_lists").insert(listData);
+      const { error: listError } = await adminClient.from("zeroed_lists").insert(listData);
 
       if (listError) {
         console.error("Failed to create default list:", listError);
@@ -61,7 +64,7 @@ export async function signup(formData: FormData) {
       const prefsData: Insertable<"zeroed_user_preferences"> = {
         user_id: data.user.id,
       };
-      const { error: prefsError } = await supabase
+      const { error: prefsError } = await adminClient
         .from("zeroed_user_preferences")
         .upsert(prefsData, { onConflict: "user_id" });
 
