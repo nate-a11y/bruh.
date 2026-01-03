@@ -15,6 +15,8 @@ interface TimerStore {
   task: Task | null;
   sessionsCompleted: number;
   soundEnabled: boolean;
+  // Track when timer was last updated (for calculating elapsed time on refresh)
+  lastTickAt: number | null;
 
   // Actions
   startTimer: (task: Task | null, durationMinutes: number) => void;
@@ -28,6 +30,8 @@ interface TimerStore {
   setSoundEnabled: (enabled: boolean) => void;
   incrementSessions: () => void;
   resetSessions: () => void;
+  // Hydration helper
+  hydrateTimer: () => void;
 }
 
 export const useTimerStore = create<TimerStore>()(
@@ -40,6 +44,7 @@ export const useTimerStore = create<TimerStore>()(
       task: null,
       sessionsCompleted: 0,
       soundEnabled: true,
+      lastTickAt: null,
 
       startTimer: (task, durationMinutes) => {
         const seconds = durationMinutes * 60;
@@ -49,6 +54,7 @@ export const useTimerStore = create<TimerStore>()(
           timeRemaining: seconds,
           initialTime: seconds,
           task,
+          lastTickAt: Date.now(),
         });
       },
 
@@ -60,16 +66,20 @@ export const useTimerStore = create<TimerStore>()(
           timeRemaining: seconds,
           initialTime: seconds,
           task: null,
+          lastTickAt: Date.now(),
         });
       },
 
       pauseTimer: () => {
-        set({ state: "paused" });
+        set({ state: "paused", lastTickAt: null });
       },
 
       resumeTimer: () => {
         const { sessionType } = get();
-        set({ state: sessionType === "focus" ? "running" : "break" });
+        set({
+          state: sessionType === "focus" ? "running" : "break",
+          lastTickAt: Date.now(),
+        });
       },
 
       stopTimer: () => {
@@ -79,20 +89,21 @@ export const useTimerStore = create<TimerStore>()(
           timeRemaining: 0,
           initialTime: 0,
           task: null,
+          lastTickAt: null,
         });
       },
 
       completeTimer: () => {
-        set({ state: "completed" });
+        set({ state: "completed", lastTickAt: null });
       },
 
       tick: () => {
         const { timeRemaining, state } = get();
         if ((state === "running" || state === "break") && timeRemaining > 0) {
-          set({ timeRemaining: timeRemaining - 1 });
+          set({ timeRemaining: timeRemaining - 1, lastTickAt: Date.now() });
         }
         if ((state === "running" || state === "break") && timeRemaining <= 1) {
-          set({ state: "completed" });
+          set({ state: "completed", lastTickAt: null });
         }
       },
 
@@ -103,6 +114,7 @@ export const useTimerStore = create<TimerStore>()(
           timeRemaining: 0,
           initialTime: 0,
           task: null,
+          lastTickAt: null,
         });
       },
 
@@ -117,12 +129,37 @@ export const useTimerStore = create<TimerStore>()(
       resetSessions: () => {
         set({ sessionsCompleted: 0 });
       },
+
+      // Called on app load to recalculate time after page refresh
+      hydrateTimer: () => {
+        const { state, lastTickAt, timeRemaining } = get();
+
+        // Only adjust if timer was running and we have a timestamp
+        if ((state === "running" || state === "break") && lastTickAt) {
+          const elapsedSeconds = Math.floor((Date.now() - lastTickAt) / 1000);
+          const newTimeRemaining = Math.max(0, timeRemaining - elapsedSeconds);
+
+          if (newTimeRemaining <= 0) {
+            // Timer completed while page was closed
+            set({ state: "completed", timeRemaining: 0, lastTickAt: null });
+          } else {
+            set({ timeRemaining: newTimeRemaining, lastTickAt: Date.now() });
+          }
+        }
+      },
     }),
     {
       name: "bruh-timer",
+      // Persist full timer state for recovery after refresh
       partialize: (state) => ({
-        soundEnabled: state.soundEnabled,
+        state: state.state,
+        sessionType: state.sessionType,
+        timeRemaining: state.timeRemaining,
+        initialTime: state.initialTime,
+        task: state.task,
         sessionsCompleted: state.sessionsCompleted,
+        soundEnabled: state.soundEnabled,
+        lastTickAt: state.lastTickAt,
       }),
     }
   )

@@ -1025,6 +1025,91 @@ export type Database = {
         };
         Relationships: [];
       };
+      // Sprint 9: Integrations
+      zeroed_integrations: {
+        Row: {
+          id: string;
+          user_id: string;
+          provider: string;
+          access_token: string;
+          refresh_token: string | null;
+          token_expires_at: string | null;
+          provider_user_id: string | null;
+          provider_email: string | null;
+          settings: Json;
+          last_sync_at: string | null;
+          sync_enabled: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          provider: string;
+          access_token: string;
+          refresh_token?: string | null;
+          token_expires_at?: string | null;
+          provider_user_id?: string | null;
+          provider_email?: string | null;
+          settings?: Json;
+          last_sync_at?: string | null;
+          sync_enabled?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          provider?: string;
+          access_token?: string;
+          refresh_token?: string | null;
+          token_expires_at?: string | null;
+          provider_user_id?: string | null;
+          provider_email?: string | null;
+          settings?: Json;
+          last_sync_at?: string | null;
+          sync_enabled?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      zeroed_calendar_events: {
+        Row: {
+          id: string;
+          user_id: string;
+          task_id: string | null;
+          external_event_id: string;
+          provider: string;
+          calendar_id: string;
+          last_synced_at: string;
+          sync_direction: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          task_id?: string | null;
+          external_event_id: string;
+          provider?: string;
+          calendar_id: string;
+          last_synced_at?: string;
+          sync_direction?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          task_id?: string | null;
+          external_event_id?: string;
+          provider?: string;
+          calendar_id?: string;
+          last_synced_at?: string;
+          sync_direction?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
