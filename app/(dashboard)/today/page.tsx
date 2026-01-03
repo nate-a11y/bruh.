@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/dashboard/header";
 import { TaskList } from "@/components/tasks/task-list";
 import { QuickCaptureBar } from "@/components/tasks/quick-capture-bar";
+import { TodayExtras } from "@/components/dashboard/today-extras";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Timer, CheckCircle2, Clock, Sparkles } from "lucide-react";
@@ -80,11 +81,21 @@ export default async function DashboardPage() {
     ? `Hey ${displayName} — ${format(new Date(), "EEEE, MMMM d")}`
     : `Today — ${format(new Date(), "EEEE, MMMM d")}`;
 
+  // Separate completed tasks for ritual
+  const completedTasksList = todayTasks?.filter((t) => t.status === "completed") || [];
+  const pendingTasksList = todayTasks?.filter((t) => t.status !== "completed") || [];
+
   return (
     <div className="flex flex-col h-full">
       <Header title={greeting} />
 
       <div className="flex-1 overflow-auto p-4 md:p-6">
+        {/* Planning Rituals & Smart Suggestions */}
+        <TodayExtras
+          todayTasks={pendingTasksList}
+          completedTasks={completedTasksList}
+        />
+
         {/* Quick Stats */}
         <div className="grid gap-4 grid-cols-2 md:grid-cols-3 mb-6">
           <Card>

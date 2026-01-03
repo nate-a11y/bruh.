@@ -17,6 +17,7 @@ import {
   Repeat,
   Target,
   Calendar,
+  Users,
 } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { toast } from "sonner";
@@ -41,6 +42,7 @@ const navigation = [
   { name: "Goals", href: "/goals", icon: Target },
   { name: "Habits", href: "/habits", icon: Repeat },
   { name: "Stats", href: "/stats", icon: BarChart3 },
+  { name: "Teams", href: "/teams", icon: Users },
 ];
 
 export function Sidebar({ lists }: SidebarProps) {

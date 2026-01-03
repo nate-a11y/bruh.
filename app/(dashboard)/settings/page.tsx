@@ -6,6 +6,7 @@ import { SlackSettings } from "@/components/settings/slack-settings";
 import { NotionSettings } from "@/components/settings/notion-settings";
 import { IntegrationsSettings } from "@/components/settings/integrations-settings";
 import { IntegrationHealth } from "@/components/settings/integration-health";
+import { EmailToTaskSettings } from "@/components/settings/email-to-task-settings";
 import { ExportButton } from "@/components/data/export-button";
 import { WebhookSettings } from "@/components/settings/webhook-settings";
 
@@ -100,6 +101,10 @@ export default async function SettingsPage() {
               <GoogleCalendarSettings integration={googleIntegration} />
               <SlackSettings integration={slackIntegration} />
               <NotionSettings integration={notionIntegration} />
+              <EmailToTaskSettings
+                emailTaskId={(preferences as any)?.email_task_id || null}
+                emailTaskEnabled={(preferences as any)?.email_task_enabled || false}
+              />
               <IntegrationsSettings />
             </div>
           </div>
