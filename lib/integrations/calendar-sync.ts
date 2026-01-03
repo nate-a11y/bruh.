@@ -6,6 +6,16 @@ import {
   deleteCalendarEvent,
   taskToCalendarEvent,
 } from "./google-calendar";
+import type { Json } from "@/lib/supabase/types";
+
+// Helper to safely access settings from Json type
+function getSettingsValue<T>(settings: Json, key: string, defaultValue: T): T {
+  if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
+    return defaultValue;
+  }
+  const value = (settings as Record<string, unknown>)[key];
+  return (value as T) ?? defaultValue;
+}
 
 interface TaskForSync {
   id: string;
@@ -46,7 +56,8 @@ export async function syncTaskToCalendar(
     }
 
     // Skip completed tasks if setting is disabled
-    if (task.status === "completed" && !integration.settings?.sync_completed_tasks) {
+    const syncCompletedTasks = getSettingsValue(integration.settings, "sync_completed_tasks", false);
+    if (task.status === "completed" && !syncCompletedTasks) {
       // If task was synced before, delete the event
       const { data: existingEvent } = await supabase
         .from("zeroed_calendar_events")
@@ -77,7 +88,7 @@ export async function syncTaskToCalendar(
       return { success: false, error: "Could not get access token" };
     }
 
-    const calendarId = integration.settings?.calendar_id || "primary";
+    const calendarId = getSettingsValue(integration.settings, "calendar_id", "primary");
     const calendarEvent = taskToCalendarEvent(task);
 
     // Check if event already exists

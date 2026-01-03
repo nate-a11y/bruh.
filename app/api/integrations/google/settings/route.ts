@@ -30,8 +30,15 @@ export async function PATCH(request: NextRequest) {
         .eq("provider", "google_calendar")
         .single();
 
+      // Type guard: ensure existing settings is an object before spreading
+      const existingSettings = existing?.settings &&
+        typeof existing.settings === "object" &&
+        !Array.isArray(existing.settings)
+          ? existing.settings
+          : {};
+
       updateData.settings = {
-        ...(existing?.settings || {}),
+        ...existingSettings,
         ...settings,
       };
     }

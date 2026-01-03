@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Zap, Timer, Repeat, FolderKanban, BarChart3, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/brand/logo";
@@ -86,8 +87,14 @@ export default function LandingPage() {
           {/* App screenshot mockup */}
           <div className="relative mx-auto max-w-3xl">
             <div className="bg-card rounded-xl border border-border p-4 shadow-2xl">
-              {/* Placeholder for app screenshot */}
-              <div className="aspect-video bg-surface-elevated rounded-lg" />
+              <Image
+                src="/BruhSS.jpg"
+                alt="Bruh app screenshot"
+                width={1200}
+                height={675}
+                className="rounded-lg"
+                priority
+              />
             </div>
           </div>
         </div>
