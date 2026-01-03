@@ -18,12 +18,37 @@ export default async function DashboardLayout({
   }
 
   // Fetch user's lists
-  const { data: lists } = await supabase
+  let { data: lists } = await supabase
     .from("zeroed_lists")
     .select("*")
     .eq("user_id", user.id)
     .eq("is_archived", false)
     .order("position", { ascending: true });
+
+  // First-time user setup: create Inbox list and preferences if needed
+  if (!lists || lists.length === 0) {
+    // Create default Inbox list
+    const { data: newList } = await supabase
+      .from("zeroed_lists")
+      .insert({
+        user_id: user.id,
+        name: "Inbox",
+        color: "#6366f1",
+        icon: "inbox",
+        position: 0,
+      })
+      .select()
+      .single();
+
+    if (newList) {
+      lists = [newList];
+    }
+
+    // Ensure user preferences exist
+    await supabase
+      .from("zeroed_user_preferences")
+      .upsert({ user_id: user.id }, { onConflict: "user_id" });
+  }
 
   return (
     <div className="flex h-screen overflow-hidden">
