@@ -45,7 +45,7 @@ export function SettingsForm({ preferences, userEmail }: SettingsFormProps) {
     if (result.error) {
       toast.error(result.error);
     } else {
-      toast.success("Settings saved");
+      toast.success("Saved. You're good.");
     }
   }
 
@@ -72,7 +72,7 @@ export function SettingsForm({ preferences, userEmail }: SettingsFormProps) {
       <Card>
         <CardHeader>
           <CardTitle>Appearance</CardTitle>
-          <CardDescription>Customize how Zeroed looks</CardDescription>
+          <CardDescription>Make it yours</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">

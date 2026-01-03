@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Timer, CheckCircle2, Clock, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { getEmptyState } from "@/lib/copy/empty-states";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -134,13 +135,13 @@ export default async function DashboardPage() {
               <Card className="border-dashed">
                 <CardContent className="flex flex-col items-center justify-center py-8 text-center">
                   <Sparkles className="h-10 w-10 text-muted-foreground mb-3" />
-                  <h3 className="font-medium mb-1">Your day is clear!</h3>
+                  <h3 className="font-medium mb-1">{getEmptyState('today')}</h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Add a task above or check your lists for things to work on.
+                    Add something above. Or don&apos;t. We&apos;re not your mom.
                   </p>
                   <Link href="/lists">
                     <Button variant="outline" size="sm">
-                      View Lists
+                      Check Lists
                     </Button>
                   </Link>
                 </CardContent>

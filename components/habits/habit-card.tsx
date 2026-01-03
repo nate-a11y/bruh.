@@ -32,7 +32,7 @@ export function HabitCard({ habit, todayCount = 0, onEdit }: HabitCardProps) {
     } else {
       setCount(prev => prev + 1);
       if (count + 1 >= habit.target_per_day) {
-        toast.success("Habit completed for today!");
+        toast.success("Habit done. Consistency looks good on you.");
       }
     }
   }

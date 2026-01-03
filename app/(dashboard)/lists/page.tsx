@@ -45,11 +45,11 @@ export default async function ListsPage() {
           <Card className="max-w-md mx-auto mt-12">
             <CardHeader className="text-center">
               <FolderOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <CardTitle>No Lists Yet</CardTitle>
+              <CardTitle>No lists yet</CardTitle>
             </CardHeader>
             <CardContent className="text-center">
               <p className="text-muted-foreground mb-4">
-                Create your first list to start organizing tasks.
+                Group your chaos. Make a list.
               </p>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />

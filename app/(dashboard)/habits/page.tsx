@@ -26,7 +26,7 @@ export default async function HabitsPage() {
     <div className="flex flex-col h-full">
       <Header
         title="Habits"
-        description="Build consistent daily habits"
+        description="Stack up the small wins"
         action={<HabitForm />}
       />
       <div className="flex-1 overflow-auto p-6">
@@ -35,7 +35,7 @@ export default async function HabitsPage() {
             <div className="text-center py-12">
               <h3 className="text-lg font-medium mb-2">No habits yet</h3>
               <p className="text-muted-foreground mb-4">
-                Create your first habit to start building consistency
+                Consistency is key. Start small.
               </p>
               <HabitForm />
             </div>
