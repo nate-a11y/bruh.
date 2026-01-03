@@ -16,6 +16,7 @@ import {
   Trophy,
   Repeat,
   Target,
+  Calendar,
 } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { toast } from "sonner";
@@ -34,6 +35,7 @@ interface SidebarProps {
 
 const navigation = [
   { name: "Today", href: "/today", icon: LayoutDashboard },
+  { name: "Calendar", href: "/calendar", icon: Calendar },
   { name: "Lists", href: "/lists", icon: FolderOpen },
   { name: "Focus", href: "/focus", icon: Timer },
   { name: "Goals", href: "/goals", icon: Target },

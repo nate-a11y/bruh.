@@ -4,6 +4,7 @@ import { Header } from "@/components/dashboard/header";
 import { StatsOverview } from "@/components/stats/stats-overview";
 import { StatsChart } from "@/components/stats/stats-chart";
 import { PunctualityReport } from "@/components/stats/punctuality-report";
+import { TimeReports } from "@/components/reports/time-reports";
 
 export default async function StatsPage() {
   const supabase = await createClient();
@@ -32,10 +33,10 @@ export default async function StatsPage() {
   // Fetch all completed tasks for punctuality analysis
   const { data: completedTasks } = await supabase
     .from("zeroed_tasks")
-    .select("estimated_minutes, actual_minutes")
+    .select("id, title, estimated_minutes, actual_minutes, status, completed_at, due_date, priority, zeroed_lists(name, color)")
     .eq("user_id", user.id)
-    .eq("status", "completed")
-    .not("actual_minutes", "eq", 0);
+    .or("status.eq.completed,status.eq.in_progress")
+    .order("completed_at", { ascending: false, nullsFirst: false });
 
   // Calculate totals
   const weeklyStats = weekStats || [];
@@ -129,6 +130,12 @@ export default async function StatsPage() {
           totalActual={totalActual}
           taskCount={tasksWithTime.length}
         />
+
+        {/* Detailed Time Reports */}
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-4">Time Reports</h2>
+          <TimeReports tasks={completedTasks || []} dateRange="week" />
+        </div>
       </div>
     </div>
   );
