@@ -50,6 +50,12 @@ export function SlackSettings({ integration }: SlackSettingsProps) {
   const [notifyDailySummary, setNotifyDailySummary] = useState(
     getSettingsValue(integration?.settings ?? null, "notify_daily_summary", true)
   );
+  const [notifyTaskCreated, setNotifyTaskCreated] = useState(
+    getSettingsValue(integration?.settings ?? null, "notify_task_created", false)
+  );
+  const [notifyTaskCompleted, setNotifyTaskCompleted] = useState(
+    getSettingsValue(integration?.settings ?? null, "notify_task_completed", false)
+  );
 
   useEffect(() => {
     if (integration) {
@@ -246,6 +252,40 @@ export function SlackSettings({ integration }: SlackSettingsProps) {
               onCheckedChange={(checked) => {
                 setNotifyDailySummary(checked);
                 updateSettings({ notify_daily_summary: checked });
+              }}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="notify-created">Task Created</Label>
+              <p className="text-xs text-muted-foreground">
+                Get notified when you add a task
+              </p>
+            </div>
+            <Switch
+              id="notify-created"
+              checked={notifyTaskCreated}
+              onCheckedChange={(checked) => {
+                setNotifyTaskCreated(checked);
+                updateSettings({ notify_task_created: checked });
+              }}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="notify-completed">Task Completed</Label>
+              <p className="text-xs text-muted-foreground">
+                Celebrate when you finish a task
+              </p>
+            </div>
+            <Switch
+              id="notify-completed"
+              checked={notifyTaskCompleted}
+              onCheckedChange={(checked) => {
+                setNotifyTaskCompleted(checked);
+                updateSettings({ notify_task_completed: checked });
               }}
             />
           </div>

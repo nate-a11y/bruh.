@@ -11,6 +11,7 @@ import type {
 import { executeFilter } from "@/lib/filters/engine";
 import { syncTaskToCalendar, removeTaskFromCalendar } from "@/lib/integrations/calendar-sync";
 import { syncTaskToNotion, completeTaskInNotion, uncompleteTaskInNotion, archiveTaskInNotion } from "@/lib/integrations/notion-sync";
+import { notifyTaskCreated, notifyTaskCompleted } from "@/lib/integrations/slack-notifications";
 
 type TaskPriority = "low" | "normal" | "high" | "urgent";
 type GoalTargetType = "tasks_completed" | "focus_minutes" | "focus_sessions" | "streak_days" | "custom";
@@ -134,6 +135,15 @@ export async function createTask(formData: FormData) {
     }).catch(console.error);
   }
 
+  // Slack notification (fire and forget)
+  if (task) {
+    notifyTaskCreated(user.id, {
+      id: task.id,
+      title: task.title,
+      due_date: task.due_date,
+    }).catch(console.error);
+  }
+
   revalidatePath("/today");
   revalidatePath("/lists");
   return { success: true };
@@ -199,6 +209,15 @@ export async function createQuickTask(title: string, listId: string) {
       due_date: task.due_date,
       priority: task.priority,
       status: task.status,
+    }).catch(console.error);
+  }
+
+  // Slack notification (fire and forget)
+  if (task) {
+    notifyTaskCreated(user.id, {
+      id: task.id,
+      title: task.title,
+      due_date: task.due_date,
     }).catch(console.error);
   }
 
@@ -324,6 +343,14 @@ export async function completeTask(taskId: string) {
     completeTaskInNotion(user.id, task.id).catch(console.error);
   } else {
     uncompleteTaskInNotion(user.id, task.id).catch(console.error);
+  }
+
+  // Slack notification (fire and forget)
+  if (newStatus === "completed") {
+    notifyTaskCompleted(user.id, {
+      id: task.id,
+      title: task.title,
+    }).catch(console.error);
   }
 
   revalidatePath("/today");
