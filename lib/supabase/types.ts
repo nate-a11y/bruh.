@@ -1421,3 +1421,44 @@ export const PRESET_FILTERS: Record<string, SmartFilterConfig> = {
     sort: { field: 'estimated_minutes', direction: 'asc' },
   },
 };
+
+// ============================================================================
+// SPRINT 9: INTEGRATIONS
+// ============================================================================
+
+export type IntegrationProvider = 'google_calendar' | 'notion' | 'todoist';
+
+export interface GoogleCalendarSettings {
+  calendar_id: string;
+  calendar_name: string;
+  sync_tasks_to_calendar: boolean;
+  sync_completed_tasks: boolean;
+}
+
+export interface Integration {
+  id: string;
+  user_id: string;
+  provider: IntegrationProvider;
+  access_token: string;
+  refresh_token: string | null;
+  token_expires_at: string | null;
+  provider_user_id: string | null;
+  provider_email: string | null;
+  settings: GoogleCalendarSettings | Record<string, unknown>;
+  last_sync_at: string | null;
+  sync_enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CalendarEventMapping {
+  id: string;
+  user_id: string;
+  task_id: string | null;
+  external_event_id: string;
+  provider: string;
+  calendar_id: string;
+  last_synced_at: string;
+  sync_direction: 'outbound' | 'inbound';
+  created_at: string;
+}

@@ -10,6 +10,7 @@ A task manager that doesn't take itself too seriously. But takes your productivi
 - **Brain Dump**: Paste your messy thoughts. AI turns them into organized tasks.
 - **Focus Mode**: Pomodoro timer built in. Lock in and get it done.
 - **Floating Timer**: Draggable widget that stays with you while you work.
+- **Google Calendar Sync**: Two-way sync with your calendar. Tasks become events.
 - **Recurring Tasks**: Daily, weekly, monthly. Set it and forget it.
 - **Projects**: Group tasks. Stay organized. Or don't. We're not judging.
 - **Stats**: See your productivity trends. Flex on yourself.
@@ -53,9 +54,15 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 # Optional: For AI Brain Dump feature
 ANTHROPIC_API_KEY=your_anthropic_api_key
+
+# Optional: For Google Calendar integration
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
 ```
 
 > **Note**: The Brain Dump feature works without an API key using a fallback parser, but works much better with Claude AI.
+
+> **Google Calendar**: Create a project in [Google Cloud Console](https://console.cloud.google.com), enable Calendar API, and create OAuth credentials. Add `{APP_URL}/api/integrations/google/callback` as authorized redirect URI.
 
 ## Brand
 
