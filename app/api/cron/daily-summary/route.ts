@@ -60,6 +60,13 @@ export async function GET(request: NextRequest) {
       }
 
       try {
+        // Get user's display name
+        const { data: prefs } = await supabase
+          .from("zeroed_user_preferences")
+          .select("display_name")
+          .eq("user_id", integration.user_id)
+          .single();
+
         // Get today's tasks for this user
         const { data: tasks } = await supabase
           .from("zeroed_tasks")
@@ -69,12 +76,15 @@ export async function GET(request: NextRequest) {
           .neq("status", "cancelled")
           .order("due_time", { ascending: true, nullsFirst: false });
 
-        // Send the summary
+        // Send the summary with personalized greeting
         const blocks = formatTodaySummary(tasks || []);
+        const greeting = prefs?.display_name
+          ? `Good morning ${prefs.display_name}! Here's your task summary for today.`
+          : `Good morning! Here's your task summary for today.`;
         await sendNotification(
           integration.access_token,
           settings,
-          `Good morning! Here's your task summary for today.`,
+          greeting,
           blocks
         );
 

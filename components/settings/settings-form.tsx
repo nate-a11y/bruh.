@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 interface SettingsFormProps {
   preferences: {
     theme: string;
+    display_name?: string | null;
     default_focus_minutes: number;
     short_break_minutes: number;
     long_break_minutes: number;
@@ -60,7 +61,19 @@ export function SettingsForm({ preferences, userEmail }: SettingsFormProps) {
           </CardTitle>
           <CardDescription>Your account information</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="displayName">Your Name</Label>
+            <Input
+              id="displayName"
+              name="displayName"
+              placeholder="What should we call you?"
+              defaultValue={preferences.display_name || ""}
+            />
+            <p className="text-xs text-muted-foreground">
+              Used in greetings and notifications
+            </p>
+          </div>
           <div className="space-y-2">
             <Label>Email</Label>
             <Input value={userEmail} disabled />

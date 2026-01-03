@@ -15,8 +15,11 @@ export async function updatePreferences(formData: FormData) {
     return { error: "Unauthorized" };
   }
 
+  const displayName = formData.get("displayName") as string;
+
   const updates = {
     theme: (formData.get("theme") as string) as Theme,
+    display_name: displayName?.trim() || null,
     default_focus_minutes: parseInt(
       formData.get("defaultFocusMinutes") as string
     ),
@@ -45,5 +48,6 @@ export async function updatePreferences(formData: FormData) {
 
   revalidatePath("/settings");
   revalidatePath("/focus");
+  revalidatePath("/today");
   return { success: true };
 }

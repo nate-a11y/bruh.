@@ -64,12 +64,25 @@ export default async function DashboardPage() {
     .eq("is_archived", false)
     .order("position", { ascending: true });
 
+  // Fetch user preferences for display name
+  const { data: prefs } = await supabase
+    .from("zeroed_user_preferences")
+    .select("display_name")
+    .eq("user_id", user.id)
+    .single();
+
   // Get default list (Inbox or first list)
   const inboxList = lists?.find((l) => l.name === "Inbox") || lists?.[0];
 
+  // Build greeting with name
+  const displayName = (prefs as { display_name?: string | null } | null)?.display_name;
+  const greeting = displayName
+    ? `Hey ${displayName} — ${format(new Date(), "EEEE, MMMM d")}`
+    : `Today — ${format(new Date(), "EEEE, MMMM d")}`;
+
   return (
     <div className="flex flex-col h-full">
-      <Header title={`Today — ${format(new Date(), "EEEE, MMMM d")}`} />
+      <Header title={greeting} />
 
       <div className="flex-1 overflow-auto p-4 md:p-6">
         {/* Quick Stats */}
