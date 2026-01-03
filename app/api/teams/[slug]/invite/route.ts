@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import crypto from "crypto";
+import { sendEmail, teamInviteEmail } from "@/lib/email";
 
 interface RouteParams {
   params: Promise<{ slug: string }>;
@@ -39,36 +40,13 @@ export async function POST(request: Request, { params }: RouteParams) {
     // Check if user is admin/owner
     const { data: membership } = await supabase
       .from("zeroed_team_members")
-      .select("role")
+      .select("role, display_name")
       .eq("team_id", team.id)
       .eq("user_id", user.id)
       .single();
 
     if (!membership || !["owner", "admin"].includes(membership.role)) {
       return NextResponse.json({ error: "Permission denied" }, { status: 403 });
-    }
-
-    // Check if user is already a member
-    const { data: existingUser } = await supabase
-      .from("auth.users")
-      .select("id")
-      .eq("email", email)
-      .single();
-
-    if (existingUser) {
-      const { data: existingMember } = await supabase
-        .from("zeroed_team_members")
-        .select("id")
-        .eq("team_id", team.id)
-        .eq("user_id", existingUser.id)
-        .single();
-
-      if (existingMember) {
-        return NextResponse.json(
-          { error: "User is already a team member" },
-          { status: 400 }
-        );
-      }
     }
 
     // Generate token
@@ -96,15 +74,32 @@ export async function POST(request: Request, { params }: RouteParams) {
       );
     }
 
-    // TODO: Send email with invite link
-    // For now, just return success
+    // Send invite email
     const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/invite/${token}`;
+    const inviterName = membership.display_name || user.email?.split("@")[0] || "Someone";
+
+    const emailContent = teamInviteEmail({
+      teamName: team.name,
+      inviterName,
+      role,
+      inviteLink,
+    });
+
+    const emailResult = await sendEmail({
+      to: email,
+      subject: emailContent.subject,
+      html: emailContent.html,
+    });
+
+    if (!emailResult.success) {
+      console.warn("Email send failed:", emailResult.error);
+      // Don't fail the request - invitation is created, just email failed
+    }
 
     return NextResponse.json({
       success: true,
       message: `Invitation sent to ${email}`,
-      // Include link for testing (remove in production)
-      link: inviteLink,
+      emailSent: emailResult.success,
     });
   } catch (error) {
     console.error("Invite error:", error);
