@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/dashboard/header";
 import { SettingsForm } from "@/components/settings/settings-form";
+import { GoogleCalendarSettings } from "@/components/settings/google-calendar-settings";
+import { IntegrationsSettings } from "@/components/settings/integrations-settings";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -20,6 +22,14 @@ export default async function SettingsPage() {
     .eq("user_id", user.id)
     .single();
 
+  // Fetch Google Calendar integration
+  const { data: googleIntegration } = await supabase
+    .from("zeroed_integrations")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("provider", "google_calendar")
+    .single();
+
   // Default preferences if none exist
   const prefs = preferences || {
     theme: "dark",
@@ -36,8 +46,22 @@ export default async function SettingsPage() {
       <Header title="Settings" />
 
       <div className="flex-1 overflow-auto p-6">
-        <div className="max-w-2xl">
+        <div className="max-w-2xl space-y-8">
           <SettingsForm preferences={prefs} userEmail={user.email || ""} />
+
+          {/* Integrations Section */}
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-xl font-semibold">Integrations</h2>
+              <p className="text-sm text-muted-foreground">
+                Connect your favorite tools
+              </p>
+            </div>
+            <div className="space-y-4">
+              <GoogleCalendarSettings integration={googleIntegration} />
+              <IntegrationsSettings />
+            </div>
+          </div>
         </div>
       </div>
     </div>
