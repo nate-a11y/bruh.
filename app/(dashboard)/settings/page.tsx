@@ -3,6 +3,7 @@ import { Header } from "@/components/dashboard/header";
 import { SettingsForm } from "@/components/settings/settings-form";
 import { GoogleCalendarSettings } from "@/components/settings/google-calendar-settings";
 import { SlackSettings } from "@/components/settings/slack-settings";
+import { NotionSettings } from "@/components/settings/notion-settings";
 import { IntegrationsSettings } from "@/components/settings/integrations-settings";
 
 export default async function SettingsPage() {
@@ -38,6 +39,13 @@ export default async function SettingsPage() {
     .eq("provider", "slack")
     .single();
 
+  const { data: notionIntegration } = await supabase
+    .from("zeroed_integrations")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("provider", "notion")
+    .single();
+
   // Default preferences if none exist
   const prefs = preferences || {
     theme: "dark",
@@ -68,6 +76,7 @@ export default async function SettingsPage() {
             <div className="space-y-4">
               <GoogleCalendarSettings integration={googleIntegration} />
               <SlackSettings integration={slackIntegration} />
+              <NotionSettings integration={notionIntegration} />
               <IntegrationsSettings />
             </div>
           </div>
