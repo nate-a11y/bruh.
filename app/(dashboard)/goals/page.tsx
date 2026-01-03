@@ -14,7 +14,7 @@ export default async function GoalsPage() {
     <div className="flex flex-col h-full">
       <Header
         title="Goals"
-        description="Set and track your productivity goals"
+        description="Aim for something. Hit it."
         action={<GoalForm />}
       />
       <div className="flex-1 overflow-auto p-6">
@@ -23,7 +23,7 @@ export default async function GoalsPage() {
             <div className="text-center py-12">
               <h3 className="text-lg font-medium mb-2">No goals yet</h3>
               <p className="text-muted-foreground mb-4">
-                Create your first goal to start tracking your progress
+                What are you working towards? Set a target.
               </p>
               <GoalForm />
             </div>

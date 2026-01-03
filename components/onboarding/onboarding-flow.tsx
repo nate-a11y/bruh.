@@ -11,10 +11,10 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 const steps = [
-  { id: "welcome", title: "Welcome to Zeroed", icon: Sparkles },
-  { id: "goals", title: "Set Your Daily Goals", icon: Target },
-  { id: "focus", title: "Focus Duration", icon: Clock },
-  { id: "first-task", title: "Create Your First Task", icon: ListTodo },
+  { id: "welcome", title: "bruh.", icon: Sparkles },
+  { id: "goals", title: "Daily Goals", icon: Target },
+  { id: "focus", title: "Focus Time", icon: Clock },
+  { id: "first-task", title: "First Task", icon: ListTodo },
 ];
 
 export function OnboardingFlow() {
@@ -38,7 +38,7 @@ export function OnboardingFlow() {
     if (result.error) {
       toast.error(result.error);
     } else {
-      toast.success("Welcome to Zeroed!");
+      toast.success("You're in. Let's go.");
       router.push("/today");
     }
   }
@@ -73,14 +73,14 @@ export function OnboardingFlow() {
 
             {currentStep === 0 && (
               <p className="text-muted-foreground mb-8">
-                Zero your tasks. Focus on what matters. Let's get you set up in just a few steps.
+                Let&apos;s get your shit together. Quick setup, then you&apos;re in.
               </p>
             )}
 
             {currentStep === 1 && (
               <div className="space-y-4">
                 <p className="text-muted-foreground mb-4">
-                  How many tasks do you want to complete each day?
+                  How many tasks per day feels right?
                 </p>
                 <div className="flex gap-2 justify-center">
                   {[3, 5, 7, 10].map((n) => (
@@ -99,7 +99,7 @@ export function OnboardingFlow() {
             {currentStep === 2 && (
               <div className="space-y-4">
                 <p className="text-muted-foreground mb-4">
-                  How long should your focus sessions be?
+                  How long can you lock in?
                 </p>
                 <div className="flex gap-2 justify-center">
                   {[15, 25, 45, 60].map((m) => (
@@ -118,10 +118,10 @@ export function OnboardingFlow() {
             {currentStep === 3 && (
               <div className="space-y-4">
                 <p className="text-muted-foreground mb-4">
-                  What's the first thing you want to accomplish?
+                  What&apos;s been on your mind? Get it out.
                 </p>
                 <Input
-                  placeholder="e.g., Review project proposal"
+                  placeholder="e.g., Finally finish that thing"
                   value={prefs.firstTask}
                   onChange={(e) => setPrefs({ ...prefs, firstTask: e.target.value })}
                   className="text-center"

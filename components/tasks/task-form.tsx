@@ -59,7 +59,7 @@ export function TaskForm({
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success("Task updated");
+        toast.success("Updated.");
         onClose();
       }
     } else {
@@ -67,7 +67,7 @@ export function TaskForm({
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success("Task created");
+        toast.success("Added. Now handle it.");
         formRef.current?.reset();
         onClose();
       }

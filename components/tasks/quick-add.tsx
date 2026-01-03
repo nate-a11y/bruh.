@@ -31,7 +31,7 @@ export function QuickAdd({
     if (result.error) {
       toast.error(result.error);
     } else {
-      toast.success("Task added");
+      toast.success("Added. Get it done.");
       setValue("");
       // Keep focus for rapid entry
       inputRef.current?.focus();
