@@ -2,11 +2,13 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { parseNaturalLanguageTask } from "@/lib/utils/natural-language-parser";
 
-// Use service role for inbound email processing
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Create service role client at runtime (not module load time)
+function getServiceClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 interface InboundEmail {
   // Common fields from email services like SendGrid, Mailgun, Postmark
@@ -24,6 +26,8 @@ interface InboundEmail {
  * Supports SendGrid, Mailgun, and Postmark formats
  */
 export async function POST(request: Request) {
+  const supabase = getServiceClient();
+
   try {
     const contentType = request.headers.get("content-type") || "";
     let email: InboundEmail;
