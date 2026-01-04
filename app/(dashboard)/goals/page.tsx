@@ -14,7 +14,7 @@ export default async function GoalsPage() {
     <div className="flex flex-col h-full">
       <Header
         title="Goals"
-        description="Aim for something. Hit it."
+        subtitle={activeGoals.length > 0 ? `${activeGoals.length} active` : undefined}
         action={<GoalForm />}
       />
       <div className="flex-1 overflow-auto p-6">

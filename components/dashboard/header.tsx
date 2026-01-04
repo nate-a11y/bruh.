@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Timer, Pause, Play, Menu } from "lucide-react";
+import { Timer, Pause, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTimerStore } from "@/lib/hooks/use-timer";
 import { formatTimerDisplay } from "@/lib/utils";
@@ -10,48 +10,34 @@ import { CommandMenu } from "./command-menu";
 
 interface HeaderProps {
   title: string;
-  description?: string;
+  subtitle?: string;
   action?: React.ReactNode;
   showTimer?: boolean;
-  onMenuClick?: () => void;
 }
 
-export function Header({ title, description, action, showTimer = true, onMenuClick }: HeaderProps) {
+export function Header({ title, subtitle, action, showTimer = true }: HeaderProps) {
   const { state, timeRemaining, task, pauseTimer, resumeTimer } =
     useTimerStore();
   const [mounted, setMounted] = useState(false);
 
-  // Set mounted state for hydration safety
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
   const isTimerActive = state === "running" || state === "paused" || state === "break";
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-border bg-card pl-14 pr-4 md:pl-6 md:pr-6">
-      <div className="flex items-center gap-3">
-        {onMenuClick && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={onMenuClick}
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
-        )}
-        <div>
-          <h1 className="text-lg font-semibold">{title}</h1>
-          {description && (
-            <p className="text-sm text-muted-foreground">{description}</p>
+    <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-6">
+      <div className="flex items-center gap-4 min-w-0">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold truncate">{title}</h1>
+          {subtitle && (
+            <p className="text-sm text-muted-foreground truncate">{subtitle}</p>
           )}
         </div>
-        {action && <div className="ml-4">{action}</div>}
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 shrink-0">
         {/* Active Timer Indicator */}
         {mounted && showTimer && isTimerActive && (
           <Link href="/focus">
@@ -61,7 +47,7 @@ export function Header({ title, description, action, showTimer = true, onMenuCli
                 {formatTimerDisplay(timeRemaining)}
               </span>
               {task && (
-                <span className="max-w-[150px] truncate text-muted-foreground">
+                <span className="hidden sm:inline max-w-[120px] truncate text-muted-foreground">
                   {task.title}
                 </span>
               )}
@@ -87,6 +73,8 @@ export function Header({ title, description, action, showTimer = true, onMenuCli
             </div>
           </Link>
         )}
+
+        {action}
 
         <CommandMenu />
       </div>

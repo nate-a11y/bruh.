@@ -87,7 +87,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     <div className="flex flex-col h-full">
       <Header
         title={project.name}
-        description={project.description}
+        subtitle={project.description}
         action={
           canManage ? (
             <div className="flex gap-2">

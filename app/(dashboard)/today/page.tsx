@@ -77,9 +77,7 @@ export default async function DashboardPage() {
 
   // Build greeting with name
   const displayName = (prefs as { display_name?: string | null } | null)?.display_name;
-  const greeting = displayName
-    ? `Hey ${displayName} — ${format(new Date(), "EEEE, MMMM d")}`
-    : `Today — ${format(new Date(), "EEEE, MMMM d")}`;
+  const dateString = format(new Date(), "EEEE, MMMM d");
 
   // Separate completed tasks for ritual
   const completedTasksList = todayTasks?.filter((t) => t.status === "completed") || [];
@@ -87,7 +85,10 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <Header title={greeting} />
+      <Header
+        title={displayName ? `Hey ${displayName}` : "Today"}
+        subtitle={dateString}
+      />
 
       <div className="flex-1 overflow-auto p-4 md:p-6">
         {/* Planning Rituals & Smart Suggestions */}
