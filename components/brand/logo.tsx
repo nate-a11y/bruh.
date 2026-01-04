@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
   showText?: boolean;
+  showIcon?: boolean;
   className?: string;
 }
 
@@ -13,16 +14,18 @@ const sizes = {
   lg: { icon: 48, text: 'text-4xl' },
 };
 
-export function Logo({ size = 'md', showText = true, className }: LogoProps) {
+export function Logo({ size = 'md', showText = true, showIcon = true, className }: LogoProps) {
   return (
     <div className={cn('flex items-center gap-2', className)}>
-      <Image
-        src="/icon-192.png"
-        alt="bruh. logo"
-        width={sizes[size].icon}
-        height={sizes[size].icon}
-        className="rounded-lg"
-      />
+      {showIcon && (
+        <Image
+          src="/icon-192.png"
+          alt="bruh. logo"
+          width={sizes[size].icon}
+          height={sizes[size].icon}
+          className="rounded-lg"
+        />
+      )}
 
       {showText && (
         <span

@@ -81,7 +81,7 @@ export function Sidebar({ lists, isAdmin }: SidebarProps) {
       {/* Logo */}
       <div className="flex h-14 items-center px-4">
         <Link href="/today">
-          <Logo size="sm" />
+          <Logo size="sm" showIcon={false} />
         </Link>
       </div>
 
