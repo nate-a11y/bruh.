@@ -83,13 +83,13 @@ export function FocusTimer({
       const prefix = state === "paused" ? "⏸ " : sessionType === "focus" ? "🎯 " : "☕ ";
       const time = formatTimerDisplay(timeRemaining);
       const taskName = selectedTask ? ` - ${selectedTask.title}` : "";
-      document.title = `${prefix}${time}${taskName} | Bruh`;
+      document.title = `${prefix}${time}${taskName} | bruh.`;
     } else {
-      document.title = "Focus Mode | Bruh";
+      document.title = "Focus Mode | bruh.";
     }
 
     return () => {
-      document.title = "Focus Mode | Bruh";
+      document.title = "Focus Mode | bruh.";
     };
   }, [state, timeRemaining, sessionType, selectedTask]);
 

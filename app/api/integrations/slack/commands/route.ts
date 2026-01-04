@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     if (!integration) {
       return NextResponse.json({
         response_type: "ephemeral",
-        text: "❌ Your Slack account isn't connected to Bruh. Visit getbruh.app/settings to connect.",
+        text: "❌ Your Slack account isn't connected to bruh. Visit getbruh.app/settings to connect.",
       });
     }
 
@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
               type: "section",
               text: {
                 type: "mrkdwn",
-                text: "*Bruh Commands*",
+                text: "*bruh. Commands*",
               },
             },
             {

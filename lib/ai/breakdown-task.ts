@@ -11,7 +11,7 @@ export interface TaskBreakdownResult {
   suggested_estimate?: number; // Total estimated minutes for parent
 }
 
-const BREAKDOWN_SYSTEM_PROMPT = `You are a task breakdown assistant for a productivity app called Bruh. Your job is to take a complex task and break it down into smaller, actionable subtasks.
+const BREAKDOWN_SYSTEM_PROMPT = `You are a task breakdown assistant for a productivity app called bruh. Your job is to take a complex task and break it down into smaller, actionable subtasks.
 
 Rules:
 1. Break down the task into 3-8 clear, specific subtasks

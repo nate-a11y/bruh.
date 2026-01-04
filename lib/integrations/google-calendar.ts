@@ -411,7 +411,7 @@ export async function listCalendarEvents(
 }
 
 /**
- * Pull changes from Google Calendar and update Bruh tasks
+ * Pull changes from Google Calendar and update bruh. tasks
  */
 export async function pullChangesFromCalendar(userId: string): Promise<{ updated: number; created: number }> {
   const supabase = await createClient();

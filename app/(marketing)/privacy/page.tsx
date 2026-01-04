@@ -2,8 +2,8 @@ import { Logo } from "@/components/brand/logo";
 import Link from "next/link";
 
 export const metadata = {
-  title: "Privacy Policy | Bruh",
-  description: "Privacy Policy for Bruh productivity app",
+  title: "Privacy Policy | bruh.",
+  description: "Privacy Policy for bruh. productivity app",
 };
 
 export default function PrivacyPage() {
@@ -21,7 +21,7 @@ export default function PrivacyPage() {
 
         <h2>Overview</h2>
         <p>
-          Bruh (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) is committed to protecting your privacy.
+          bruh. (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) is committed to protecting your privacy.
           This Privacy Policy explains how we collect, use, and safeguard your information when you use
           our productivity application at getbruh.app.
         </p>

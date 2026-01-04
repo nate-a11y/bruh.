@@ -88,7 +88,7 @@ export function InstallPrompt() {
                 <Download className="h-5 w-5 text-primary" />
               </div>
               <div className="flex-1">
-                <h4 className="font-semibold text-sm">Install Bruh</h4>
+                <h4 className="font-semibold text-sm">Install bruh.</h4>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Add to home screen for quick access & offline use
                 </p>

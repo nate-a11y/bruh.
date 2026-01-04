@@ -16,7 +16,7 @@ export default function MaintenancePage() {
         <div className="space-y-2">
           <h1 className="text-2xl font-bold">We'll be right back</h1>
           <p className="text-muted-foreground">
-            Bruh is currently undergoing scheduled maintenance.
+            bruh. is currently undergoing scheduled maintenance.
             We're working to improve your experience and will be back shortly.
           </p>
         </div>

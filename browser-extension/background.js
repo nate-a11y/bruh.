@@ -1,4 +1,4 @@
-// Bruh Browser Extension - Background Service Worker
+// bruh. Browser Extension - Background Service Worker
 
 const API_BASE = 'https://bruh.app';
 
@@ -7,21 +7,21 @@ chrome.runtime.onInstalled.addListener(() => {
   // Context menu for selected text
   chrome.contextMenus.create({
     id: 'add-task-from-selection',
-    title: 'Add "%s" as task to Bruh',
+    title: 'Add "%s" as task to bruh.',
     contexts: ['selection']
   });
 
   // Context menu for links
   chrome.contextMenus.create({
     id: 'add-task-from-link',
-    title: 'Add link as task to Bruh',
+    title: 'Add link as task to bruh.',
     contexts: ['link']
   });
 
   // Context menu for page
   chrome.contextMenus.create({
     id: 'add-task-from-page',
-    title: 'Add page as task to Bruh',
+    title: 'Add page as task to bruh.',
     contexts: ['page']
   });
 });
@@ -81,7 +81,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       type: 'basic',
       iconUrl: 'icons/icon128.png',
       title: 'Error',
-      message: 'Failed to add task. Please log in to Bruh.'
+      message: 'Failed to add task. Please log in to bruh.'
     });
   }
 });

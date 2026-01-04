@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Bruh - Quick Task Capture",
+  "name": "bruh. - Quick Task Capture",
   "version": "1.0.0",
-  "description": "Quickly capture tasks from any webpage to your Bruh inbox",
+  "description": "Quickly capture tasks from any webpage to your bruh. inbox",
   "permissions": [
     "activeTab",
     "storage",

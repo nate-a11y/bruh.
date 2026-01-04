@@ -3,7 +3,7 @@
 
 @layer base {
   :root {
-    /* Bruh Light Mode - rare, but supported */
+    /* bruh. Light Mode - rare, but supported */
     --background: 250 250 250;
     --foreground: 10 10 10;
     --card: 255 255 255;
@@ -32,7 +32,7 @@
     --chart-4: 0 153 255;
     --chart-5: 255 51 102;
 
-    /* Bruh brand colors */
+    /* bruh. brand colors */
     --bruh-black: 10 10 10;
     --bruh-orange: 255 107 0;
     --bruh-orange-hover: 255 133 51;
@@ -51,7 +51,7 @@
   }
 
   .dark {
-    /* Bruh Dark Mode (Default) */
+    /* bruh. Dark Mode (Default) */
     --background: 10 10 10;
     --foreground: 255 255 255;
     --card: 20 20 20;
@@ -79,7 +79,7 @@
     --chart-4: 0 153 255;
     --chart-5: 255 51 102;
 
-    /* Bruh brand colors */
+    /* bruh. brand colors */
     --bruh-black: 10 10 10;
     --bruh-orange: 255 107 0;
     --bruh-orange-hover: 255 133 51;
@@ -126,7 +126,7 @@
   --color-chart-4: rgb(var(--chart-4));
   --color-chart-5: rgb(var(--chart-5));
 
-  /* Bruh brand colors */
+  /* bruh. brand colors */
   --color-bruh-black: rgb(var(--bruh-black));
   --color-bruh-orange: rgb(var(--bruh-orange));
   --color-bruh-orange-hover: rgb(var(--bruh-orange-hover));
@@ -184,7 +184,7 @@
   }
 }
 
-/* Utility classes for Bruh brand */
+/* Utility classes for bruh. brand */
 @layer utilities {
   .animate-pulse-orange {
     animation: pulseOrange 2s ease-in-out infinite;

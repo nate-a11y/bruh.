@@ -176,7 +176,7 @@ export function NotionSettings({ integration }: NotionSettingsProps) {
             </a>
           </Button>
           <p className="text-xs text-muted-foreground mt-3">
-            Two-way sync tasks between Bruh and Notion databases.
+            Two-way sync tasks between bruh. and Notion databases.
           </p>
         </CardContent>
       </Card>
@@ -228,7 +228,7 @@ export function NotionSettings({ integration }: NotionSettingsProps) {
               ))}
               {databases.length === 0 && !isLoadingDatabases && (
                 <div className="p-2 text-sm text-muted-foreground text-center">
-                  No databases found. Share databases with Bruh in Notion.
+                  No databases found. Share databases with bruh. in Notion.
                 </div>
               )}
             </SelectContent>

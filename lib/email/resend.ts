@@ -12,7 +12,7 @@ function getResendClient(): Resend {
 }
 
 function getFromEmail(): string {
-  return process.env.RESEND_FROM_EMAIL || "Bruh <noreply@getbruh.app>";
+  return process.env.RESEND_FROM_EMAIL || "bruh. <noreply@getbruh.app>";
 }
 
 export interface SendEmailOptions {

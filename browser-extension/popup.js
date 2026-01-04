@@ -1,4 +1,4 @@
-// Bruh Browser Extension - Popup Script
+// bruh. Browser Extension - Popup Script
 
 const API_BASE = 'https://bruh.app';
 
@@ -12,9 +12,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!session) {
     content.innerHTML = `
       <div class="login-prompt">
-        <p>Please log in to Bruh to add tasks</p>
+        <p>Please log in to bruh. to add tasks</p>
         <p style="margin-top: 12px;">
-          <a href="${API_BASE}/login" target="_blank">Log in to Bruh →</a>
+          <a href="${API_BASE}/login" target="_blank">Log in to bruh. →</a>
         </p>
       </div>
     `;

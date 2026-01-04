@@ -50,7 +50,7 @@ async function getNotionIntegration(userId: string) {
   };
 }
 
-// Store mapping between Bruh task and Notion page
+// Store mapping between bruh. task and Notion page
 async function storeTaskMapping(userId: string, taskId: string, notionPageId: string) {
   const supabase = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -239,7 +239,7 @@ function extractText(richText: Array<{ plain_text?: string }> | undefined): stri
   return richText.map((t) => t.plain_text || "").join("");
 }
 
-// Pull changes from Notion and update Bruh tasks
+// Pull changes from Notion and update bruh. tasks
 export async function pullChangesFromNotion(userId: string): Promise<{ updated: number; created: number }> {
   const supabase = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
