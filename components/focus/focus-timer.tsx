@@ -15,7 +15,7 @@ import {
 import { useTimerStore } from "@/lib/hooks/use-timer";
 import { createFocusSession, completeFocusSession } from "@/app/(dashboard)/actions";
 import { FocusCompleteModal } from "./focus-complete-modal";
-import { FocusSounds, type SoundType } from "./focus-sounds";
+import { FocusMusic } from "./focus-music";
 import { playTimerEndSound } from "@/lib/sounds";
 import type { Task } from "@/lib/supabase/types";
 
@@ -447,10 +447,9 @@ export function FocusTimer({
             )}
             Alert {soundEnabled ? "On" : "Off"}
           </Button>
-          <FocusSounds
-            defaultSound={focusSound as SoundType}
+          <FocusMusic
+            isTimerRunning={state === "running" || state === "break"}
             defaultVolume={focusSoundVolume}
-            isPlaying={state === "running" || state === "break"}
           />
         </div>
 

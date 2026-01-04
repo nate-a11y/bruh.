@@ -12,8 +12,8 @@ export const SOUND_OPTIONS: { value: SoundType; label: string; icon: string }[] 
 ];
 
 /**
- * Procedural audio generator using Web Audio API
- * Creates ambient sounds without requiring audio files
+ * Improved procedural audio generator using Web Audio API
+ * Creates more realistic ambient sounds with better layering and modulation
  */
 class ProceduralSoundGenerator {
   private audioContext: AudioContext | null = null;
@@ -21,6 +21,7 @@ class ProceduralSoundGenerator {
   private nodes: AudioNode[] = [];
   private currentSound: SoundType = 'none';
   private isPlaying = false;
+  private animationFrameId: number | null = null;
 
   private getContext(): AudioContext {
     if (!this.audioContext) {
@@ -71,34 +72,49 @@ class ProceduralSoundGenerator {
     }
   }
 
-  private createNoiseBuffer(type: 'white' | 'pink' | 'brown'): AudioBuffer {
+  private createNoiseBuffer(type: 'white' | 'pink' | 'brown', seconds: number = 4): AudioBuffer {
     const ctx = this.getContext();
-    const bufferSize = ctx.sampleRate * 2; // 2 seconds buffer
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
+    const bufferSize = ctx.sampleRate * seconds;
+    const buffer = ctx.createBuffer(2, bufferSize, ctx.sampleRate); // Stereo for more immersion
+    const dataL = buffer.getChannelData(0);
+    const dataR = buffer.getChannelData(1);
 
-    let lastValue = 0;
+    let lastValueL = 0, lastValueR = 0;
     let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+    let c0 = 0, c1 = 0, c2 = 0, c3 = 0, c4 = 0, c5 = 0, c6 = 0;
 
     for (let i = 0; i < bufferSize; i++) {
-      const white = Math.random() * 2 - 1;
+      const whiteL = Math.random() * 2 - 1;
+      const whiteR = Math.random() * 2 - 1;
 
       if (type === 'white') {
-        data[i] = white * 0.3;
+        dataL[i] = whiteL * 0.25;
+        dataR[i] = whiteR * 0.25;
       } else if (type === 'pink') {
-        // Pink noise using Paul Kellet's algorithm
-        b0 = 0.99886 * b0 + white * 0.0555179;
-        b1 = 0.99332 * b1 + white * 0.0750759;
-        b2 = 0.96900 * b2 + white * 0.1538520;
-        b3 = 0.86650 * b3 + white * 0.3104856;
-        b4 = 0.55000 * b4 + white * 0.5329522;
-        b5 = -0.7616 * b5 - white * 0.0168980;
-        data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.08;
-        b6 = white * 0.115926;
+        // Pink noise using Paul Kellet's algorithm - stereo
+        b0 = 0.99886 * b0 + whiteL * 0.0555179;
+        b1 = 0.99332 * b1 + whiteL * 0.0750759;
+        b2 = 0.96900 * b2 + whiteL * 0.1538520;
+        b3 = 0.86650 * b3 + whiteL * 0.3104856;
+        b4 = 0.55000 * b4 + whiteL * 0.5329522;
+        b5 = -0.7616 * b5 - whiteL * 0.0168980;
+        dataL[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + whiteL * 0.5362) * 0.07;
+        b6 = whiteL * 0.115926;
+
+        c0 = 0.99886 * c0 + whiteR * 0.0555179;
+        c1 = 0.99332 * c1 + whiteR * 0.0750759;
+        c2 = 0.96900 * c2 + whiteR * 0.1538520;
+        c3 = 0.86650 * c3 + whiteR * 0.3104856;
+        c4 = 0.55000 * c4 + whiteR * 0.5329522;
+        c5 = -0.7616 * c5 - whiteR * 0.0168980;
+        dataR[i] = (c0 + c1 + c2 + c3 + c4 + c5 + c6 + whiteR * 0.5362) * 0.07;
+        c6 = whiteR * 0.115926;
       } else if (type === 'brown') {
         // Brown noise - integrated white noise
-        lastValue = (lastValue + (0.02 * white)) / 1.02;
-        data[i] = lastValue * 3.5;
+        lastValueL = (lastValueL + (0.02 * whiteL)) / 1.02;
+        lastValueR = (lastValueR + (0.02 * whiteR)) / 1.02;
+        dataL[i] = lastValueL * 3.2;
+        dataR[i] = lastValueR * 3.2;
       }
     }
 
@@ -126,10 +142,11 @@ class ProceduralSoundGenerator {
     source.buffer = buffer;
     source.loop = true;
 
-    // Add low-pass filter for warmth
+    // Smooth low-pass filter
     const filter = ctx.createBiquadFilter();
     filter.type = 'lowpass';
-    filter.frequency.value = 400;
+    filter.frequency.value = 500;
+    filter.Q.value = 0.5;
 
     source.connect(filter);
     filter.connect(this.masterGain!);
@@ -154,216 +171,410 @@ class ProceduralSoundGenerator {
   private createRain() {
     const ctx = this.getContext();
 
-    // Base rain - filtered white noise
-    const rainBuffer = this.createNoiseBuffer('white');
-    const rainSource = ctx.createBufferSource();
-    rainSource.buffer = rainBuffer;
-    rainSource.loop = true;
+    // Layer 1: Steady rain - filtered pink noise (sounds more natural than white)
+    const steadyRainBuffer = this.createNoiseBuffer('pink', 5);
+    const steadyRain = ctx.createBufferSource();
+    steadyRain.buffer = steadyRainBuffer;
+    steadyRain.loop = true;
 
-    const rainFilter = ctx.createBiquadFilter();
-    rainFilter.type = 'bandpass';
-    rainFilter.frequency.value = 2500;
-    rainFilter.Q.value = 0.5;
+    // Bandpass for rain frequency range
+    const rainBP = ctx.createBiquadFilter();
+    rainBP.type = 'bandpass';
+    rainBP.frequency.value = 3000;
+    rainBP.Q.value = 0.4;
 
-    const rainGain = ctx.createGain();
-    rainGain.gain.value = 0.4;
+    // Slight high shelf for presence
+    const rainHighShelf = ctx.createBiquadFilter();
+    rainHighShelf.type = 'highshelf';
+    rainHighShelf.frequency.value = 4000;
+    rainHighShelf.gain.value = 3;
 
-    rainSource.connect(rainFilter);
-    rainFilter.connect(rainGain);
-    rainGain.connect(this.masterGain!);
-    rainSource.start();
+    const steadyGain = ctx.createGain();
+    steadyGain.gain.value = 0.35;
 
-    // Low rumble (thunder-like ambience)
-    const rumbleBuffer = this.createNoiseBuffer('brown');
-    const rumbleSource = ctx.createBufferSource();
-    rumbleSource.buffer = rumbleBuffer;
-    rumbleSource.loop = true;
+    steadyRain.connect(rainBP);
+    rainBP.connect(rainHighShelf);
+    rainHighShelf.connect(steadyGain);
+    steadyGain.connect(this.masterGain!);
+    steadyRain.start();
 
-    const rumbleFilter = ctx.createBiquadFilter();
-    rumbleFilter.type = 'lowpass';
-    rumbleFilter.frequency.value = 200;
+    // Layer 2: Heavier drops - white noise with different filtering
+    const heavyBuffer = this.createNoiseBuffer('white', 3);
+    const heavyRain = ctx.createBufferSource();
+    heavyRain.buffer = heavyBuffer;
+    heavyRain.loop = true;
+
+    const heavyBP = ctx.createBiquadFilter();
+    heavyBP.type = 'bandpass';
+    heavyBP.frequency.value = 2000;
+    heavyBP.Q.value = 0.8;
+
+    // Subtle modulation for variation
+    const heavyLFO = ctx.createOscillator();
+    heavyLFO.type = 'sine';
+    heavyLFO.frequency.value = 0.08;
+
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = 0.08;
+
+    const heavyGain = ctx.createGain();
+    heavyGain.gain.value = 0.18;
+
+    heavyLFO.connect(lfoGain);
+    lfoGain.connect(heavyGain.gain);
+
+    heavyRain.connect(heavyBP);
+    heavyBP.connect(heavyGain);
+    heavyGain.connect(this.masterGain!);
+    heavyRain.start();
+    heavyLFO.start();
+
+    // Layer 3: Low rumble (distant thunder/atmosphere)
+    const rumbleBuffer = this.createNoiseBuffer('brown', 6);
+    const rumble = ctx.createBufferSource();
+    rumble.buffer = rumbleBuffer;
+    rumble.loop = true;
+
+    const rumbleLP = ctx.createBiquadFilter();
+    rumbleLP.type = 'lowpass';
+    rumbleLP.frequency.value = 150;
+    rumbleLP.Q.value = 0.7;
+
+    // Very slow modulation for distant thunder feel
+    const rumbleLFO = ctx.createOscillator();
+    rumbleLFO.type = 'sine';
+    rumbleLFO.frequency.value = 0.02;
+
+    const rumbleLFOGain = ctx.createGain();
+    rumbleLFOGain.gain.value = 0.04;
 
     const rumbleGain = ctx.createGain();
-    rumbleGain.gain.value = 0.15;
+    rumbleGain.gain.value = 0.12;
 
-    rumbleSource.connect(rumbleFilter);
-    rumbleFilter.connect(rumbleGain);
+    rumbleLFO.connect(rumbleLFOGain);
+    rumbleLFOGain.connect(rumbleGain.gain);
+
+    rumble.connect(rumbleLP);
+    rumbleLP.connect(rumbleGain);
     rumbleGain.connect(this.masterGain!);
-    rumbleSource.start();
+    rumble.start();
+    rumbleLFO.start();
 
-    this.nodes.push(rainSource, rainFilter, rainGain, rumbleSource, rumbleFilter, rumbleGain);
+    this.nodes.push(
+      steadyRain, rainBP, rainHighShelf, steadyGain,
+      heavyRain, heavyBP, heavyLFO, lfoGain, heavyGain,
+      rumble, rumbleLP, rumbleLFO, rumbleLFOGain, rumbleGain
+    );
   }
 
   private createOcean() {
     const ctx = this.getContext();
 
-    // Wave sound using modulated noise
-    const waveBuffer = this.createNoiseBuffer('pink');
-    const waveSource = ctx.createBufferSource();
-    waveSource.buffer = waveBuffer;
-    waveSource.loop = true;
+    // Layer 1: Deep ocean base - very low frequencies
+    const deepBuffer = this.createNoiseBuffer('brown', 8);
+    const deep = ctx.createBufferSource();
+    deep.buffer = deepBuffer;
+    deep.loop = true;
 
-    // Low-pass for deep ocean sound
-    const waveFilter = ctx.createBiquadFilter();
-    waveFilter.type = 'lowpass';
-    waveFilter.frequency.value = 600;
-    waveFilter.Q.value = 1;
+    const deepLP = ctx.createBiquadFilter();
+    deepLP.type = 'lowpass';
+    deepLP.frequency.value = 200;
+    deepLP.Q.value = 0.5;
 
-    // LFO for wave rhythm
-    const lfo = ctx.createOscillator();
-    lfo.type = 'sine';
-    lfo.frequency.value = 0.1; // Slow waves
+    const deepGain = ctx.createGain();
+    deepGain.gain.value = 0.3;
 
-    const lfoGain = ctx.createGain();
-    lfoGain.gain.value = 0.3;
+    deep.connect(deepLP);
+    deepLP.connect(deepGain);
+    deepGain.connect(this.masterGain!);
+    deep.start();
+
+    // Layer 2: Wave surge - pink noise with slow modulation
+    const waveBuffer = this.createNoiseBuffer('pink', 6);
+    const wave = ctx.createBufferSource();
+    wave.buffer = waveBuffer;
+    wave.loop = true;
+
+    const waveBP = ctx.createBiquadFilter();
+    waveBP.type = 'lowpass';
+    waveBP.frequency.value = 800;
+    waveBP.Q.value = 0.4;
+
+    // Slow LFO for wave rhythm (about 6-8 second cycles)
+    const waveLFO = ctx.createOscillator();
+    waveLFO.type = 'sine';
+    waveLFO.frequency.value = 0.12;
+
+    const waveLFOGain = ctx.createGain();
+    waveLFOGain.gain.value = 0.25;
 
     const waveGain = ctx.createGain();
-    waveGain.gain.value = 0.5;
+    waveGain.gain.value = 0.35;
 
-    lfo.connect(lfoGain);
-    lfoGain.connect(waveGain.gain);
+    waveLFO.connect(waveLFOGain);
+    waveLFOGain.connect(waveGain.gain);
 
-    waveSource.connect(waveFilter);
-    waveFilter.connect(waveGain);
+    wave.connect(waveBP);
+    waveBP.connect(waveGain);
     waveGain.connect(this.masterGain!);
+    wave.start();
+    waveLFO.start();
 
-    waveSource.start();
-    lfo.start();
+    // Layer 3: Foam/surf - higher frequency white noise with modulation
+    const foamBuffer = this.createNoiseBuffer('white', 4);
+    const foam = ctx.createBufferSource();
+    foam.buffer = foamBuffer;
+    foam.loop = true;
 
-    // Foam/surf high frequencies
-    const foamBuffer = this.createNoiseBuffer('white');
-    const foamSource = ctx.createBufferSource();
-    foamSource.buffer = foamBuffer;
-    foamSource.loop = true;
+    const foamHP = ctx.createBiquadFilter();
+    foamHP.type = 'highpass';
+    foamHP.frequency.value = 2500;
 
-    const foamFilter = ctx.createBiquadFilter();
-    foamFilter.type = 'highpass';
-    foamFilter.frequency.value = 3000;
+    const foamBP = ctx.createBiquadFilter();
+    foamBP.type = 'bandpass';
+    foamBP.frequency.value = 4000;
+    foamBP.Q.value = 0.5;
+
+    // Foam follows wave rhythm but slightly offset
+    const foamLFO = ctx.createOscillator();
+    foamLFO.type = 'sine';
+    foamLFO.frequency.value = 0.15;
+
+    const foamLFOGain = ctx.createGain();
+    foamLFOGain.gain.value = 0.06;
 
     const foamGain = ctx.createGain();
-    foamGain.gain.value = 0.1;
+    foamGain.gain.value = 0.08;
 
-    foamSource.connect(foamFilter);
-    foamFilter.connect(foamGain);
+    foamLFO.connect(foamLFOGain);
+    foamLFOGain.connect(foamGain.gain);
+
+    foam.connect(foamHP);
+    foamHP.connect(foamBP);
+    foamBP.connect(foamGain);
     foamGain.connect(this.masterGain!);
-    foamSource.start();
+    foam.start();
+    foamLFO.start();
 
-    this.nodes.push(waveSource, waveFilter, lfo, lfoGain, waveGain, foamSource, foamFilter, foamGain);
+    this.nodes.push(
+      deep, deepLP, deepGain,
+      wave, waveBP, waveLFO, waveLFOGain, waveGain,
+      foam, foamHP, foamBP, foamLFO, foamLFOGain, foamGain
+    );
   }
 
   private createForest() {
     const ctx = this.getContext();
 
-    // Wind through leaves - filtered noise
-    const windBuffer = this.createNoiseBuffer('pink');
-    const windSource = ctx.createBufferSource();
-    windSource.buffer = windBuffer;
-    windSource.loop = true;
+    // Layer 1: Wind through trees - filtered pink noise with slow modulation
+    const windBuffer = this.createNoiseBuffer('pink', 7);
+    const wind = ctx.createBufferSource();
+    wind.buffer = windBuffer;
+    wind.loop = true;
 
-    const windFilter = ctx.createBiquadFilter();
-    windFilter.type = 'bandpass';
-    windFilter.frequency.value = 800;
-    windFilter.Q.value = 0.3;
+    const windBP = ctx.createBiquadFilter();
+    windBP.type = 'bandpass';
+    windBP.frequency.value = 600;
+    windBP.Q.value = 0.3;
 
-    // LFO for wind gusts
-    const lfo = ctx.createOscillator();
-    lfo.type = 'sine';
-    lfo.frequency.value = 0.15;
+    // Slow gusting modulation
+    const windLFO = ctx.createOscillator();
+    windLFO.type = 'sine';
+    windLFO.frequency.value = 0.07;
 
-    const lfoGain = ctx.createGain();
-    lfoGain.gain.value = 0.2;
+    const windLFOGain = ctx.createGain();
+    windLFOGain.gain.value = 0.2;
 
     const windGain = ctx.createGain();
-    windGain.gain.value = 0.4;
+    windGain.gain.value = 0.3;
 
-    lfo.connect(lfoGain);
-    lfoGain.connect(windGain.gain);
+    windLFO.connect(windLFOGain);
+    windLFOGain.connect(windGain.gain);
 
-    windSource.connect(windFilter);
-    windFilter.connect(windGain);
+    wind.connect(windBP);
+    windBP.connect(windGain);
     windGain.connect(this.masterGain!);
+    wind.start();
+    windLFO.start();
 
-    windSource.start();
-    lfo.start();
+    // Layer 2: Leaves rustling - higher frequency with faster modulation
+    const leavesBuffer = this.createNoiseBuffer('white', 4);
+    const leaves = ctx.createBufferSource();
+    leaves.buffer = leavesBuffer;
+    leaves.loop = true;
 
-    // Background ambient
-    const ambientBuffer = this.createNoiseBuffer('brown');
-    const ambientSource = ctx.createBufferSource();
-    ambientSource.buffer = ambientBuffer;
-    ambientSource.loop = true;
+    const leavesBP = ctx.createBiquadFilter();
+    leavesBP.type = 'bandpass';
+    leavesBP.frequency.value = 3500;
+    leavesBP.Q.value = 0.6;
 
-    const ambientFilter = ctx.createBiquadFilter();
-    ambientFilter.type = 'lowpass';
-    ambientFilter.frequency.value = 300;
+    const leavesLFO = ctx.createOscillator();
+    leavesLFO.type = 'sine';
+    leavesLFO.frequency.value = 0.25;
+
+    const leavesLFOGain = ctx.createGain();
+    leavesLFOGain.gain.value = 0.04;
+
+    const leavesGain = ctx.createGain();
+    leavesGain.gain.value = 0.06;
+
+    leavesLFO.connect(leavesLFOGain);
+    leavesLFOGain.connect(leavesGain.gain);
+
+    leaves.connect(leavesBP);
+    leavesBP.connect(leavesGain);
+    leavesGain.connect(this.masterGain!);
+    leaves.start();
+    leavesLFO.start();
+
+    // Layer 3: Deep forest ambience
+    const ambientBuffer = this.createNoiseBuffer('brown', 8);
+    const ambient = ctx.createBufferSource();
+    ambient.buffer = ambientBuffer;
+    ambient.loop = true;
+
+    const ambientLP = ctx.createBiquadFilter();
+    ambientLP.type = 'lowpass';
+    ambientLP.frequency.value = 250;
+    ambientLP.Q.value = 0.3;
 
     const ambientGain = ctx.createGain();
-    ambientGain.gain.value = 0.15;
+    ambientGain.gain.value = 0.18;
 
-    ambientSource.connect(ambientFilter);
-    ambientFilter.connect(ambientGain);
+    ambient.connect(ambientLP);
+    ambientLP.connect(ambientGain);
     ambientGain.connect(this.masterGain!);
-    ambientSource.start();
+    ambient.start();
 
-    this.nodes.push(windSource, windFilter, lfo, lfoGain, windGain, ambientSource, ambientFilter, ambientGain);
+    this.nodes.push(
+      wind, windBP, windLFO, windLFOGain, windGain,
+      leaves, leavesBP, leavesLFO, leavesLFOGain, leavesGain,
+      ambient, ambientLP, ambientGain
+    );
   }
 
   private createFireplace() {
     const ctx = this.getContext();
 
-    // Crackling fire - filtered noise with modulation
-    const crackleBuffer = this.createNoiseBuffer('white');
-    const crackleSource = ctx.createBufferSource();
-    crackleSource.buffer = crackleBuffer;
-    crackleSource.loop = true;
+    // Layer 1: Base flame roar - low frequency
+    const roarBuffer = this.createNoiseBuffer('brown', 6);
+    const roar = ctx.createBufferSource();
+    roar.buffer = roarBuffer;
+    roar.loop = true;
 
-    const crackleFilter = ctx.createBiquadFilter();
-    crackleFilter.type = 'bandpass';
-    crackleFilter.frequency.value = 1500;
-    crackleFilter.Q.value = 2;
+    const roarLP = ctx.createBiquadFilter();
+    roarLP.type = 'lowpass';
+    roarLP.frequency.value = 200;
+    roarLP.Q.value = 0.4;
 
-    // Random-ish modulation for crackle effect
-    const modulator = ctx.createOscillator();
-    modulator.type = 'sawtooth';
-    modulator.frequency.value = 3;
+    // Slow breathing modulation
+    const roarLFO = ctx.createOscillator();
+    roarLFO.type = 'sine';
+    roarLFO.frequency.value = 0.15;
 
-    const modGain = ctx.createGain();
-    modGain.gain.value = 0.4;
+    const roarLFOGain = ctx.createGain();
+    roarLFOGain.gain.value = 0.08;
 
-    const crackleGain = ctx.createGain();
-    crackleGain.gain.value = 0.25;
+    const roarGain = ctx.createGain();
+    roarGain.gain.value = 0.25;
 
-    modulator.connect(modGain);
-    modGain.connect(crackleGain.gain);
+    roarLFO.connect(roarLFOGain);
+    roarLFOGain.connect(roarGain.gain);
 
-    crackleSource.connect(crackleFilter);
-    crackleFilter.connect(crackleGain);
-    crackleGain.connect(this.masterGain!);
+    roar.connect(roarLP);
+    roarLP.connect(roarGain);
+    roarGain.connect(this.masterGain!);
+    roar.start();
+    roarLFO.start();
 
-    crackleSource.start();
-    modulator.start();
+    // Layer 2: Mid-range flame - pink noise
+    const flameBuffer = this.createNoiseBuffer('pink', 5);
+    const flame = ctx.createBufferSource();
+    flame.buffer = flameBuffer;
+    flame.loop = true;
 
-    // Low rumble (flame)
-    const flameBuffer = this.createNoiseBuffer('brown');
-    const flameSource = ctx.createBufferSource();
-    flameSource.buffer = flameBuffer;
-    flameSource.loop = true;
+    const flameBP = ctx.createBiquadFilter();
+    flameBP.type = 'bandpass';
+    flameBP.frequency.value = 400;
+    flameBP.Q.value = 0.5;
 
-    const flameFilter = ctx.createBiquadFilter();
-    flameFilter.type = 'lowpass';
-    flameFilter.frequency.value = 250;
+    // Faster flickering
+    const flameLFO = ctx.createOscillator();
+    flameLFO.type = 'sine';
+    flameLFO.frequency.value = 0.4;
+
+    const flameLFOGain = ctx.createGain();
+    flameLFOGain.gain.value = 0.1;
 
     const flameGain = ctx.createGain();
-    flameGain.gain.value = 0.3;
+    flameGain.gain.value = 0.2;
 
-    flameSource.connect(flameFilter);
-    flameFilter.connect(flameGain);
+    flameLFO.connect(flameLFOGain);
+    flameLFOGain.connect(flameGain.gain);
+
+    flame.connect(flameBP);
+    flameBP.connect(flameGain);
     flameGain.connect(this.masterGain!);
-    flameSource.start();
+    flame.start();
+    flameLFO.start();
 
-    this.nodes.push(crackleSource, crackleFilter, modulator, modGain, crackleGain, flameSource, flameFilter, flameGain);
+    // Layer 3: Crackling - high frequency bursts
+    const crackleBuffer = this.createNoiseBuffer('white', 3);
+    const crackle = ctx.createBufferSource();
+    crackle.buffer = crackleBuffer;
+    crackle.loop = true;
+
+    const crackleBP = ctx.createBiquadFilter();
+    crackleBP.type = 'bandpass';
+    crackleBP.frequency.value = 2000;
+    crackleBP.Q.value = 1.5;
+
+    // High shelf for snap
+    const crackleHS = ctx.createBiquadFilter();
+    crackleHS.type = 'highshelf';
+    crackleHS.frequency.value = 3000;
+    crackleHS.gain.value = 4;
+
+    // Irregular modulation for random crackles
+    const crackleLFO1 = ctx.createOscillator();
+    crackleLFO1.type = 'sawtooth';
+    crackleLFO1.frequency.value = 2.3;
+
+    const crackleLFO2 = ctx.createOscillator();
+    crackleLFO2.type = 'square';
+    crackleLFO2.frequency.value = 0.7;
+
+    const crackleLFOGain = ctx.createGain();
+    crackleLFOGain.gain.value = 0.12;
+
+    const crackleGain = ctx.createGain();
+    crackleGain.gain.value = 0.15;
+
+    crackleLFO1.connect(crackleLFOGain);
+    crackleLFO2.connect(crackleLFOGain);
+    crackleLFOGain.connect(crackleGain.gain);
+
+    crackle.connect(crackleBP);
+    crackleBP.connect(crackleHS);
+    crackleHS.connect(crackleGain);
+    crackleGain.connect(this.masterGain!);
+    crackle.start();
+    crackleLFO1.start();
+    crackleLFO2.start();
+
+    this.nodes.push(
+      roar, roarLP, roarLFO, roarLFOGain, roarGain,
+      flame, flameBP, flameLFO, flameLFOGain, flameGain,
+      crackle, crackleBP, crackleHS, crackleLFO1, crackleLFO2, crackleLFOGain, crackleGain
+    );
   }
 
   stop() {
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+    }
+
     this.nodes.forEach(node => {
       try {
         if (node instanceof AudioBufferSourceNode || node instanceof OscillatorNode) {
