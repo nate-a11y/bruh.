@@ -53,7 +53,7 @@ export function IntegrationsSettings() {
       <CardHeader>
         <CardTitle>Raycast Extension</CardTitle>
         <CardDescription>
-          Quick capture tasks from anywhere with the Bruh Raycast extension
+          Quick capture tasks from anywhere with the bruh. Raycast extension
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -73,7 +73,7 @@ export function IntegrationsSettings() {
         <div className="space-y-2">
           <Label>Access Token</Label>
           <p className="text-sm text-muted-foreground">
-            Generate a token to connect Raycast to your Bruh account
+            Generate a token to connect Raycast to your bruh. account
           </p>
 
           {token ? (

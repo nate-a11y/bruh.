@@ -14,7 +14,7 @@ export interface ParsedBrainDump {
   notes?: string[]; // General notes that aren't tasks
 }
 
-const SYSTEM_PROMPT = `You are a task extraction assistant for a productivity app called Bruh. Your job is to take messy, unstructured text (a "brain dump") and extract actionable tasks from it.
+const SYSTEM_PROMPT = `You are a task extraction assistant for a productivity app called bruh. Your job is to take messy, unstructured text (a "brain dump") and extract actionable tasks from it.
 
 Rules:
 1. Extract clear, actionable tasks from the text

@@ -271,7 +271,7 @@ export async function POST(request: NextRequest) {
 // GET /api/webhooks/incoming - Documentation endpoint
 export async function GET() {
   return NextResponse.json({
-    name: "Bruh Incoming Webhook API",
+    name: "bruh. Incoming Webhook API",
     version: "1.0",
     description: "Receive events from external services like Zapier, Make, n8n",
     authentication: "Bearer token (API key) in Authorization header",

@@ -4,7 +4,7 @@ import { Toaster } from "sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Bruh - Get your shit together.",
+  title: "bruh. - Get your shit together.",
   description: "A task manager that doesn't take itself too seriously. But takes your productivity very seriously.",
   manifest: "/manifest.json",
   icons: {
@@ -18,15 +18,15 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: "Bruh - Get your shit together.",
+    title: "bruh. - Get your shit together.",
     description: "A task manager that doesn't take itself too seriously. But takes your productivity very seriously.",
     url: "https://getbruh.app",
-    siteName: "Bruh",
+    siteName: "bruh.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Bruh - Get your shit together.",
+    title: "bruh. - Get your shit together.",
     description: "A task manager that doesn't take itself too seriously. But takes your productivity very seriously.",
   },
 };

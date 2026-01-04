@@ -156,7 +156,7 @@ export default function LandingPage() {
             <div className="bg-card rounded-xl border border-border p-4 shadow-2xl">
               <Image
                 src="/BruhSS.jpg"
-                alt="Bruh app screenshot"
+                alt="bruh. app screenshot"
                 width={1200}
                 height={675}
                 className="rounded-lg"
@@ -247,7 +247,7 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-2xl font-display font-bold text-foreground mb-2">
-              Why Bruh?
+              Why bruh.?
             </h2>
           </div>
 
@@ -293,7 +293,7 @@ export default function LandingPage() {
               Terms
             </Link>
             <p className="text-xs text-muted-foreground">
-              &copy; {new Date().getFullYear()} Bruh
+              &copy; {new Date().getFullYear()} bruh.
             </p>
           </div>
         </div>

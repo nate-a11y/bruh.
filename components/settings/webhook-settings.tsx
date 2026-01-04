@@ -219,7 +219,7 @@ export function WebhookSettings() {
             Outgoing Webhooks
           </CardTitle>
           <CardDescription>
-            Send events to external services when things happen in Bruh.
+            Send events to external services when things happen in bruh.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -283,7 +283,7 @@ export function WebhookSettings() {
         <CardHeader>
           <CardTitle>API Documentation</CardTitle>
           <CardDescription>
-            Learn how to integrate Bruh with your tools
+            Learn how to integrate bruh. with your tools
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -543,7 +543,7 @@ function CreateWebhookDialog({ onCreated }: { onCreated: (secret: string) => voi
         <DialogHeader>
           <DialogTitle>Create Outgoing Webhook</DialogTitle>
           <DialogDescription>
-            Send events to an external URL when things happen in Bruh
+            Send events to an external URL when things happen in bruh.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">

@@ -82,7 +82,7 @@ export function TaskItem({ task, onEdit, onUpdate }: TaskItemProps) {
       toast.error(result.error);
     } else if (!isCompleted) {
       playCompletionSound();
-      // Show Bruh-style completion message
+      // Show bruh.-style completion message
       toast.success(getCompletionMessage('single'));
     }
     setIsCompleting(false);

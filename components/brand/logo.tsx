@@ -18,7 +18,7 @@ export function Logo({ size = 'md', showText = true, className }: LogoProps) {
     <div className={cn('flex items-center gap-2', className)}>
       <Image
         src="/icon-192.png"
-        alt="Bruh logo"
+        alt="bruh. logo"
         width={sizes[size].icon}
         height={sizes[size].icon}
         className="rounded-lg"
@@ -31,7 +31,7 @@ export function Logo({ size = 'md', showText = true, className }: LogoProps) {
             sizes[size].text
           )}
         >
-          bruh
+          bruh<span className="text-primary">.</span>
         </span>
       )}
     </div>

@@ -66,6 +66,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
 interface AdminStats {
@@ -113,11 +114,21 @@ export function AdminDashboard({ stats, recentUsers }: AdminDashboardProps) {
   const [emailMessage, setEmailMessage] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [settings, setSettings] = useState({
+    maintenance_mode: false,
+    signups_enabled: true,
+    email_notifications: true,
+  });
+  const [loadingSettings, setLoadingSettings] = useState(false);
+  const [savingSettings, setSavingSettings] = useState<string | null>(null);
 
   // Fetch users when Users tab is active
   useEffect(() => {
     if (activeTab === "users" && users.length === 0) {
       fetchUsers();
+    }
+    if (activeTab === "settings" && !loadingSettings) {
+      fetchSettings();
     }
   }, [activeTab]);
 
@@ -133,6 +144,42 @@ export function AdminDashboard({ stats, recentUsers }: AdminDashboardProps) {
       toast.error("Failed to fetch users");
     } finally {
       setLoadingUsers(false);
+    }
+  }
+
+  async function fetchSettings() {
+    setLoadingSettings(true);
+    try {
+      const res = await fetch("/api/admin/settings");
+      const data = await res.json();
+      if (data.settings) {
+        setSettings(data.settings);
+      }
+    } catch {
+      toast.error("Failed to fetch settings");
+    } finally {
+      setLoadingSettings(false);
+    }
+  }
+
+  async function updateSetting(key: string, value: boolean) {
+    setSavingSettings(key);
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key, value }),
+      });
+      if (res.ok) {
+        setSettings((prev) => ({ ...prev, [key]: value }));
+        toast.success("Setting updated");
+      } else {
+        toast.error("Failed to update setting");
+      }
+    } catch {
+      toast.error("Failed to update setting");
+    } finally {
+      setSavingSettings(null);
     }
   }
 
@@ -532,35 +579,68 @@ export function AdminDashboard({ stats, recentUsers }: AdminDashboardProps) {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between py-3 border-b">
-                <div>
-                  <p className="font-medium">Maintenance Mode</p>
-                  <p className="text-sm text-muted-foreground">
-                    Temporarily disable access for non-admin users
-                  </p>
+              {loadingSettings ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
                 </div>
-                <Button variant="outline" size="sm">
-                  Disabled
-                </Button>
-              </div>
-              <div className="flex items-center justify-between py-3 border-b">
-                <div>
-                  <p className="font-medium">New User Signups</p>
-                  <p className="text-sm text-muted-foreground">
-                    Allow new users to register
-                  </p>
-                </div>
-                <Badge variant="default">Enabled</Badge>
-              </div>
-              <div className="flex items-center justify-between py-3">
-                <div>
-                  <p className="font-medium">Email Notifications</p>
-                  <p className="text-sm text-muted-foreground">
-                    Send transactional emails via Resend
-                  </p>
-                </div>
-                <Badge variant="default">Active</Badge>
-              </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between py-3 border-b">
+                    <div>
+                      <p className="font-medium">Maintenance Mode</p>
+                      <p className="text-sm text-muted-foreground">
+                        Temporarily disable access for non-admin users
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {savingSettings === "maintenance_mode" && (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      )}
+                      <Switch
+                        checked={settings.maintenance_mode}
+                        onCheckedChange={(checked) => updateSetting("maintenance_mode", checked)}
+                        disabled={savingSettings === "maintenance_mode"}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between py-3 border-b">
+                    <div>
+                      <p className="font-medium">New User Signups</p>
+                      <p className="text-sm text-muted-foreground">
+                        Allow new users to register
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {savingSettings === "signups_enabled" && (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      )}
+                      <Switch
+                        checked={settings.signups_enabled}
+                        onCheckedChange={(checked) => updateSetting("signups_enabled", checked)}
+                        disabled={savingSettings === "signups_enabled"}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between py-3">
+                    <div>
+                      <p className="font-medium">Email Notifications</p>
+                      <p className="text-sm text-muted-foreground">
+                        Send transactional emails via Resend
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {savingSettings === "email_notifications" && (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      )}
+                      <Switch
+                        checked={settings.email_notifications}
+                        onCheckedChange={(checked) => updateSetting("email_notifications", checked)}
+                        disabled={savingSettings === "email_notifications"}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

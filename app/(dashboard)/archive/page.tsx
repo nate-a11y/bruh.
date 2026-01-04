@@ -44,7 +44,7 @@ export default async function ArchivePage({
 
   return (
     <div className="flex flex-col h-full">
-      <Header title="Logbook" description="Your completion history" />
+      <Header title="Logbook" subtitle={entries?.length ? `${entries.length} completed` : undefined} />
       <div className="flex-1 overflow-auto p-6 space-y-6">
         <ArchiveStats data={stats || []} />
         <ArchiveList entries={entries || []} />

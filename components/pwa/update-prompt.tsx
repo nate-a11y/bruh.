@@ -25,7 +25,7 @@ export function UpdatePrompt({ onUpdate }: UpdatePromptProps) {
             <div className="flex-1">
               <h4 className="font-semibold text-sm">Update available</h4>
               <p className="text-xs text-muted-foreground mt-0.5">
-                A new version of Bruh is ready
+                A new version of bruh. is ready
               </p>
             </div>
             <Button size="sm" onClick={onUpdate}>

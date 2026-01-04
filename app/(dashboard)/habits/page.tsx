@@ -26,7 +26,7 @@ export default async function HabitsPage() {
     <div className="flex flex-col h-full">
       <Header
         title="Habits"
-        description="Stack up the small wins"
+        subtitle={habits.length > 0 ? `${habits.length} tracking` : undefined}
         action={<HabitForm />}
       />
       <div className="flex-1 overflow-auto p-6">

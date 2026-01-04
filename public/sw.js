@@ -1,4 +1,4 @@
-// Bruh Service Worker - Offline Support
+// bruh. Service Worker - Offline Support
 const CACHE_NAME = "bruh-v1";
 const STATIC_CACHE = "bruh-static-v1";
 
@@ -124,7 +124,7 @@ self.addEventListener("push", (event) => {
   };
 
   event.waitUntil(
-    self.registration.showNotification(data.title || "Bruh", options)
+    self.registration.showNotification(data.title || "bruh.", options)
   );
 });
 

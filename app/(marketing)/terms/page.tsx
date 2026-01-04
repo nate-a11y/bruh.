@@ -2,8 +2,8 @@ import { Logo } from "@/components/brand/logo";
 import Link from "next/link";
 
 export const metadata = {
-  title: "Terms of Service | Bruh",
-  description: "Terms of Service for Bruh productivity app",
+  title: "Terms of Service | bruh.",
+  description: "Terms of Service for bruh. productivity app",
 };
 
 export default function TermsPage() {
@@ -21,13 +21,13 @@ export default function TermsPage() {
 
         <h2>1. Acceptance of Terms</h2>
         <p>
-          By accessing or using Bruh (&quot;the Service&quot;), you agree to be bound by these
+          By accessing or using bruh. (&quot;the Service&quot;), you agree to be bound by these
           Terms of Service. If you do not agree to these terms, do not use the Service.
         </p>
 
         <h2>2. Description of Service</h2>
         <p>
-          Bruh is a productivity application that helps you manage tasks, track habits,
+          bruh. is a productivity application that helps you manage tasks, track habits,
           and stay focused. The Service includes web access and integrations with
           third-party services like Google Calendar, Slack, and Notion.
         </p>

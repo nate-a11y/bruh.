@@ -6,6 +6,7 @@ import { BrainDumpProvider } from "@/components/tasks/brain-dump-provider";
 import { WelcomeModal } from "@/components/onboarding/welcome-modal";
 import { PWAProvider } from "@/components/pwa/pwa-provider";
 import { isAdmin } from "@/lib/admin";
+import { getPlatformSetting } from "@/lib/platform-settings";
 
 export default async function DashboardLayout({
   children,
@@ -20,6 +21,14 @@ export default async function DashboardLayout({
 
   if (!user) {
     redirect("/login");
+  }
+
+  // Check maintenance mode - only admins can access during maintenance
+  const userIsAdmin = isAdmin(user.email);
+  const maintenanceMode = await getPlatformSetting("maintenance_mode");
+
+  if (maintenanceMode && !userIsAdmin) {
+    redirect("/maintenance");
   }
 
   // Fetch user's lists
@@ -63,7 +72,6 @@ export default async function DashboardLayout({
     .single();
 
   const needsName = !prefs?.display_name;
-  const userIsAdmin = isAdmin(user.email);
 
   return (
     <PWAProvider>

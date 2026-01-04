@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { getPlatformSetting } from "@/lib/platform-settings";
 
 // Lazy initialization - only create client when needed (not at build time)
 let resendClient: Resend | null = null;
@@ -11,7 +12,7 @@ function getResendClient(): Resend {
 }
 
 function getFromEmail(): string {
-  return process.env.RESEND_FROM_EMAIL || "Zeroed <noreply@zeroed.app>";
+  return process.env.RESEND_FROM_EMAIL || "bruh. <noreply@getbruh.app>";
 }
 
 export interface SendEmailOptions {
@@ -20,9 +21,19 @@ export interface SendEmailOptions {
   html: string;
   text?: string;
   replyTo?: string;
+  bypassSettingsCheck?: boolean; // For critical emails like password reset
 }
 
-export async function sendEmail({ to, subject, html, text, replyTo }: SendEmailOptions) {
+export async function sendEmail({ to, subject, html, text, replyTo, bypassSettingsCheck }: SendEmailOptions) {
+  // Check if email notifications are enabled (unless bypassed for critical emails)
+  if (!bypassSettingsCheck) {
+    const emailEnabled = await getPlatformSetting("email_notifications");
+    if (!emailEnabled) {
+      console.log("Email notifications disabled, skipping email send");
+      return { success: false, error: "Email notifications disabled" };
+    }
+  }
+
   if (!process.env.RESEND_API_KEY) {
     console.warn("RESEND_API_KEY not set, skipping email send");
     return { success: false, error: "Email not configured" };

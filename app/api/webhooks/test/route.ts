@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       event: "test",
       timestamp: new Date().toISOString(),
       data: {
-        message: "This is a test webhook from Bruh",
+        message: "This is a test webhook from bruh.",
         webhook_id: webhook.id,
         webhook_name: webhook.name,
       },
