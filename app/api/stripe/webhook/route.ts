@@ -4,11 +4,13 @@ import { stripe, STRIPE_CONFIG } from '@/lib/stripe';
 import { createClient } from '@supabase/supabase-js';
 import type Stripe from 'stripe';
 
-// Use service role for webhook handling
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Lazy initialization to avoid build-time errors
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export async function POST(request: NextRequest) {
   if (!stripe) {
@@ -100,7 +102,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   if (!userId) {
     // Try to find by customer ID
-    const { data: sub } = await supabaseAdmin
+    const { data: sub } = await getSupabaseAdmin()
       .from('zeroed_subscriptions')
       .select('user_id')
       .eq('stripe_customer_id', session.customer as string)
@@ -140,14 +142,20 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       status = subscription.status;
   }
 
-  const { error } = await supabaseAdmin
+  // Cast subscription to any for fields that exist but aren't in current types
+  const sub = subscription as any;
+  const { error } = await (getSupabaseAdmin() as any)
     .from('zeroed_subscriptions')
     .update({
       status,
       stripe_subscription_id: subscription.id,
       stripe_price_id: subscription.items.data[0]?.price.id,
-      current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+      current_period_start: sub.current_period_start
+        ? new Date(sub.current_period_start * 1000).toISOString()
+        : null,
+      current_period_end: sub.current_period_end
+        ? new Date(sub.current_period_end * 1000).toISOString()
+        : null,
       cancel_at_period_end: subscription.cancel_at_period_end,
       canceled_at: subscription.canceled_at
         ? new Date(subscription.canceled_at * 1000).toISOString()
@@ -166,7 +174,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     ? subscription.customer
     : subscription.customer.id;
 
-  const { error } = await supabaseAdmin
+  const { error } = await getSupabaseAdmin()
     .from('zeroed_subscriptions')
     .update({
       status: 'canceled',
@@ -188,7 +196,7 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
 
   if (!customerId) return;
 
-  const { error } = await supabaseAdmin
+  const { error } = await getSupabaseAdmin()
     .from('zeroed_subscriptions')
     .update({
       status: 'past_due',
@@ -209,7 +217,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
   if (!customerId) return;
 
   // If it was past_due, set back to active
-  const { error } = await supabaseAdmin
+  const { error } = await getSupabaseAdmin()
     .from('zeroed_subscriptions')
     .update({
       status: 'active',

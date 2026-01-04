@@ -38,7 +38,7 @@ export async function POST() {
       customerId = customer.id;
 
       // Save customer ID to subscription record
-      await supabase
+      await (supabase as any)
         .from('zeroed_subscriptions')
         .upsert({
           user_id: user.id,

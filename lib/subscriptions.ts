@@ -17,7 +17,7 @@ export const SUBSCRIPTION_CONFIG = {
 export async function checkSubscriptionAccess(userId: string): Promise<SubscriptionAccess> {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .rpc('zeroed_check_subscription_access', { p_user_id: userId })
     .single();
 
@@ -36,7 +36,7 @@ export async function checkSubscriptionAccess(userId: string): Promise<Subscript
 export async function getSubscription(userId: string): Promise<Subscription | null> {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('zeroed_subscriptions')
     .select('*')
     .eq('user_id', userId)
@@ -55,7 +55,7 @@ export async function getSubscription(userId: string): Promise<Subscription | nu
 export async function redeemCoupon(userId: string, code: string): Promise<CouponRedemptionResult> {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .rpc('zeroed_redeem_coupon', { p_user_id: userId, p_code: code })
     .single();
 
@@ -73,7 +73,7 @@ export async function redeemCoupon(userId: string, code: string): Promise<Coupon
 export async function validateCoupon(code: string): Promise<{ valid: boolean; type?: string }> {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('zeroed_coupons')
     .select('code, coupon_type, is_active, expires_at, max_uses, current_uses')
     .ilike('code', code)
