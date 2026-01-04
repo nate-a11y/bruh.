@@ -14,12 +14,14 @@ export async function GET() {
   // Generate state for CSRF protection
   const state = randomBytes(32).toString("hex");
 
-  // Store state in database for verification
+  // Store state in database for CSRF verification during OAuth callback
+  // access_token is empty until OAuth completes successfully
   await supabase.from("zeroed_integrations").upsert({
     user_id: user.id,
     provider: "notion",
-    access_token: "", // Placeholder until OAuth completes
+    access_token: "",
     settings: { oauth_state: state },
+    sync_enabled: false,
     updated_at: new Date().toISOString(),
   }, {
     onConflict: "user_id,provider",
