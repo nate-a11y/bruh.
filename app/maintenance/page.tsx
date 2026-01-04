@@ -5,7 +5,7 @@ export default function MaintenancePage() {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
       <div className="text-center space-y-6 max-w-md">
-        <Logo size="lg" />
+        <Logo size="lg" showIcon={false} />
 
         <div className="flex items-center justify-center">
           <div className="p-4 bg-primary/10 rounded-full">

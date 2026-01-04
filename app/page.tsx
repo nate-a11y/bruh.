@@ -102,7 +102,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background">
       {/* Nav */}
       <nav className="flex items-center justify-between p-6 max-w-6xl mx-auto">
-        <Logo size="md" />
+        <Logo size="md" showIcon={false} />
         <div className="flex items-center gap-4">
           <Link
             href="/login"
@@ -284,7 +284,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-border py-8 px-6">
         <div className="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-4">
-          <Logo size="sm" />
+          <Logo size="sm" showIcon={false} />
           <div className="flex items-center gap-6">
             <Link href="/privacy" className="text-xs text-muted-foreground hover:text-foreground">
               Privacy

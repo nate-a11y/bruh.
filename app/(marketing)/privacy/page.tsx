@@ -11,7 +11,7 @@ export default function PrivacyPage() {
     <div className="min-h-screen bg-background">
       <nav className="flex items-center justify-between p-6 max-w-4xl mx-auto">
         <Link href="/">
-          <Logo size="md" />
+          <Logo size="md" showIcon={false} />
         </Link>
       </nav>
 

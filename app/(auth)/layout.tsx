@@ -12,7 +12,7 @@ export default function AuthLayout({
         href="/"
         className="mb-8 hover:opacity-80 transition-opacity"
       >
-        <Logo size="lg" />
+        <Logo size="lg" showIcon={false} />
       </Link>
       <div className="w-full max-w-sm">{children}</div>
       <p className="mt-8 text-center text-sm text-muted-foreground">

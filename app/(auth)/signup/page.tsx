@@ -11,7 +11,7 @@ export default async function SignupPage() {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
         <div className="text-center space-y-6 max-w-md">
-          <Logo size="lg" />
+          <Logo size="lg" showIcon={false} />
 
           <div className="space-y-2">
             <h1 className="text-2xl font-bold">Signups Temporarily Closed</h1>

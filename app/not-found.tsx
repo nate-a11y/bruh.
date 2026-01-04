@@ -11,7 +11,7 @@ export default function NotFound() {
       <header className="border-b border-border">
         <div className="container mx-auto px-4 py-4 flex items-center">
           <Link href="/" className="hover:opacity-80 transition-opacity">
-            <Logo />
+            <Logo showIcon={false} />
           </Link>
         </div>
       </header>
