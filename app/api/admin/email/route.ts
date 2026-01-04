@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/admin";
 import { sendEmail } from "@/lib/email/resend";
+import { adminEmail } from "@/lib/email/templates";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -21,15 +22,7 @@ export async function POST(request: NextRequest) {
     await sendEmail({
       to,
       subject,
-      html: `
-        <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="white-space: pre-wrap; line-height: 1.6;">${message.replace(/\n/g, '<br>')}</div>
-          <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e7eb;" />
-          <p style="color: #6b7280; font-size: 14px;">
-            Sent from Bruh Admin
-          </p>
-        </div>
-      `,
+      html: adminEmail({ message }),
     });
 
     return NextResponse.json({ success: true });

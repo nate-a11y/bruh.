@@ -6,7 +6,7 @@ function baseTemplate(content: string): string {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Zeroed</title>
+  <title>Bruh</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -96,14 +96,14 @@ function baseTemplate(content: string): string {
 <body>
   <div class="container">
     <div class="card">
-      <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://zeroed.app'}" class="logo">
-        Zeroed<span>.</span>
+      <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://getbruh.app'}" class="logo">
+        Bruh<span>.</span>
       </a>
       ${content}
     </div>
     <div class="footer">
-      <p>© ${new Date().getFullYear()} Zeroed. All rights reserved.</p>
-      <p>You received this email because you have an account or were invited to Zeroed.</p>
+      <p>© ${new Date().getFullYear()} Bruh. All rights reserved.</p>
+      <p>You received this email because you have an account or were invited to Bruh.</p>
     </div>
   </div>
 </body>
@@ -124,7 +124,7 @@ export function teamInviteEmail({
   inviteLink: string;
 }): { subject: string; html: string } {
   return {
-    subject: `You've been invited to join ${teamName} on Zeroed`,
+    subject: `You've been invited to join ${teamName} on Bruh`,
     html: baseTemplate(`
       <h1>Join ${teamName}</h1>
       <p>${inviterName} has invited you to join <strong>${teamName}</strong> as a <strong>${role}</strong>.</p>
@@ -162,12 +162,12 @@ export function welcomeEmail({
 }: {
   userName?: string;
 }): { subject: string; html: string } {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://zeroed.app';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://getbruh.app';
   return {
-    subject: `Welcome to Zeroed!`,
+    subject: `Welcome to Bruh!`,
     html: baseTemplate(`
       <h1>Welcome${userName ? `, ${userName}` : ''}! 🎉</h1>
-      <p>Thanks for joining Zeroed. We're excited to help you get focused and accomplish more.</p>
+      <p>Thanks for joining Bruh. We're excited to help you get focused and accomplish more.</p>
 
       <div class="highlight">
         <p style="margin: 0 0 8px 0;"><strong>Here's what you can do:</strong></p>
@@ -195,7 +195,7 @@ export function passwordResetEmail({
   resetLink: string;
 }): { subject: string; html: string } {
   return {
-    subject: `Reset your Zeroed password`,
+    subject: `Reset your Bruh password`,
     html: baseTemplate(`
       <h1>Reset Your Password</h1>
       <p>We received a request to reset your password. Click the button below to create a new password.</p>
@@ -258,7 +258,7 @@ export function dailyDigestEmail({
   const greeting = getTimeGreeting();
 
   return {
-    subject: `${greeting}${userName ? `, ${userName}` : ''} - Your Zeroed Daily Digest`,
+    subject: `${greeting}${userName ? `, ${userName}` : ''} - Your Bruh Daily Digest`,
     html: baseTemplate(`
       <h1>${greeting}${userName ? `, ${userName}` : ''}!</h1>
       <p>Here's what's on your plate today.</p>
@@ -292,7 +292,7 @@ export function dailyDigestEmail({
         </div>
       `}
 
-      <a href="${dashboardLink}" class="button">Open Zeroed</a>
+      <a href="${dashboardLink}" class="button">Open Bruh</a>
     `),
   };
 }
@@ -316,7 +316,7 @@ export function weeklySummaryEmail({
   const focusHours = Math.round(focusMinutes / 60);
 
   return {
-    subject: `Your Weekly Zeroed Summary`,
+    subject: `Your Weekly Bruh Summary`,
     html: baseTemplate(`
       <h1>Your Week in Review</h1>
       <p>Here's how you did this week${userName ? `, ${userName}` : ''}.</p>
@@ -347,6 +347,23 @@ export function weeklySummaryEmail({
       <p class="muted">Keep up the momentum! 💪</p>
     `),
   };
+}
+
+// Admin email (sent from admin dashboard)
+export function adminEmail({
+  message,
+}: {
+  message: string;
+}): string {
+  return baseTemplate(`
+    <div style="white-space: pre-wrap; line-height: 1.8;">
+${message}
+    </div>
+
+    <hr class="divider">
+
+    <p class="muted">This email was sent by a Bruh administrator.</p>
+  `);
 }
 
 function getTimeGreeting(): string {
