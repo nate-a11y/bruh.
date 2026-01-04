@@ -18,6 +18,7 @@ import {
   Target,
   Calendar,
   Users,
+  Shield,
 } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { toast } from "sonner";
@@ -32,6 +33,7 @@ import type { List } from "@/lib/supabase/types";
 
 interface SidebarProps {
   lists: List[];
+  isAdmin?: boolean;
 }
 
 const navigation = [
@@ -45,7 +47,7 @@ const navigation = [
   { name: "Teams", href: "/teams", icon: Users },
 ];
 
-export function Sidebar({ lists }: SidebarProps) {
+export function Sidebar({ lists, isAdmin }: SidebarProps) {
   const pathname = usePathname();
   const [showNewList, setShowNewList] = useState(false);
   const [newListName, setNewListName] = useState("");
@@ -192,6 +194,20 @@ export function Sidebar({ lists }: SidebarProps) {
         <div className="px-3 py-1">
           <KeyboardShortcutsModal />
         </div>
+        {isAdmin && (
+          <Link
+            href="/admin"
+            className={cn(
+              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              pathname === "/admin"
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            )}
+          >
+            <Shield className="h-4 w-4" />
+            Admin
+          </Link>
+        )}
         <Link
           href="/settings"
           className={cn(
@@ -221,9 +237,10 @@ export function Sidebar({ lists }: SidebarProps) {
 // Mobile sidebar wrapper with hamburger menu
 interface MobileSidebarProps {
   lists: List[];
+  isAdmin?: boolean;
 }
 
-export function MobileSidebar({ lists }: MobileSidebarProps) {
+export function MobileSidebar({ lists, isAdmin }: MobileSidebarProps) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -262,7 +279,7 @@ export function MobileSidebar({ lists }: MobileSidebarProps) {
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <Sidebar lists={lists} />
+        <Sidebar lists={lists} isAdmin={isAdmin} />
       </div>
     </>
   );

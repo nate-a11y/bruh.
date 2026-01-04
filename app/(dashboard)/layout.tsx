@@ -5,6 +5,7 @@ import { FloatingTimerWrapper } from "@/components/focus/floating-timer-wrapper"
 import { BrainDumpProvider } from "@/components/tasks/brain-dump-provider";
 import { WelcomeModal } from "@/components/onboarding/welcome-modal";
 import { PWAProvider } from "@/components/pwa/pwa-provider";
+import { isAdmin } from "@/lib/admin";
 
 export default async function DashboardLayout({
   children,
@@ -62,16 +63,17 @@ export default async function DashboardLayout({
     .single();
 
   const needsName = !prefs?.display_name;
+  const userIsAdmin = isAdmin(user.email);
 
   return (
     <PWAProvider>
       <div className="flex h-screen overflow-hidden">
         {/* Desktop sidebar */}
         <div className="hidden md:block">
-          <Sidebar lists={lists || []} />
+          <Sidebar lists={lists || []} isAdmin={userIsAdmin} />
         </div>
         {/* Mobile sidebar */}
-        <MobileSidebar lists={lists || []} />
+        <MobileSidebar lists={lists || []} isAdmin={userIsAdmin} />
         <main className="flex-1 overflow-auto">{children}</main>
         {/* Floating timer - shows when focus session is active */}
         <FloatingTimerWrapper />
