@@ -96,6 +96,26 @@ interface AdminUser {
   is_banned: boolean;
 }
 
+interface SubscriptionRecord {
+  id: string;
+  user_id: string;
+  status: string;
+  trial_ends_at: string | null;
+  current_period_end: string | null;
+  coupon_code: string | null;
+  user_email: string;
+  display_name: string | null;
+  updated_at: string;
+}
+
+interface SubscriptionStats {
+  total: number;
+  active: number;
+  trialing: number;
+  freeForever: number;
+  canceled: number;
+}
+
 interface AdminDashboardProps {
   stats: AdminStats;
   recentUsers: RecentUser[];
@@ -121,14 +141,22 @@ export function AdminDashboard({ stats, recentUsers }: AdminDashboardProps) {
   });
   const [loadingSettings, setLoadingSettings] = useState(false);
   const [savingSettings, setSavingSettings] = useState<string | null>(null);
+  const [subscriptions, setSubscriptions] = useState<SubscriptionRecord[]>([]);
+  const [subStats, setSubStats] = useState<SubscriptionStats>({ total: 0, active: 0, trialing: 0, freeForever: 0, canceled: 0 });
+  const [loadingSubscriptions, setLoadingSubscriptions] = useState(false);
+  const [subActionLoading, setSubActionLoading] = useState<string | null>(null);
+  const [subSearchQuery, setSubSearchQuery] = useState("");
 
-  // Fetch users when Users tab is active
+  // Fetch data when tabs are active
   useEffect(() => {
     if (activeTab === "users" && users.length === 0) {
       fetchUsers();
     }
     if (activeTab === "settings" && !loadingSettings) {
       fetchSettings();
+    }
+    if (activeTab === "billing" && subscriptions.length === 0) {
+      fetchSubscriptions();
     }
   }, [activeTab]);
 
@@ -159,6 +187,44 @@ export function AdminDashboard({ stats, recentUsers }: AdminDashboardProps) {
       toast.error("Failed to fetch settings");
     } finally {
       setLoadingSettings(false);
+    }
+  }
+
+  async function fetchSubscriptions() {
+    setLoadingSubscriptions(true);
+    try {
+      const res = await fetch("/api/admin/subscriptions");
+      const data = await res.json();
+      if (data.subscriptions) {
+        setSubscriptions(data.subscriptions);
+        setSubStats(data.stats);
+      }
+    } catch {
+      toast.error("Failed to fetch subscriptions");
+    } finally {
+      setLoadingSubscriptions(false);
+    }
+  }
+
+  async function handleSubscriptionAction(userId: string, action: string) {
+    setSubActionLoading(userId);
+    try {
+      const res = await fetch("/api/admin/subscriptions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, action }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message);
+        fetchSubscriptions(); // Refresh data
+      } else {
+        toast.error(data.error || "Action failed");
+      }
+    } catch {
+      toast.error("Action failed");
+    } finally {
+      setSubActionLoading(null);
     }
   }
 
@@ -543,28 +609,187 @@ export function AdminDashboard({ stats, recentUsers }: AdminDashboardProps) {
 
         {/* Billing Tab */}
         <TabsContent value="billing" className="space-y-4">
+          {/* Subscription Stats */}
+          <div className="grid gap-4 md:grid-cols-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{subStats.total}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Active</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-500">{subStats.active}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Trialing</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-blue-500">{subStats.trialing}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Lifetime Access</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-purple-500">{subStats.freeForever}</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Subscriptions Table */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5" />
-                Billing & Subscriptions
+                Subscriptions
               </CardTitle>
               <CardDescription>
-                Manage subscription plans and payment processing
+                Manage user subscriptions and grant lifetime access
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <CreditCard className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">Coming Soon</h3>
-                <p className="text-sm text-muted-foreground max-w-md">
-                  Stripe integration for subscription billing, plan management,
-                  and revenue analytics will be available here.
-                </p>
-                <Button className="mt-4" variant="outline" disabled>
-                  Connect Stripe
+              <div className="flex items-center gap-4 mb-4">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by email..."
+                    value={subSearchQuery}
+                    onChange={(e) => setSubSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Button variant="outline" size="sm" onClick={fetchSubscriptions} disabled={loadingSubscriptions}>
+                  {loadingSubscriptions ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                 </Button>
               </div>
+
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Expires/Renews</TableHead>
+                    <TableHead>Coupon</TableHead>
+                    <TableHead className="w-[100px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loadingSubscriptions ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8">
+                        <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    <>
+                      {subscriptions
+                        .filter(sub =>
+                          sub.user_email?.toLowerCase().includes(subSearchQuery.toLowerCase()) ||
+                          sub.display_name?.toLowerCase().includes(subSearchQuery.toLowerCase())
+                        )
+                        .map((sub) => (
+                        <TableRow key={sub.id}>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{sub.display_name || "Unnamed"}</p>
+                              <p className="text-xs text-muted-foreground">{sub.user_email}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {sub.status === "free_forever" && (
+                              <Badge className="bg-purple-500">Lifetime</Badge>
+                            )}
+                            {sub.status === "active" && (
+                              <Badge variant="default">Active</Badge>
+                            )}
+                            {sub.status === "trialing" && (
+                              <Badge variant="secondary">Trial</Badge>
+                            )}
+                            {(sub.status === "canceled" || sub.status === "trial_expired") && (
+                              <Badge variant="outline">Inactive</Badge>
+                            )}
+                            {sub.status === "past_due" && (
+                              <Badge variant="destructive">Past Due</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {sub.status === "free_forever" ? (
+                              <span className="text-muted-foreground">Never</span>
+                            ) : sub.trial_ends_at ? (
+                              format(new Date(sub.trial_ends_at), "MMM d, yyyy")
+                            ) : sub.current_period_end ? (
+                              format(new Date(sub.current_period_end), "MMM d, yyyy")
+                            ) : (
+                              "-"
+                            )}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {sub.coupon_code || "-"}
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  disabled={subActionLoading === sub.user_id}
+                                >
+                                  {subActionLoading === sub.user_id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                {sub.status !== "free_forever" ? (
+                                  <DropdownMenuItem
+                                    onClick={() => handleSubscriptionAction(sub.user_id, "grant_free_forever")}
+                                    className="text-purple-600"
+                                  >
+                                    Grant Lifetime Access
+                                  </DropdownMenuItem>
+                                ) : (
+                                  <DropdownMenuItem
+                                    onClick={() => handleSubscriptionAction(sub.user_id, "revoke_free_forever")}
+                                    className="text-amber-600"
+                                  >
+                                    Revoke Lifetime Access
+                                  </DropdownMenuItem>
+                                )}
+                                {sub.status === "trialing" && (
+                                  <DropdownMenuItem
+                                    onClick={() => handleSubscriptionAction(sub.user_id, "extend_trial")}
+                                  >
+                                    Extend Trial +30 days
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {subscriptions.length === 0 && !loadingSubscriptions && (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                            No subscriptions found
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </>
+                  )}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
