@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { sendEmail, welcomeEmail } from "@/lib/email";
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
@@ -38,6 +39,15 @@ export async function signup(formData: FormData) {
   if (error) {
     return { error: error.message };
   }
+
+  // Send welcome email (don't await - fire and forget)
+  const userName = email.split("@")[0];
+  const welcomeContent = welcomeEmail({ userName });
+  sendEmail({
+    to: email,
+    subject: welcomeContent.subject,
+    html: welcomeContent.html,
+  }).catch((err) => console.error("Welcome email failed:", err));
 
   // Now sign in the user
   const supabase = await createClient();

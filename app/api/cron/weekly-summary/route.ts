@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendSlackDM, sendSlackMessage, SlackBlock } from "@/lib/integrations/slack";
+import { sendEmail, weeklySummaryEmail } from "@/lib/email";
 import { startOfWeek, endOfWeek, subWeeks, format } from "date-fns";
 
 // Send notification to configured channel or DM
@@ -21,11 +22,15 @@ async function sendNotification(
   return { ok: false, error: "No destination configured" };
 }
 
-export async function GET(request: NextRequest) {
-  const supabase = createClient(
+function getServiceClient() {
+  return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
+}
+
+export async function GET(request: NextRequest) {
+  const supabase = getServiceClient();
 
   // Verify cron secret
   const authHeader = request.headers.get("authorization");
@@ -34,57 +39,133 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Get last week's date range
-    const lastWeekStart = format(startOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 }), "yyyy-MM-dd");
-    const lastWeekEnd = format(endOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 }), "yyyy-MM-dd");
+    const now = new Date();
+    const lastWeekStart = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
+    const lastWeekEnd = endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
+    const lastWeekStartStr = format(lastWeekStart, "yyyy-MM-dd");
+    const lastWeekEndStr = format(lastWeekEnd, "yyyy-MM-dd");
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
-    let sent = 0;
+    let slackSent = 0;
+    let emailSent = 0;
     let errors = 0;
 
-    // Get all users with Slack integration enabled for weekly summary
+    // === SEND EMAIL SUMMARIES ===
+    const { data: emailUsers } = await supabase
+      .from("zeroed_user_preferences")
+      .select("user_id, display_name, weekly_summary_enabled")
+      .eq("weekly_summary_enabled", true);
+
+    for (const user of emailUsers || []) {
+      try {
+        // Get user's email
+        const { data: authUser } = await supabase.auth.admin.getUserById(user.user_id);
+        if (!authUser?.user?.email) continue;
+
+        // Get stats
+        const { count: tasksCompleted } = await supabase
+          .from("zeroed_tasks")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user.user_id)
+          .eq("status", "completed")
+          .gte("completed_at", lastWeekStart.toISOString())
+          .lte("completed_at", lastWeekEnd.toISOString());
+
+        const { data: focusSessions } = await supabase
+          .from("zeroed_focus_sessions")
+          .select("duration_minutes")
+          .eq("user_id", user.user_id)
+          .gte("started_at", lastWeekStart.toISOString())
+          .lte("started_at", lastWeekEnd.toISOString());
+
+        const focusMinutes = (focusSessions || []).reduce(
+          (sum, s) => sum + (s.duration_minutes || 0),
+          0
+        );
+
+        const { data: streakData } = await supabase
+          .from("zeroed_user_stats")
+          .select("current_streak")
+          .eq("user_id", user.user_id)
+          .single();
+
+        // Get top project
+        const { data: listActivity } = await supabase
+          .from("zeroed_tasks")
+          .select("list_id, zeroed_lists(name)")
+          .eq("user_id", user.user_id)
+          .eq("status", "completed")
+          .gte("completed_at", lastWeekStart.toISOString())
+          .lte("completed_at", lastWeekEnd.toISOString());
+
+        const listCounts: Record<string, { count: number; name: string }> = {};
+        for (const task of listActivity || []) {
+          if (task.list_id && task.zeroed_lists) {
+            const listName = (task.zeroed_lists as any).name;
+            if (!listCounts[task.list_id]) {
+              listCounts[task.list_id] = { count: 0, name: listName };
+            }
+            listCounts[task.list_id].count++;
+          }
+        }
+        const topList = Object.values(listCounts).sort((a, b) => b.count - a.count)[0];
+
+        const emailContent = weeklySummaryEmail({
+          userName: user.display_name || undefined,
+          tasksCompleted: tasksCompleted || 0,
+          focusMinutes,
+          streakDays: streakData?.current_streak || 0,
+          topProject: topList?.name,
+          dashboardLink: `${appUrl}/stats`,
+        });
+
+        const result = await sendEmail({
+          to: authUser.user.email,
+          subject: emailContent.subject,
+          html: emailContent.html,
+        });
+
+        if (result.success) emailSent++;
+      } catch (err) {
+        console.error(`Email failed for ${user.user_id}:`, err);
+        errors++;
+      }
+    }
+
+    // === SEND SLACK SUMMARIES ===
     const { data: integrations } = await supabase
       .from("zeroed_integrations")
       .select("user_id, access_token, settings")
       .eq("provider", "slack")
       .eq("sync_enabled", true);
 
-    if (!integrations || integrations.length === 0) {
-      return NextResponse.json({ message: "No integrations to process", sent: 0 });
-    }
-
-    for (const integration of integrations) {
+    for (const integration of integrations || []) {
       const settings = integration.settings as Record<string, unknown> | null;
-      if (!settings?.notify_weekly_summary) {
-        continue;
-      }
-
-      if (!integration.access_token) {
+      if (!settings?.notify_weekly_summary || !integration.access_token) {
         continue;
       }
 
       try {
-        // Get user's display name
         const { data: prefs } = await supabase
           .from("zeroed_user_preferences")
           .select("display_name, streak_current")
           .eq("user_id", integration.user_id)
           .single();
 
-        // Get last week's stats
         const { data: tasks } = await supabase
           .from("zeroed_tasks")
           .select("id, status, completed_at")
           .eq("user_id", integration.user_id)
-          .gte("completed_at", lastWeekStart)
-          .lte("completed_at", lastWeekEnd);
+          .gte("completed_at", lastWeekStartStr)
+          .lte("completed_at", lastWeekEndStr);
 
         const { data: focusSessions } = await supabase
           .from("zeroed_focus_sessions")
           .select("duration_minutes")
           .eq("user_id", integration.user_id)
           .eq("completed", true)
-          .gte("created_at", lastWeekStart)
-          .lte("created_at", lastWeekEnd);
+          .gte("created_at", lastWeekStartStr)
+          .lte("created_at", lastWeekEndStr);
 
         const completedTasks = tasks?.length || 0;
         const totalFocusMinutes = focusSessions?.reduce((acc, s) => acc + (s.duration_minutes || 0), 0) || 0;
@@ -107,25 +188,16 @@ export async function GET(request: NextRequest) {
           {
             type: "section",
             fields: [
-              {
-                type: "mrkdwn",
-                text: `*Tasks Completed*\n${completedTasks} tasks ✅`,
-              },
-              {
-                type: "mrkdwn",
-                text: `*Focus Time*\n${focusHours}h ${focusMins}m ⏱️`,
-              },
-              {
-                type: "mrkdwn",
-                text: `*Current Streak*\n${streak} days 🔥`,
-              },
+              { type: "mrkdwn", text: `*Tasks Completed*\n${completedTasks} tasks ✅` },
+              { type: "mrkdwn", text: `*Focus Time*\n${focusHours}h ${focusMins}m ⏱️` },
+              { type: "mrkdwn", text: `*Current Streak*\n${streak} days 🔥` },
             ],
           },
           {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: `_Week of ${lastWeekStart} to ${lastWeekEnd}_`,
+              text: `_Week of ${lastWeekStartStr} to ${lastWeekEndStr}_`,
             },
           },
         ];
@@ -137,20 +209,25 @@ export async function GET(request: NextRequest) {
           blocks
         );
 
-        sent++;
+        slackSent++;
       } catch (error) {
-        console.error(`Failed to send weekly summary to user ${integration.user_id}:`, error);
+        console.error(`Slack failed for ${integration.user_id}:`, error);
         errors++;
       }
     }
 
     return NextResponse.json({
       message: "Weekly summaries sent",
-      sent,
+      email: emailSent,
+      slack: slackSent,
       errors,
     });
   } catch (error) {
     console.error("Weekly summary cron error:", error);
     return NextResponse.json({ error: "Cron job failed" }, { status: 500 });
   }
+}
+
+export async function POST(request: NextRequest) {
+  return GET(request);
 }
