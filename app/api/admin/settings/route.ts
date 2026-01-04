@@ -16,7 +16,8 @@ export async function GET() {
 
   const adminClient = createServiceClient();
 
-  const { data: settings } = await adminClient
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: settings } = await (adminClient as any)
     .from("zeroed_platform_settings")
     .select("key, value")
     .in("key", ["maintenance_mode", "signups_enabled", "email_notifications"]);
@@ -52,7 +53,8 @@ export async function PUT(request: NextRequest) {
   const adminClient = createServiceClient();
 
   // Upsert the setting
-  const { error } = await adminClient
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (adminClient as any)
     .from("zeroed_platform_settings")
     .upsert(
       { key, value: String(value), updated_at: new Date().toISOString() },
