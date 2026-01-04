@@ -1,13 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useFormStatus } from "react-dom";
-import { Loader2 } from "lucide-react";
+import { Loader2, Gift, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { signup } from "@/app/(auth)/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Card,
   CardContent,
@@ -17,10 +19,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-function SubmitButton() {
+function SubmitButton({ disabled }: { disabled?: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" className="w-full" disabled={pending}>
+    <Button type="submit" className="w-full" disabled={pending || disabled}>
       {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
       Create account
     </Button>
@@ -28,6 +30,9 @@ function SubmitButton() {
 }
 
 export function SignupForm() {
+  const [showCoupon, setShowCoupon] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+
   async function handleSignup(formData: FormData) {
     const password = formData.get("password") as string;
     const confirmPassword = formData.get("confirmPassword") as string;
@@ -42,6 +47,11 @@ export function SignupForm() {
       return;
     }
 
+    if (!acceptedTerms) {
+      toast.error("You must accept the Terms of Service and Privacy Policy");
+      return;
+    }
+
     const result = await signup(formData);
     if (result?.error) {
       toast.error(result.error);
@@ -53,7 +63,7 @@ export function SignupForm() {
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl">Create an account</CardTitle>
         <CardDescription>
-          Enter your email below to create your account
+          Start your 30-day free trial. No credit card required.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -90,7 +100,72 @@ export function SignupForm() {
               minLength={6}
             />
           </div>
-          <SubmitButton />
+
+          {/* Coupon Code (collapsible) */}
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={() => setShowCoupon(!showCoupon)}
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Gift className="h-4 w-4" />
+              Have a coupon code?
+              {showCoupon ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </button>
+            {showCoupon && (
+              <Input
+                id="couponCode"
+                name="couponCode"
+                type="text"
+                placeholder="Enter coupon code"
+                className="mt-2"
+              />
+            )}
+          </div>
+
+          {/* Terms Acceptance */}
+          <div className="flex items-start space-x-2">
+            <Checkbox
+              id="acceptedTerms"
+              name="acceptedTerms"
+              checked={acceptedTerms}
+              onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
+              className="mt-1"
+            />
+            <label
+              htmlFor="acceptedTerms"
+              className="text-sm text-muted-foreground leading-relaxed cursor-pointer"
+            >
+              I agree to the{" "}
+              <Link
+                href="/terms"
+                target="_blank"
+                className="text-primary hover:underline"
+              >
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link
+                href="/privacy"
+                target="_blank"
+                className="text-primary hover:underline"
+              >
+                Privacy Policy
+              </Link>
+            </label>
+          </div>
+
+          <input
+            type="hidden"
+            name="acceptedTerms"
+            value={acceptedTerms ? "on" : "off"}
+          />
+
+          <SubmitButton disabled={!acceptedTerms} />
         </form>
       </CardContent>
       <CardFooter>

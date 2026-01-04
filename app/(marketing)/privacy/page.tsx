@@ -17,7 +17,7 @@ export default function PrivacyPage() {
 
       <main className="max-w-4xl mx-auto px-6 py-12 prose prose-invert">
         <h1>Privacy Policy</h1>
-        <p className="text-muted-foreground">Last updated: January 3, 2026</p>
+        <p className="text-muted-foreground">Last updated: January 4, 2026</p>
 
         <h2>Overview</h2>
         <p>
@@ -27,6 +27,7 @@ export default function PrivacyPage() {
         </p>
 
         <h2>Information We Collect</h2>
+
         <h3>Account Information</h3>
         <p>When you create an account, we collect:</p>
         <ul>
@@ -43,6 +44,19 @@ export default function PrivacyPage() {
           <li>User preferences and settings</li>
         </ul>
 
+        <h3>Billing Information</h3>
+        <p>When you subscribe to our paid service, we collect:</p>
+        <ul>
+          <li>Payment card information (processed securely by Stripe - we never store your full card number)</li>
+          <li>Billing address</li>
+          <li>Transaction history</li>
+          <li>Subscription status and plan details</li>
+        </ul>
+        <p>
+          All payment processing is handled by Stripe, a PCI-DSS compliant payment processor.
+          We only store a reference to your Stripe customer ID and subscription details.
+        </p>
+
         <h3>Integration Data</h3>
         <p>If you connect third-party services (Google Calendar, Slack, Notion), we store:</p>
         <ul>
@@ -56,15 +70,18 @@ export default function PrivacyPage() {
         <p>We use your information to:</p>
         <ul>
           <li>Provide and maintain our service</li>
+          <li>Process subscription payments and manage your account</li>
           <li>Sync your tasks with connected third-party services</li>
           <li>Send notifications you&apos;ve opted into (e.g., Slack reminders)</li>
+          <li>Send important account notifications (payment confirmations, subscription changes)</li>
           <li>Improve our service based on usage patterns (anonymized)</li>
         </ul>
 
         <h2>Data Storage and Security</h2>
         <p>
           Your data is stored securely using Supabase, which provides enterprise-grade security
-          including encryption at rest and in transit. We do not sell, rent, or share your
+          including encryption at rest and in transit. Payment data is processed and stored
+          by Stripe using bank-level encryption. We do not sell, rent, or share your
           personal data with third parties for marketing purposes.
         </p>
 
@@ -73,6 +90,7 @@ export default function PrivacyPage() {
         <ul>
           <li><strong>Supabase</strong> - Database and authentication</li>
           <li><strong>Vercel</strong> - Application hosting</li>
+          <li><strong>Stripe</strong> - Payment processing</li>
           <li><strong>Google Calendar</strong> - Calendar sync (optional)</li>
           <li><strong>Slack</strong> - Notifications and commands (optional)</li>
           <li><strong>Notion</strong> - Database sync (optional)</li>
@@ -85,7 +103,16 @@ export default function PrivacyPage() {
           <li><strong>Access</strong> - Export all your data from Settings</li>
           <li><strong>Delete</strong> - Delete your account and all associated data</li>
           <li><strong>Disconnect</strong> - Remove any third-party integration at any time</li>
+          <li><strong>Cancel</strong> - Cancel your subscription at any time from Settings</li>
         </ul>
+
+        <h2>Data Retention</h2>
+        <p>
+          We retain your account data for as long as your account is active. Upon account deletion,
+          we delete all your personal data within 30 days. We may retain anonymized, aggregated
+          data for analytics purposes. Payment records may be retained as required by law for
+          tax and accounting purposes.
+        </p>
 
         <h2>Cookies</h2>
         <p>
@@ -97,7 +124,8 @@ export default function PrivacyPage() {
         <p>
           We may update this Privacy Policy from time to time. We will notify you of any
           changes by posting the new Privacy Policy on this page and updating the
-          &quot;Last updated&quot; date.
+          &quot;Last updated&quot; date. For material changes affecting your data or billing,
+          we will notify you via email.
         </p>
 
         <h2>Contact Us</h2>

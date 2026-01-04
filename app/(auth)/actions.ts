@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { sendEmail, welcomeEmail } from "@/lib/email";
+import { redeemCoupon, validateCoupon } from "@/lib/subscriptions";
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
@@ -27,6 +28,21 @@ export async function login(formData: FormData) {
 export async function signup(formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
+  const couponCode = formData.get("couponCode") as string | null;
+  const acceptedTerms = formData.get("acceptedTerms") === "on";
+
+  // Require terms acceptance
+  if (!acceptedTerms) {
+    return { error: "You must accept the Terms of Service and Privacy Policy" };
+  }
+
+  // Validate coupon code if provided (before creating user)
+  if (couponCode && couponCode.trim()) {
+    const validation = await validateCoupon(couponCode.trim());
+    if (!validation.valid) {
+      return { error: "Invalid or expired coupon code" };
+    }
+  }
 
   // Use admin API to create user (bypasses GoTrue's normal flow)
   const adminClient = createServiceClient();
@@ -38,6 +54,17 @@ export async function signup(formData: FormData) {
 
   if (error) {
     return { error: error.message };
+  }
+
+  const userId = data.user.id;
+
+  // Apply coupon code if provided
+  if (couponCode && couponCode.trim()) {
+    const result = await redeemCoupon(userId, couponCode.trim());
+    if (!result.success) {
+      console.error("Coupon redemption failed:", result.message);
+      // Don't fail signup, just log it - user can apply later
+    }
   }
 
   // Send welcome email (don't await - fire and forget)

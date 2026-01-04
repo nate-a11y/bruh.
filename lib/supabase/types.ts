@@ -1725,3 +1725,56 @@ export interface IncomingWebhookPayload {
     tags?: string[];
   };
 }
+
+// ============================================================================
+// SUBSCRIPTIONS & BILLING
+// ============================================================================
+
+export type SubscriptionStatus = 'trialing' | 'active' | 'canceled' | 'past_due' | 'free_forever' | 'trial_expired';
+
+export interface Subscription {
+  id: string;
+  user_id: string;
+  status: SubscriptionStatus;
+  trial_started_at: string | null;
+  trial_ends_at: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  stripe_price_id: string | null;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  canceled_at: string | null;
+  coupon_code: string | null;
+  coupon_applied_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type CouponType = 'free_forever' | 'trial_extension' | 'discount';
+
+export interface Coupon {
+  id: string;
+  code: string;
+  description: string | null;
+  coupon_type: CouponType;
+  discount_percent: number | null;
+  trial_days_extension: number | null;
+  max_uses: number | null;
+  current_uses: number;
+  is_active: boolean;
+  expires_at: string | null;
+  created_at: string;
+}
+
+export interface SubscriptionAccess {
+  has_access: boolean;
+  status: SubscriptionStatus;
+  days_remaining: number | null;
+}
+
+export interface CouponRedemptionResult {
+  success: boolean;
+  message: string;
+  new_status: SubscriptionStatus | null;
+}

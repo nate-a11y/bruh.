@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/dashboard/header";
 import { SettingsForm } from "@/components/settings/settings-form";
+import { BillingSettings } from "@/components/settings/billing-settings";
 import { GoogleCalendarSettings } from "@/components/settings/google-calendar-settings";
 import { SlackSettings } from "@/components/settings/slack-settings";
 import { NotionSettings } from "@/components/settings/notion-settings";
@@ -9,6 +10,7 @@ import { IntegrationHealth } from "@/components/settings/integration-health";
 import { EmailToTaskSettings } from "@/components/settings/email-to-task-settings";
 import { ExportButton } from "@/components/data/export-button";
 import { WebhookSettings } from "@/components/settings/webhook-settings";
+import { getSubscription, checkSubscriptionAccess } from "@/lib/subscriptions";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -50,6 +52,12 @@ export default async function SettingsPage() {
     .eq("provider", "notion")
     .single();
 
+  // Fetch subscription info
+  const [subscription, subscriptionAccess] = await Promise.all([
+    getSubscription(user.id),
+    checkSubscriptionAccess(user.id),
+  ]);
+
   // Default preferences if none exist
   const prefs = preferences || {
     theme: "dark",
@@ -68,6 +76,20 @@ export default async function SettingsPage() {
       <div className="flex-1 overflow-auto p-6">
         <div className="max-w-2xl space-y-8">
           <SettingsForm preferences={prefs} userEmail={user.email || ""} />
+
+          {/* Billing Section */}
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-xl font-semibold">Billing</h2>
+              <p className="text-sm text-muted-foreground">
+                Manage your subscription and payment
+              </p>
+            </div>
+            <BillingSettings
+              subscription={subscription}
+              access={subscriptionAccess}
+            />
+          </div>
 
           {/* Data Section */}
           <div className="space-y-4">
