@@ -207,11 +207,7 @@ export function FocusTimer({
   }, [state, pauseTimer, resumeTimer, handleStop]);
 
   async function handleStart() {
-    if (!selectedTask && tasks.length > 0) {
-      toast.error("Select a task to focus on");
-      return;
-    }
-
+    // Allow free focus - no task selection required
     startTimer(selectedTask, defaultFocusMinutes);
     startTimeRef.current = new Date();
 
