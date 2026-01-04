@@ -28,7 +28,7 @@ export async function GET() {
     email_notifications: true,
   };
 
-  settings?.forEach((s) => {
+  (settings as Array<{ key: string; value: string }> | null)?.forEach((s) => {
     settingsMap[s.key] = s.value === "true";
   });
 
