@@ -36,7 +36,7 @@ function baseTemplate(content: string): string {
       display: block;
     }
     .logo span {
-      color: #3b82f6;
+      color: #FF6B00;
     }
     h1 {
       font-size: 24px;
@@ -49,7 +49,7 @@ function baseTemplate(content: string): string {
     }
     .button {
       display: inline-block;
-      background: #3b82f6;
+      background: #FF6B00;
       color: white !important;
       text-decoration: none;
       padding: 12px 24px;
@@ -58,7 +58,7 @@ function baseTemplate(content: string): string {
       margin: 16px 0;
     }
     .button:hover {
-      background: #2563eb;
+      background: #E55F00;
     }
     .secondary-button {
       background: #f3f4f6;
@@ -323,7 +323,7 @@ export function weeklySummaryEmail({
 
       <div style="display: flex; gap: 16px; flex-wrap: wrap; margin: 24px 0;">
         <div class="highlight" style="flex: 1; min-width: 120px; text-align: center;">
-          <p style="margin: 0; font-size: 32px; font-weight: 700; color: #3b82f6;">${tasksCompleted}</p>
+          <p style="margin: 0; font-size: 32px; font-weight: 700; color: #FF6B00;">${tasksCompleted}</p>
           <p style="margin: 4px 0 0 0; font-size: 14px; color: #6b7280;">Tasks Done</p>
         </div>
         <div class="highlight" style="flex: 1; min-width: 120px; text-align: center;">
