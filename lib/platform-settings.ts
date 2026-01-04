@@ -26,13 +26,14 @@ export async function getAllPlatformSettings(): Promise<Record<PlatformSetting, 
 
   try {
     const adminClient = createServiceClient();
-    const { data: settings } = await adminClient
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: settings } = await (adminClient as any)
       .from("zeroed_platform_settings")
       .select("key, value")
       .in("key", ["maintenance_mode", "signups_enabled", "email_notifications"]);
 
     const result = { ...settingDefaults };
-    settings?.forEach((s) => {
+    (settings as Array<{ key: string; value: string }> | null)?.forEach((s) => {
       if (s.key in result) {
         result[s.key as PlatformSetting] = s.value === "true";
       }
