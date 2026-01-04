@@ -13,11 +13,14 @@ import {
   GripHorizontal,
   PictureInPicture2,
   Smartphone,
+  Check,
+  Circle,
   X
 } from "lucide-react";
 import { cn, formatTimerDisplay } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useTimerStore } from "@/lib/hooks/use-timer";
+import { useTimerStore, type TimerSubtask } from "@/lib/hooks/use-timer";
+import { completeTask } from "@/app/(dashboard)/actions";
 import Link from "next/link";
 
 interface FloatingTimerProps {
@@ -67,10 +70,20 @@ export function FloatingTimer({ onClose, autoOpenPiP = false }: FloatingTimerPro
     timeRemaining,
     initialTime,
     task,
+    subtasks,
     pauseTimer,
     resumeTimer,
     stopTimer,
+    toggleSubtask,
   } = useTimerStore();
+
+  // Handle subtask toggle with server sync
+  const handleSubtaskToggle = useCallback(async (subtaskId: string) => {
+    // Optimistically update local state
+    toggleSubtask(subtaskId);
+    // Sync to server (fire and forget)
+    completeTask(subtaskId).catch(console.error);
+  }, [toggleSubtask]);
 
   // Check PiP support and mobile on mount
   useEffect(() => {
@@ -382,9 +395,11 @@ export function FloatingTimer({ onClose, autoOpenPiP = false }: FloatingTimerPro
         timeRemaining={timeRemaining}
         initialTime={initialTime}
         task={task}
+        subtasks={subtasks}
         pauseTimer={pauseTimer}
         resumeTimer={resumeTimer}
         stopTimer={stopTimer}
+        onSubtaskToggle={handleSubtaskToggle}
         onClose={() => pipWindow.close()}
       />,
       pipContainer
@@ -456,9 +471,39 @@ export function FloatingTimer({ onClose, autoOpenPiP = false }: FloatingTimerPro
 
         {/* Task name */}
         {task && (
-          <p className="text-lg text-muted-foreground mb-8 max-w-xs text-center">
+          <p className="text-lg text-muted-foreground mb-4 max-w-xs text-center">
             {task.title}
           </p>
+        )}
+
+        {/* Subtasks checklist */}
+        {subtasks.length > 0 && (
+          <div className="w-full max-w-xs mb-8 space-y-2 max-h-40 overflow-y-auto">
+            {subtasks.map((subtask) => (
+              <button
+                key={subtask.id}
+                onClick={() => handleSubtaskToggle(subtask.id)}
+                className={cn(
+                  "w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-left transition-colors",
+                  subtask.status === "completed"
+                    ? "bg-green-500/10 opacity-60"
+                    : "bg-muted/50 hover:bg-muted"
+                )}
+              >
+                {subtask.status === "completed" ? (
+                  <Check className="h-5 w-5 text-green-500 shrink-0" />
+                ) : (
+                  <Circle className="h-5 w-5 text-muted-foreground shrink-0" />
+                )}
+                <span className={cn(
+                  "text-sm truncate",
+                  subtask.status === "completed" && "line-through"
+                )}>
+                  {subtask.title}
+                </span>
+              </button>
+            ))}
+          </div>
         )}
 
         {/* Controls */}
@@ -644,6 +689,34 @@ export function FloatingTimer({ onClose, autoOpenPiP = false }: FloatingTimerPro
                 </p>
               )}
 
+              {/* Subtasks checklist */}
+              {subtasks.length > 0 && (
+                <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                  {subtasks.map((subtask) => (
+                    <button
+                      key={subtask.id}
+                      onClick={() => handleSubtaskToggle(subtask.id)}
+                      className={cn(
+                        "w-full flex items-center gap-2 px-2 py-1 rounded text-left text-xs transition-colors hover:bg-muted/50",
+                        subtask.status === "completed" && "opacity-50"
+                      )}
+                    >
+                      {subtask.status === "completed" ? (
+                        <Check className="h-3 w-3 text-green-500 shrink-0" />
+                      ) : (
+                        <Circle className="h-3 w-3 text-muted-foreground shrink-0" />
+                      )}
+                      <span className={cn(
+                        "truncate",
+                        subtask.status === "completed" && "line-through"
+                      )}>
+                        {subtask.title}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {/* Controls */}
               <div className="flex items-center justify-center gap-2">
                 <Button
@@ -681,9 +754,11 @@ function PiPTimerContent({
   timeRemaining,
   initialTime,
   task,
+  subtasks,
   pauseTimer,
   resumeTimer,
   stopTimer,
+  onSubtaskToggle,
   onClose,
 }: {
   state: string;
@@ -691,9 +766,11 @@ function PiPTimerContent({
   timeRemaining: number;
   initialTime: number;
   task: { title: string } | null;
+  subtasks: TimerSubtask[];
   pauseTimer: () => void;
   resumeTimer: () => void;
   stopTimer: () => void;
+  onSubtaskToggle: (id: string) => void;
   onClose: () => void;
 }) {
   const progress = initialTime > 0 ? ((initialTime - timeRemaining) / initialTime) * 100 : 0;
@@ -704,12 +781,55 @@ function PiPTimerContent({
   const playIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`;
   const pauseIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>`;
   const stopIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>`;
+  const checkIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+  const circleIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle></svg>`;
+
+  // Generate subtask HTML
+  const subtasksHtml = subtasks.length > 0 ? `
+    <div class="subtasks">
+      ${subtasks.map(st => `
+        <button class="subtask-btn" data-id="${st.id}" data-status="${st.status}">
+          <span class="subtask-icon">${st.status === 'completed' ? checkIcon : circleIcon}</span>
+          <span class="subtask-title ${st.status === 'completed' ? 'completed' : ''}">${st.title}</span>
+        </button>
+      `).join('')}
+    </div>
+  ` : '';
 
   return (
     <div
       style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
       dangerouslySetInnerHTML={{
         __html: `
+          <style>
+            .subtasks {
+              max-height: 80px;
+              overflow-y: auto;
+              margin-bottom: 8px;
+            }
+            .subtask-btn {
+              display: flex;
+              align-items: center;
+              gap: 6px;
+              width: 100%;
+              padding: 4px 8px;
+              background: transparent;
+              border: none;
+              border-radius: 4px;
+              cursor: pointer;
+              text-align: left;
+              color: #a1a1aa;
+              font-size: 11px;
+              transition: background 0.15s;
+            }
+            .subtask-btn:hover { background: #27272a; }
+            .subtask-btn[data-status="completed"] { opacity: 0.5; }
+            .subtask-icon { width: 12px; height: 12px; flex-shrink: 0; }
+            .subtask-icon svg { width: 12px; height: 12px; }
+            .subtask-btn[data-status="completed"] .subtask-icon { color: #22c55e; }
+            .subtask-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .subtask-title.completed { text-decoration: line-through; }
+          </style>
           <div class="progress-bar">
             <div class="progress-fill ${isFocus ? 'focus' : 'break'}" style="width: ${progress}%"></div>
           </div>
@@ -727,6 +847,8 @@ function PiPTimerContent({
 
           ${task ? `<div class="task-name">${task.title}</div>` : ''}
 
+          ${subtasksHtml}
+
           <div class="controls">
             <button class="btn btn-icon" id="stop-btn">${stopIcon}</button>
             <button class="btn btn-primary ${isPaused ? 'paused' : ''}" id="toggle-btn">
@@ -740,6 +862,7 @@ function PiPTimerContent({
         if (el) {
           const stopBtn = el.querySelector('#stop-btn');
           const toggleBtn = el.querySelector('#toggle-btn');
+          const subtaskBtns = el.querySelectorAll('.subtask-btn');
 
           if (stopBtn) {
             stopBtn.addEventListener('click', () => {
@@ -757,6 +880,13 @@ function PiPTimerContent({
               }
             });
           }
+
+          subtaskBtns.forEach((btn) => {
+            btn.addEventListener('click', () => {
+              const id = btn.getAttribute('data-id');
+              if (id) onSubtaskToggle(id);
+            });
+          });
         }
       }}
     />
