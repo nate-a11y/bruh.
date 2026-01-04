@@ -85,20 +85,18 @@ CREATE POLICY "Service role manages subscriptions"
   ON zeroed_subscriptions FOR ALL
   USING (auth.role() = 'service_role');
 
--- Anyone can check if a coupon code exists (for validation)
-CREATE POLICY "Anyone can view active coupons"
-  ON zeroed_coupons FOR SELECT
-  USING (is_active = TRUE AND (expires_at IS NULL OR expires_at > NOW()));
+-- Only service role can access coupons (validation happens via SECURITY DEFINER function)
+CREATE POLICY "Service role manages coupons"
+  ON zeroed_coupons FOR ALL
+  USING (auth.role() = 'service_role');
 
 -- Users can see their own redemptions
 CREATE POLICY "Users can view own redemptions"
   ON zeroed_coupon_redemptions FOR SELECT
   USING (auth.uid() = user_id);
 
--- Insert the bruh.free4life coupon
-INSERT INTO zeroed_coupons (code, description, coupon_type, is_active)
-VALUES ('bruh.free4life', 'Lifetime free access', 'free_forever', TRUE)
-ON CONFLICT (code) DO NOTHING;
+-- NOTE: Coupon codes should be inserted manually via Supabase dashboard for security
+-- Example: INSERT INTO zeroed_coupons (code, description, coupon_type, is_active) VALUES ('CODE', 'Description', 'free_forever', TRUE);
 
 -- Function to check subscription status
 CREATE OR REPLACE FUNCTION zeroed_check_subscription_access(p_user_id UUID)
