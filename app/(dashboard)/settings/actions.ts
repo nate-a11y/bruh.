@@ -30,6 +30,8 @@ export async function updatePreferences(formData: FormData) {
     ),
     sound_enabled: formData.get("soundEnabled") === "true",
     notifications_enabled: formData.get("notificationsEnabled") === "true",
+    daily_digest_enabled: formData.get("dailyDigestEnabled") === "true",
+    weekly_summary_enabled: formData.get("weeklySummaryEnabled") === "true",
   };
 
   const { error } = await supabase

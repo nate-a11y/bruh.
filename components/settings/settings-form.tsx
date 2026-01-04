@@ -2,7 +2,7 @@
 
 import { useFormStatus } from "react-dom";
 import { useTheme } from "next-themes";
-import { Loader2, Moon, Sun, Laptop, User } from "lucide-react";
+import { Loader2, Moon, Sun, Laptop, User, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,8 @@ interface SettingsFormProps {
     sessions_before_long_break: number;
     sound_enabled: boolean;
     notifications_enabled: boolean;
+    daily_digest_enabled?: boolean;
+    weekly_summary_enabled?: boolean;
   };
   userEmail: string;
 }
@@ -212,6 +214,56 @@ export function SettingsForm({ preferences, userEmail }: SettingsFormProps) {
                 name="notificationsEnabled"
                 value="true"
                 defaultChecked={preferences.notifications_enabled}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+            </label>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Email Notifications */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Mail className="h-5 w-5" />
+            Email Notifications
+          </CardTitle>
+          <CardDescription>Receive email updates about your tasks</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">Daily Digest</p>
+              <p className="text-sm text-muted-foreground">
+                Get a morning email with today's tasks and overdue items
+              </p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                name="dailyDigestEnabled"
+                value="true"
+                defaultChecked={preferences.daily_digest_enabled}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+            </label>
+          </div>
+          <Separator />
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">Weekly Summary</p>
+              <p className="text-sm text-muted-foreground">
+                Get a Monday email with your weekly stats and accomplishments
+              </p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                name="weeklySummaryEnabled"
+                value="true"
+                defaultChecked={preferences.weekly_summary_enabled}
                 className="sr-only peer"
               />
               <div className="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
