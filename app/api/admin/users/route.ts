@@ -38,6 +38,8 @@ export async function GET() {
 
   const users = authUsers.users.map((authUser) => {
     const prefs = prefsMap.get(authUser.id);
+    // banned_until exists in Supabase auth but isn't in the TS types
+    const bannedUntil = (authUser as unknown as { banned_until?: string }).banned_until;
     return {
       id: authUser.id,
       email: authUser.email,
@@ -45,7 +47,7 @@ export async function GET() {
       created_at: authUser.created_at,
       last_sign_in_at: authUser.last_sign_in_at,
       task_count: taskCountMap.get(authUser.id) || 0,
-      is_banned: authUser.banned_until ? new Date(authUser.banned_until) > new Date() : false,
+      is_banned: bannedUntil ? new Date(bannedUntil) > new Date() : false,
     };
   });
 
