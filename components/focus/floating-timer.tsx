@@ -11,31 +11,58 @@ import {
   ChevronDown,
   Maximize2,
   GripHorizontal,
-  ExternalLink,
+  PictureInPicture2,
+  Smartphone,
+  Check,
+  Circle,
   X
 } from "lucide-react";
 import { cn, formatTimerDisplay } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useTimerStore } from "@/lib/hooks/use-timer";
-import { useRouter } from "next/navigation";
+import { useTimerStore, type TimerSubtask } from "@/lib/hooks/use-timer";
+import { completeTask } from "@/app/(dashboard)/actions";
 import Link from "next/link";
 
 interface FloatingTimerProps {
   onClose?: () => void;
+  autoOpenPiP?: boolean;
 }
 
-// Check if Document Picture-in-Picture is supported
-const isPiPSupported = typeof window !== "undefined" && "documentPictureInPicture" in window;
+// Check if Document Picture-in-Picture is supported (desktop only)
+function isPiPSupported(): boolean {
+  if (typeof window === "undefined") return false;
+  return "documentPictureInPicture" in window;
+}
 
-export function FloatingTimer({ onClose }: FloatingTimerProps) {
-  const router = useRouter();
+// Check if Wake Lock API is supported (works on mobile)
+function isWakeLockSupported(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return "wakeLock" in navigator;
+}
+
+// Check if device is mobile
+function isMobileDevice(): boolean {
+  if (typeof window === "undefined") return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  ) || window.innerWidth < 768;
+}
+
+export function FloatingTimer({ onClose, autoOpenPiP = false }: FloatingTimerProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const [isDragging, setIsDragging] = useState(false);
   const [pipWindow, setPipWindow] = useState<Window | null>(null);
   const [pipContainer, setPipContainer] = useState<HTMLElement | null>(null);
+  const [pipSupported, setPipSupported] = useState(false);
+  const [pipError, setPipError] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [wakeLockActive, setWakeLockActive] = useState(false);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const dragRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef({ x: 0, y: 0, posX: 0, posY: 0 });
+  const hasTriedAutoPiP = useRef(false);
 
   const {
     state,
@@ -43,66 +70,267 @@ export function FloatingTimer({ onClose }: FloatingTimerProps) {
     timeRemaining,
     initialTime,
     task,
+    subtasks,
     pauseTimer,
     resumeTimer,
     stopTimer,
+    toggleSubtask,
   } = useTimerStore();
+
+  // Handle subtask toggle with server sync
+  const handleSubtaskToggle = useCallback(async (subtaskId: string) => {
+    // Optimistically update local state
+    toggleSubtask(subtaskId);
+    // Sync to server (fire and forget)
+    completeTask(subtaskId).catch(console.error);
+  }, [toggleSubtask]);
+
+  // Check PiP support and mobile on mount
+  useEffect(() => {
+    setPipSupported(isPiPSupported());
+    setIsMobile(isMobileDevice());
+
+    // Handle resize for mobile detection
+    const handleResize = () => setIsMobile(isMobileDevice());
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Wake Lock - keeps screen on during timer (especially useful for mobile)
+  const requestWakeLock = useCallback(async () => {
+    if (!isWakeLockSupported()) return false;
+
+    try {
+      wakeLockRef.current = await navigator.wakeLock.request("screen");
+      setWakeLockActive(true);
+
+      // Re-acquire on visibility change (when user returns to tab)
+      wakeLockRef.current.addEventListener("release", () => {
+        setWakeLockActive(false);
+      });
+
+      return true;
+    } catch (err) {
+      console.error("Wake Lock error:", err);
+      return false;
+    }
+  }, []);
+
+  const releaseWakeLock = useCallback(async () => {
+    if (wakeLockRef.current) {
+      await wakeLockRef.current.release();
+      wakeLockRef.current = null;
+      setWakeLockActive(false);
+    }
+  }, []);
+
+  // Auto-acquire wake lock when timer is running
+  useEffect(() => {
+    if (state === "running") {
+      requestWakeLock();
+    } else if (state === "idle") {
+      releaseWakeLock();
+    }
+  }, [state, requestWakeLock, releaseWakeLock]);
+
+  // Re-acquire wake lock when page becomes visible again
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && state === "running") {
+        requestWakeLock();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [state, requestWakeLock]);
+
+  // Toggle mobile fullscreen mode
+  const toggleFullscreen = useCallback(() => {
+    setIsFullscreen((prev) => !prev);
+  }, []);
 
   // Open Picture-in-Picture window
   const openPiP = useCallback(async () => {
-    if (!isPiPSupported) return;
+    if (!isPiPSupported()) {
+      setPipError("Your browser doesn't support Picture-in-Picture");
+      return false;
+    }
 
     try {
-      // @ts-expect-error - Document PiP API types not yet in TS
-      const pip = await window.documentPictureInPicture.requestWindow({
-        width: 300,
-        height: 200,
-      });
-
-      // Copy styles to PiP window
-      const styleSheets = document.styleSheets;
-      for (const sheet of styleSheets) {
-        try {
-          const cssRules = [...sheet.cssRules].map(rule => rule.cssText).join("\n");
-          const style = pip.document.createElement("style");
-          style.textContent = cssRules;
-          pip.document.head.appendChild(style);
-        } catch {
-          // Skip cross-origin stylesheets
-          if (sheet.href) {
-            const link = pip.document.createElement("link");
-            link.rel = "stylesheet";
-            link.href = sheet.href;
-            pip.document.head.appendChild(link);
-          }
-        }
+      // Close existing PiP window if any
+      if (pipWindow) {
+        pipWindow.close();
       }
 
-      // Set dark background
-      pip.document.body.style.backgroundColor = "#0a0a0a";
-      pip.document.body.style.margin = "0";
-      pip.document.body.style.padding = "12px";
-      pip.document.body.style.fontFamily = "system-ui, sans-serif";
+      // @ts-expect-error - Document PiP API types not yet in TS
+      const pip: Window = await window.documentPictureInPicture.requestWindow({
+        width: 320,
+        height: 220,
+        disallowReturnToOpener: false,
+      });
 
-      // Create container for React portal
+      // Set up the PiP document
+      pip.document.documentElement.style.colorScheme = "dark";
+
+      // Add basic styles directly
+      const style = pip.document.createElement("style");
+      style.textContent = `
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+        body {
+          font-family: system-ui, -apple-system, sans-serif;
+          background: #0a0a0a;
+          color: white;
+          padding: 16px;
+          height: 100vh;
+          display: flex;
+          flex-direction: column;
+        }
+        .progress-bar {
+          height: 4px;
+          background: #27272a;
+          border-radius: 2px;
+          overflow: hidden;
+          margin-bottom: 16px;
+        }
+        .progress-fill {
+          height: 100%;
+          transition: width 0.5s ease;
+        }
+        .progress-fill.focus { background: #f97316; }
+        .progress-fill.break { background: #22c55e; }
+        .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 8px;
+        }
+        .badge {
+          font-size: 11px;
+          font-weight: 500;
+          padding: 2px 8px;
+          border-radius: 9999px;
+        }
+        .badge.focus { background: rgba(249,115,22,0.2); color: #fb923c; }
+        .badge.break { background: rgba(34,197,94,0.2); color: #4ade80; }
+        .close-btn {
+          background: none;
+          border: none;
+          color: #71717a;
+          cursor: pointer;
+          padding: 4px;
+          font-size: 14px;
+        }
+        .close-btn:hover { color: white; }
+        .timer {
+          text-align: center;
+          font-family: ui-monospace, monospace;
+          font-size: 48px;
+          font-weight: 700;
+          letter-spacing: -2px;
+          margin: 8px 0;
+        }
+        .timer.running { color: #f97316; }
+        .timer.paused { color: #71717a; }
+        .task-name {
+          text-align: center;
+          font-size: 12px;
+          color: #a1a1aa;
+          margin-bottom: 12px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .controls {
+          display: flex;
+          justify-content: center;
+          gap: 8px;
+          margin-top: auto;
+        }
+        .btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 13px;
+          font-weight: 500;
+          transition: all 0.15s;
+        }
+        .btn-icon {
+          width: 36px;
+          height: 36px;
+          background: transparent;
+          border: 1px solid #3f3f46;
+          color: #a1a1aa;
+        }
+        .btn-icon:hover { background: #27272a; color: white; }
+        .btn-primary {
+          height: 36px;
+          padding: 0 16px;
+          background: #f97316;
+          color: white;
+        }
+        .btn-primary:hover { background: #ea580c; }
+        .btn-primary.paused { background: #22c55e; }
+        .btn-primary.paused:hover { background: #16a34a; }
+        svg {
+          width: 16px;
+          height: 16px;
+        }
+      `;
+      pip.document.head.appendChild(style);
+
+      // Create container for content
       const container = pip.document.createElement("div");
+      container.id = "pip-root";
       pip.document.body.appendChild(container);
 
       setPipWindow(pip);
       setPipContainer(container);
+      setPipError(null);
 
       // Handle PiP window close
       pip.addEventListener("pagehide", () => {
         setPipWindow(null);
         setPipContainer(null);
       });
+
+      return true;
     } catch (error) {
       console.error("Failed to open PiP:", error);
+      setPipError(error instanceof Error ? error.message : "Failed to open Picture-in-Picture");
+      return false;
     }
-  }, []);
+  }, [pipWindow]);
 
   // Only show when timer is active
   const isActive = state === "running" || state === "paused" || state === "break";
+
+  // Auto-open PiP when timer becomes active (only once per session)
+  useEffect(() => {
+    if (autoOpenPiP && isActive && !pipWindow && !hasTriedAutoPiP.current && pipSupported) {
+      hasTriedAutoPiP.current = true;
+      // Small delay to ensure user gesture context is available
+      const timer = setTimeout(() => {
+        openPiP();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [autoOpenPiP, isActive, pipWindow, pipSupported, openPiP]);
+
+  // Reset auto-PiP flag when timer stops
+  useEffect(() => {
+    if (!isActive) {
+      hasTriedAutoPiP.current = false;
+    }
+  }, [isActive]);
 
   // Close PiP when timer stops
   useEffect(() => {
@@ -158,10 +386,158 @@ export function FloatingTimer({ onClose }: FloatingTimerProps) {
   // Calculate progress
   const progress = initialTime > 0 ? ((initialTime - timeRemaining) / initialTime) * 100 : 0;
 
+  // Don't render in-browser widget if PiP is open
+  if (pipWindow && pipContainer) {
+    return createPortal(
+      <PiPTimerContent
+        state={state}
+        sessionType={sessionType}
+        timeRemaining={timeRemaining}
+        initialTime={initialTime}
+        task={task}
+        subtasks={subtasks}
+        pauseTimer={pauseTimer}
+        resumeTimer={resumeTimer}
+        stopTimer={stopTimer}
+        onSubtaskToggle={handleSubtaskToggle}
+        onClose={() => pipWindow.close()}
+      />,
+      pipContainer
+    );
+  }
+
   if (!isActive) return null;
 
+  // Mobile fullscreen mode
+  if (isFullscreen) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 bg-background flex flex-col items-center justify-center p-6"
+      >
+        {/* Progress bar at top */}
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-muted">
+          <motion.div
+            className={cn(
+              "h-full",
+              sessionType === "focus" ? "bg-primary" : "bg-green-500"
+            )}
+            initial={false}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.5 }}
+          />
+        </div>
+
+        {/* Close button */}
+        <Button
+          size="icon"
+          variant="ghost"
+          className="absolute top-4 right-4 h-10 w-10"
+          onClick={() => setIsFullscreen(false)}
+        >
+          <X className="h-5 w-5" />
+        </Button>
+
+        {/* Wake lock indicator */}
+        {wakeLockActive && (
+          <div className="absolute top-4 left-4 flex items-center gap-1.5 text-xs text-muted-foreground">
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            Screen stays on
+          </div>
+        )}
+
+        {/* Session type badge */}
+        <span className={cn(
+          "text-sm font-medium px-4 py-1.5 rounded-full mb-6",
+          sessionType === "focus"
+            ? "bg-primary/10 text-primary"
+            : "bg-green-500/10 text-green-500"
+        )}>
+          {sessionType === "focus" ? "Focus Session" : sessionType === "short_break" ? "Short Break" : "Long Break"}
+        </span>
+
+        {/* Big timer */}
+        <div
+          className={cn(
+            "font-mono text-7xl sm:text-8xl font-bold tabular-nums mb-4",
+            state === "running" && "text-primary",
+            state === "paused" && "text-muted-foreground"
+          )}
+        >
+          {formatTimerDisplay(timeRemaining)}
+        </div>
+
+        {/* Task name */}
+        {task && (
+          <p className="text-lg text-muted-foreground mb-4 max-w-xs text-center">
+            {task.title}
+          </p>
+        )}
+
+        {/* Subtasks checklist */}
+        {subtasks.length > 0 && (
+          <div className="w-full max-w-xs mb-8 space-y-2 max-h-40 overflow-y-auto">
+            {subtasks.map((subtask) => (
+              <button
+                key={subtask.id}
+                onClick={() => handleSubtaskToggle(subtask.id)}
+                className={cn(
+                  "w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-left transition-colors",
+                  subtask.status === "completed"
+                    ? "bg-green-500/10 opacity-60"
+                    : "bg-muted/50 hover:bg-muted"
+                )}
+              >
+                {subtask.status === "completed" ? (
+                  <Check className="h-5 w-5 text-green-500 shrink-0" />
+                ) : (
+                  <Circle className="h-5 w-5 text-muted-foreground shrink-0" />
+                )}
+                <span className={cn(
+                  "text-sm truncate",
+                  subtask.status === "completed" && "line-through"
+                )}>
+                  {subtask.title}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Controls */}
+        <div className="flex items-center gap-4">
+          <Button
+            size="lg"
+            variant="outline"
+            className="h-14 w-14"
+            onClick={stopTimer}
+          >
+            <Square className="h-6 w-6" />
+          </Button>
+          {state === "paused" ? (
+            <Button size="lg" className="h-14 px-8" onClick={resumeTimer}>
+              <Play className="h-6 w-6 mr-2" />
+              Resume
+            </Button>
+          ) : (
+            <Button size="lg" className="h-14 px-8" onClick={pauseTimer}>
+              <Pause className="h-6 w-6 mr-2" />
+              Pause
+            </Button>
+          )}
+        </div>
+
+        {/* Tip */}
+        <p className="absolute bottom-6 text-xs text-muted-foreground text-center">
+          {wakeLockActive ? "Your screen will stay on while the timer runs" : "Tap the timer to exit fullscreen"}
+        </p>
+      </motion.div>
+    );
+  }
+
   return (
-    <>
     <AnimatePresence>
       <motion.div
         ref={dragRef}
@@ -249,15 +625,27 @@ export function FloatingTimer({ onClose }: FloatingTimerProps) {
                   >
                     <ChevronDown className="h-3 w-3" />
                   </Button>
-                  {isPiPSupported && (
+                  {/* Desktop: PiP button, Mobile: Fullscreen button */}
+                  {pipSupported && !isMobile && (
                     <Button
                       size="icon"
                       variant="ghost"
                       className="h-6 w-6"
                       onClick={openPiP}
-                      title="Pop out (stays on top)"
+                      title="Pop out window (stays on top of other apps)"
                     >
-                      <ExternalLink className="h-3 w-3" />
+                      <PictureInPicture2 className="h-3 w-3" />
+                    </Button>
+                  )}
+                  {isMobile && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6"
+                      onClick={toggleFullscreen}
+                      title="Fullscreen timer"
+                    >
+                      <Smartphone className="h-3 w-3" />
                     </Button>
                   )}
                   <Link href="/focus">
@@ -267,6 +655,19 @@ export function FloatingTimer({ onClose }: FloatingTimerProps) {
                   </Link>
                 </div>
               </div>
+
+              {/* PiP Error */}
+              {pipError && (
+                <p className="text-xs text-red-400 text-center">{pipError}</p>
+              )}
+
+              {/* Wake lock indicator (mobile) */}
+              {isMobile && wakeLockActive && (
+                <div className="flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                  Screen on
+                </div>
+              )}
 
               {/* Timer display */}
               <div className="text-center">
@@ -286,6 +687,34 @@ export function FloatingTimer({ onClose }: FloatingTimerProps) {
                 <p className="text-xs text-muted-foreground text-center truncate px-2">
                   {task.title}
                 </p>
+              )}
+
+              {/* Subtasks checklist */}
+              {subtasks.length > 0 && (
+                <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                  {subtasks.map((subtask) => (
+                    <button
+                      key={subtask.id}
+                      onClick={() => handleSubtaskToggle(subtask.id)}
+                      className={cn(
+                        "w-full flex items-center gap-2 px-2 py-1 rounded text-left text-xs transition-colors hover:bg-muted/50",
+                        subtask.status === "completed" && "opacity-50"
+                      )}
+                    >
+                      {subtask.status === "completed" ? (
+                        <Check className="h-3 w-3 text-green-500 shrink-0" />
+                      ) : (
+                        <Circle className="h-3 w-3 text-muted-foreground shrink-0" />
+                      )}
+                      <span className={cn(
+                        "truncate",
+                        subtask.status === "completed" && "line-through"
+                      )}>
+                        {subtask.title}
+                      </span>
+                    </button>
+                  ))}
+                </div>
               )}
 
               {/* Controls */}
@@ -315,36 +744,21 @@ export function FloatingTimer({ onClose }: FloatingTimerProps) {
         </div>
       </motion.div>
     </AnimatePresence>
-
-    {/* Picture-in-Picture content */}
-    {pipContainer && createPortal(
-      <PiPTimerContent
-        state={state}
-        sessionType={sessionType}
-        timeRemaining={timeRemaining}
-        initialTime={initialTime}
-        task={task}
-        pauseTimer={pauseTimer}
-        resumeTimer={resumeTimer}
-        stopTimer={stopTimer}
-        onClose={() => pipWindow?.close()}
-      />,
-      pipContainer
-    )}
-  </>
   );
 }
 
-// Simplified timer content for PiP window
+// Simplified timer content for PiP window (vanilla HTML/JS - no React)
 function PiPTimerContent({
   state,
   sessionType,
   timeRemaining,
   initialTime,
   task,
+  subtasks,
   pauseTimer,
   resumeTimer,
   stopTimer,
+  onSubtaskToggle,
   onClose,
 }: {
   state: string;
@@ -352,90 +766,129 @@ function PiPTimerContent({
   timeRemaining: number;
   initialTime: number;
   task: { title: string } | null;
+  subtasks: TimerSubtask[];
   pauseTimer: () => void;
   resumeTimer: () => void;
   stopTimer: () => void;
+  onSubtaskToggle: (id: string) => void;
   onClose: () => void;
 }) {
   const progress = initialTime > 0 ? ((initialTime - timeRemaining) / initialTime) * 100 : 0;
+  const isFocus = sessionType === "focus";
+  const isPaused = state === "paused";
+
+  // SVG icons as strings
+  const playIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`;
+  const pauseIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>`;
+  const stopIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>`;
+  const checkIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+  const circleIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle></svg>`;
+
+  // Generate subtask HTML
+  const subtasksHtml = subtasks.length > 0 ? `
+    <div class="subtasks">
+      ${subtasks.map(st => `
+        <button class="subtask-btn" data-id="${st.id}" data-status="${st.status}">
+          <span class="subtask-icon">${st.status === 'completed' ? checkIcon : circleIcon}</span>
+          <span class="subtask-title ${st.status === 'completed' ? 'completed' : ''}">${st.title}</span>
+        </button>
+      `).join('')}
+    </div>
+  ` : '';
 
   return (
-    <div className="text-white">
-      {/* Progress bar */}
-      <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden mb-4">
-        <div
-          className={cn(
-            "h-full transition-all duration-500",
-            sessionType === "focus" ? "bg-orange-500" : "bg-green-500"
-          )}
-          style={{ width: `${progress}%` }}
-        />
-      </div>
+    <div
+      style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+      dangerouslySetInnerHTML={{
+        __html: `
+          <style>
+            .subtasks {
+              max-height: 80px;
+              overflow-y: auto;
+              margin-bottom: 8px;
+            }
+            .subtask-btn {
+              display: flex;
+              align-items: center;
+              gap: 6px;
+              width: 100%;
+              padding: 4px 8px;
+              background: transparent;
+              border: none;
+              border-radius: 4px;
+              cursor: pointer;
+              text-align: left;
+              color: #a1a1aa;
+              font-size: 11px;
+              transition: background 0.15s;
+            }
+            .subtask-btn:hover { background: #27272a; }
+            .subtask-btn[data-status="completed"] { opacity: 0.5; }
+            .subtask-icon { width: 12px; height: 12px; flex-shrink: 0; }
+            .subtask-icon svg { width: 12px; height: 12px; }
+            .subtask-btn[data-status="completed"] .subtask-icon { color: #22c55e; }
+            .subtask-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .subtask-title.completed { text-decoration: line-through; }
+          </style>
+          <div class="progress-bar">
+            <div class="progress-fill ${isFocus ? 'focus' : 'break'}" style="width: ${progress}%"></div>
+          </div>
 
-      {/* Session type */}
-      <div className="flex items-center justify-between mb-2">
-        <span className={cn(
-          "text-xs font-medium px-2 py-0.5 rounded-full",
-          sessionType === "focus"
-            ? "bg-orange-500/20 text-orange-400"
-            : "bg-green-500/20 text-green-400"
-        )}>
-          {sessionType === "focus" ? "Focus" : sessionType === "short_break" ? "Break" : "Long Break"}
-        </span>
-        <button
-          onClick={onClose}
-          className="text-zinc-500 hover:text-white text-xs"
-        >
-          ✕
-        </button>
-      </div>
+          <div class="header">
+            <span class="badge ${isFocus ? 'focus' : 'break'}">
+              ${isFocus ? 'Focus' : sessionType === 'short_break' ? 'Break' : 'Long Break'}
+            </span>
+            <button class="close-btn" onclick="window.close()">✕</button>
+          </div>
 
-      {/* Timer */}
-      <div className="text-center mb-3">
-        <span
-          className={cn(
-            "font-mono text-4xl font-bold tabular-nums",
-            state === "running" && "text-orange-500",
-            state === "paused" && "text-zinc-400"
-          )}
-        >
-          {formatTimerDisplay(timeRemaining)}
-        </span>
-      </div>
+          <div class="timer ${state === 'running' ? 'running' : 'paused'}">
+            ${formatTimerDisplay(timeRemaining)}
+          </div>
 
-      {/* Task name */}
-      {task && (
-        <p className="text-xs text-zinc-400 text-center truncate mb-3">
-          {task.title}
-        </p>
-      )}
+          ${task ? `<div class="task-name">${task.title}</div>` : ''}
 
-      {/* Controls */}
-      <div className="flex items-center justify-center gap-2">
-        <button
-          onClick={stopTimer}
-          className="h-8 w-8 rounded-lg border border-zinc-700 hover:bg-zinc-800 flex items-center justify-center"
-        >
-          <Square className="h-3.5 w-3.5 text-zinc-400" />
-        </button>
-        {state === "paused" ? (
-          <button
-            onClick={resumeTimer}
-            className="h-8 px-4 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium flex items-center gap-1.5"
-          >
-            <Play className="h-3.5 w-3.5" />
-            Resume
-          </button>
-        ) : (
-          <button
-            onClick={pauseTimer}
-            className="h-8 px-4 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium flex items-center gap-1.5"
-          >
-            <Pause className="h-3.5 w-3.5" />
-            Pause
-          </button>
-        )}
-      </div>
-    </div>
+          ${subtasksHtml}
+
+          <div class="controls">
+            <button class="btn btn-icon" id="stop-btn">${stopIcon}</button>
+            <button class="btn btn-primary ${isPaused ? 'paused' : ''}" id="toggle-btn">
+              ${isPaused ? playIcon : pauseIcon}
+              ${isPaused ? 'Resume' : 'Pause'}
+            </button>
+          </div>
+        `
+      }}
+      ref={(el) => {
+        if (el) {
+          const stopBtn = el.querySelector('#stop-btn');
+          const toggleBtn = el.querySelector('#toggle-btn');
+          const subtaskBtns = el.querySelectorAll('.subtask-btn');
+
+          if (stopBtn) {
+            stopBtn.addEventListener('click', () => {
+              stopTimer();
+              onClose();
+            });
+          }
+
+          if (toggleBtn) {
+            toggleBtn.addEventListener('click', () => {
+              if (isPaused) {
+                resumeTimer();
+              } else {
+                pauseTimer();
+              }
+            });
+          }
+
+          subtaskBtns.forEach((btn) => {
+            btn.addEventListener('click', () => {
+              const id = btn.getAttribute('data-id');
+              if (id) onSubtaskToggle(id);
+            });
+          });
+        }
+      }}
+    />
   );
 }

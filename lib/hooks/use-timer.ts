@@ -7,19 +7,27 @@ import type { Task } from "@/lib/supabase/types";
 export type TimerState = "idle" | "running" | "paused" | "break" | "completed";
 export type SessionType = "focus" | "short_break" | "long_break";
 
+// Simplified subtask for timer display
+export interface TimerSubtask {
+  id: string;
+  title: string;
+  status: "pending" | "in_progress" | "completed" | "cancelled";
+}
+
 interface TimerStore {
   state: TimerState;
   sessionType: SessionType;
   timeRemaining: number;
   initialTime: number;
   task: Task | null;
+  subtasks: TimerSubtask[];
   sessionsCompleted: number;
   soundEnabled: boolean;
   // Track when timer was last updated (for calculating elapsed time on refresh)
   lastTickAt: number | null;
 
   // Actions
-  startTimer: (task: Task | null, durationMinutes: number) => void;
+  startTimer: (task: Task | null, durationMinutes: number, subtasks?: TimerSubtask[]) => void;
   startBreak: (type: "short_break" | "long_break", durationMinutes: number) => void;
   pauseTimer: () => void;
   resumeTimer: () => void;
@@ -30,6 +38,9 @@ interface TimerStore {
   setSoundEnabled: (enabled: boolean) => void;
   incrementSessions: () => void;
   resetSessions: () => void;
+  // Subtask management
+  setSubtasks: (subtasks: TimerSubtask[]) => void;
+  toggleSubtask: (subtaskId: string) => void;
   // Hydration helper
   hydrateTimer: () => void;
 }
@@ -42,11 +53,12 @@ export const useTimerStore = create<TimerStore>()(
       timeRemaining: 0,
       initialTime: 0,
       task: null,
+      subtasks: [],
       sessionsCompleted: 0,
       soundEnabled: true,
       lastTickAt: null,
 
-      startTimer: (task, durationMinutes) => {
+      startTimer: (task, durationMinutes, subtasks = []) => {
         const seconds = durationMinutes * 60;
         set({
           state: "running",
@@ -54,6 +66,7 @@ export const useTimerStore = create<TimerStore>()(
           timeRemaining: seconds,
           initialTime: seconds,
           task,
+          subtasks,
           lastTickAt: Date.now(),
         });
       },
@@ -89,6 +102,7 @@ export const useTimerStore = create<TimerStore>()(
           timeRemaining: 0,
           initialTime: 0,
           task: null,
+          subtasks: [],
           lastTickAt: null,
         });
       },
@@ -114,6 +128,7 @@ export const useTimerStore = create<TimerStore>()(
           timeRemaining: 0,
           initialTime: 0,
           task: null,
+          subtasks: [],
           lastTickAt: null,
         });
       },
@@ -128,6 +143,21 @@ export const useTimerStore = create<TimerStore>()(
 
       resetSessions: () => {
         set({ sessionsCompleted: 0 });
+      },
+
+      setSubtasks: (subtasks) => {
+        set({ subtasks });
+      },
+
+      toggleSubtask: (subtaskId) => {
+        const { subtasks } = get();
+        set({
+          subtasks: subtasks.map((st) =>
+            st.id === subtaskId
+              ? { ...st, status: st.status === "completed" ? "pending" : "completed" }
+              : st
+          ),
+        });
       },
 
       // Called on app load to recalculate time after page refresh
@@ -157,6 +187,7 @@ export const useTimerStore = create<TimerStore>()(
         timeRemaining: state.timeRemaining,
         initialTime: state.initialTime,
         task: state.task,
+        subtasks: state.subtasks,
         sessionsCompleted: state.sessionsCompleted,
         soundEnabled: state.soundEnabled,
         lastTickAt: state.lastTickAt,
