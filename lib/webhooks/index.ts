@@ -1,6 +1,55 @@
 import { createClient } from "@/lib/supabase/server";
 import crypto from "crypto";
+import { lookup } from "dns/promises";
+import { isIP } from "net";
 import type { WebhookEventType, OutgoingWebhook } from "@/lib/supabase/types";
+
+/** True for loopback, private, link-local (incl. cloud metadata 169.254.169.254) and reserved ranges. */
+function isPrivateAddress(ip: string): boolean {
+  const v = isIP(ip);
+  if (v === 4) {
+    const p = ip.split(".").map(Number);
+    if (p[0] === 10 || p[0] === 127 || p[0] === 0) return true;
+    if (p[0] === 169 && p[1] === 254) return true; // link-local + metadata
+    if (p[0] === 172 && p[1] >= 16 && p[1] <= 31) return true;
+    if (p[0] === 192 && p[1] === 168) return true;
+    if (p[0] === 100 && p[1] >= 64 && p[1] <= 127) return true; // CGNAT
+    return false;
+  }
+  const a = ip.toLowerCase();
+  if (a === "::1" || a === "::") return true;
+  if (a.startsWith("fe80") || a.startsWith("fc") || a.startsWith("fd")) return true;
+  const mapped = a.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+  if (mapped) return isPrivateAddress(mapped[1]);
+  return false;
+}
+
+/**
+ * Guard against SSRF: only allow http(s) to public hosts. Resolves DNS and
+ * rejects if any resolved address is private/loopback/link-local. Throws on
+ * any unsafe URL. Callers must also use `redirect: "error"` on the fetch.
+ */
+async function assertSafeWebhookUrl(rawUrl: string): Promise<void> {
+  let url: URL;
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    throw new Error("Invalid webhook URL");
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    throw new Error("Webhook URL must use http(s)");
+  }
+  const host = url.hostname.replace(/^\[|\]$/g, "");
+  if (host === "localhost") throw new Error("Webhook host not allowed");
+  if (isIP(host)) {
+    if (isPrivateAddress(host)) throw new Error("Webhook host not allowed");
+    return;
+  }
+  const addrs = await lookup(host, { all: true });
+  if (addrs.some((a) => isPrivateAddress(a.address))) {
+    throw new Error("Webhook host not allowed");
+  }
+}
 
 // Generate a secure API key
 export function generateApiKey(): { key: string; hash: string; prefix: string } {
@@ -175,6 +224,9 @@ async function sendWebhook(
 
   const signature = signWebhookPayload(body, webhook.secret);
 
+  // SSRF guard: reject internal/private targets before making the request.
+  await assertSafeWebhookUrl(webhook.url);
+
   const response = await fetch(webhook.url, {
     method: "POST",
     headers: {
@@ -183,6 +235,7 @@ async function sendWebhook(
       "X-Bruh-Event": eventType,
     },
     body,
+    redirect: "error", // don't follow redirects to a private host
     signal: AbortSignal.timeout(10000), // 10 second timeout
   });
 
