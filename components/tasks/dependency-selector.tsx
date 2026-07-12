@@ -166,6 +166,7 @@ export function DependencySelector({
               <button
                 type="button"
                 onClick={() => removeDependency(task.id)}
+                aria-label="Remove dependency"
                 className="ml-1 rounded-full hover:bg-muted p-0.5"
               >
                 <X className="h-3 w-3" />

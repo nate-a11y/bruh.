@@ -9,7 +9,14 @@ interface RouteParams {
 export async function POST(request: Request, { params }: RouteParams) {
   try {
     const { slug } = await params;
-    const { role } = await request.json();
+    const { role: rawRole } = await request.json();
+
+    // Validate role against allowlist (never allow "owner" via invite)
+    const allowedRoles = ["member", "admin"];
+    const role = rawRole ?? "member";
+    if (!allowedRoles.includes(role)) {
+      return NextResponse.json({ error: "Invalid role" }, { status: 400 });
+    }
 
     const supabase = await createClient() as any;
     const { data: { user } } = await supabase.auth.getUser();
@@ -52,7 +59,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       .insert({
         team_id: team.id,
         email: `link-${token.slice(0, 8)}@invite.getbruh.app`,
-        role: role || "member",
+        role,
         invited_by: user.id,
         token,
         expires_at: expiresAt.toISOString(),

@@ -47,6 +47,7 @@ export function KanbanCard({ task, onClick, isOverlay }: KanbanCardProps) {
         <button
           {...attributes}
           {...listeners}
+          aria-label="Drag to reorder"
           className="mt-0.5 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing"
         >
           <GripVertical className="h-4 w-4" />

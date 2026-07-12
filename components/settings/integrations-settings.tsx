@@ -79,10 +79,10 @@ export function IntegrationsSettings() {
           {token ? (
             <div className="flex gap-2">
               <Input value={token} readOnly className="font-mono text-xs" />
-              <Button variant="outline" size="icon" onClick={copyToken}>
+              <Button variant="outline" size="icon" onClick={copyToken} aria-label="Copy token">
                 <Copy className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="icon" onClick={generateToken}>
+              <Button variant="outline" size="icon" onClick={generateToken} aria-label="Regenerate token">
                 <RefreshCw className="h-4 w-4" />
               </Button>
             </div>
@@ -105,6 +105,7 @@ export function IntegrationsSettings() {
                 size="sm"
                 onClick={() => copyToClipboard(SUPABASE_URL, "URL")}
                 disabled={!SUPABASE_URL}
+                aria-label="Copy Supabase URL"
               >
                 {copied === "URL" ? (
                   <Check className="h-4 w-4 text-green-500" />
@@ -120,6 +121,7 @@ export function IntegrationsSettings() {
                 size="sm"
                 onClick={() => copyToClipboard(SUPABASE_ANON_KEY, "Anon Key")}
                 disabled={!SUPABASE_ANON_KEY}
+                aria-label="Copy Supabase Anon Key"
               >
                 {copied === "Anon Key" ? (
                   <Check className="h-4 w-4 text-green-500" />

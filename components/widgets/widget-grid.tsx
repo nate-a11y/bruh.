@@ -114,6 +114,7 @@ export function WidgetGrid({
                   <Button
                     variant="ghost"
                     size="icon"
+                    aria-label="Drag to reorder"
                     className="h-6 w-6 cursor-grab"
                   >
                     <GripVertical className="h-3 w-3" />
@@ -121,6 +122,7 @@ export function WidgetGrid({
                   <Button
                     variant="ghost"
                     size="icon"
+                    aria-label="Remove widget"
                     className="h-6 w-6 text-destructive"
                     onClick={() => onRemoveWidget?.(widget.id)}
                   >

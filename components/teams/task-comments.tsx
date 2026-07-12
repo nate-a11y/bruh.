@@ -256,7 +256,7 @@ export function TaskComments({
               {comment.user_id === currentUserId && editingId !== comment.id && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" aria-label="Comment options">
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -298,6 +298,7 @@ export function TaskComments({
         <Button
           size="icon"
           className="absolute bottom-2 right-2"
+          aria-label="Send comment"
           onClick={handleSubmit}
           disabled={!newComment.trim() || isSubmitting}
         >

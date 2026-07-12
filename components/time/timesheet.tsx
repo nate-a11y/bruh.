@@ -45,6 +45,7 @@ export function Timesheet({ entries, onAddEntry }: TimesheetProps) {
             variant="outline"
             size="icon"
             onClick={() => setWeekStart(addDays(weekStart, -7))}
+            aria-label="Previous week"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -55,6 +56,7 @@ export function Timesheet({ entries, onAddEntry }: TimesheetProps) {
             variant="outline"
             size="icon"
             onClick={() => setWeekStart(addDays(weekStart, 7))}
+            aria-label="Next week"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -87,6 +89,7 @@ export function Timesheet({ entries, onAddEntry }: TimesheetProps) {
                     size="icon"
                     className="h-6 w-6"
                     onClick={() => onAddEntry?.(day)}
+                    aria-label={`Add entry for ${format(day, "EEE d")}`}
                   >
                     <Plus className="h-3 w-3" />
                   </Button>

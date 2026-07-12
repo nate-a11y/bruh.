@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://getbruh.app"),
   title: "bruh. - Get your shit together.",
   description: "A task manager that doesn't take itself too seriously. But takes your productivity very seriously.",
   manifest: "/manifest.json",
@@ -23,11 +24,20 @@ export const metadata: Metadata = {
     url: "https://getbruh.app",
     siteName: "bruh.",
     type: "website",
+    images: [
+      {
+        url: "/BruhSS.jpg",
+        width: 1200,
+        height: 630,
+        alt: "bruh. - Get your shit together.",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "bruh. - Get your shit together.",
     description: "A task manager that doesn't take itself too seriously. But takes your productivity very seriously.",
+    images: ["/BruhSS.jpg"],
   },
 };
 

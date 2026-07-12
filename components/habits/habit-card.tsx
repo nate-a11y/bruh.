@@ -93,6 +93,7 @@ export function HabitCard({ habit, todayCount = 0, onEdit }: HabitCardProps) {
                   size="icon"
                   className="h-8 w-8"
                   onClick={handleIncrement}
+                  aria-label="Increment count"
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
@@ -101,7 +102,7 @@ export function HabitCard({ habit, todayCount = 0, onEdit }: HabitCardProps) {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Habit options">
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>

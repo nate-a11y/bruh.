@@ -59,11 +59,11 @@ export function CalendarView({ tasks, onTaskClick, onDayClick }: CalendarViewPro
     <div className="bg-card rounded-lg border">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b">
-        <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
+        <Button variant="ghost" size="icon" aria-label="Previous month" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
           <ChevronLeft className="h-4 w-4" />
         </Button>
         <h2 className="font-semibold">{format(currentMonth, "MMMM yyyy")}</h2>
-        <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
+        <Button variant="ghost" size="icon" aria-label="Next month" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>

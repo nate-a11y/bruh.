@@ -106,6 +106,7 @@ export function InstallPrompt() {
                 size="icon"
                 className="h-6 w-6 shrink-0"
                 onClick={handleDismiss}
+                aria-label="Dismiss"
               >
                 <X className="h-4 w-4" />
               </Button>

@@ -333,6 +333,7 @@ export function FocusMusic({
                   className="h-8 px-2"
                   onClick={handleAddCustom}
                   disabled={!customUrl}
+                  aria-label="Add track"
                 >
                   <Plus className="h-3 w-3" />
                 </Button>
@@ -369,6 +370,7 @@ export function FocusMusic({
                 className="h-8 w-8 p-0"
                 onClick={handleTogglePlayPause}
                 disabled={audioSource === 'none'}
+                aria-label={isPlaying ? "Pause music" : "Play music"}
               >
                 {isPlaying ? (
                   <Pause className="h-4 w-4" />
@@ -381,6 +383,7 @@ export function FocusMusic({
                 size="sm"
                 className="h-8 w-8 p-0"
                 onClick={() => setIsMuted(!isMuted)}
+                aria-label={isMuted ? "Unmute music" : "Mute music"}
               >
                 {isMuted ? (
                   <VolumeX className="h-4 w-4" />

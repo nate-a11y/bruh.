@@ -241,6 +241,7 @@ export function FilterBuilder({ config, onChange, lists }: FilterBuilderProps) {
                 size="icon"
                 onClick={() => removeCondition(index)}
                 className="ml-auto"
+                aria-label="Remove condition"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>

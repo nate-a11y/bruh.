@@ -106,10 +106,20 @@ export function CalendarView({
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => navigate("prev")}>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label={viewMode === "month" ? "Previous month" : viewMode === "week" ? "Previous week" : "Previous day"}
+            onClick={() => navigate("prev")}
+          >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="icon" onClick={() => navigate("next")}>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label={viewMode === "month" ? "Next month" : viewMode === "week" ? "Next week" : "Next day"}
+            onClick={() => navigate("next")}
+          >
             <ChevronRight className="h-4 w-4" />
           </Button>
           <h2 className="text-lg font-semibold ml-2">{getHeaderTitle()}</h2>
@@ -345,6 +355,7 @@ function WeekView({
               <Button
                 variant="ghost"
                 size="sm"
+                aria-label="Add task"
                 className="w-full h-6 mt-1 opacity-0 hover:opacity-100 transition-opacity"
                 onClick={() => onAddTask(day)}
               >

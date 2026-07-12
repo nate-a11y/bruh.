@@ -95,7 +95,7 @@ export function TagManager({ tags: initialTags }: TagManagerProps) {
               />
             ))}
           </div>
-          <Button type="submit" size="sm" disabled={!newTagName.trim()}>
+          <Button type="submit" size="sm" disabled={!newTagName.trim()} aria-label="Add tag">
             <Plus className="h-4 w-4" />
           </Button>
         </form>
@@ -132,6 +132,7 @@ export function TagManager({ tags: initialTags }: TagManagerProps) {
                     setEditingId(tag.id);
                     setEditName(tag.name);
                   }}
+                  aria-label="Edit tag"
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>
@@ -140,6 +141,7 @@ export function TagManager({ tags: initialTags }: TagManagerProps) {
                   size="icon"
                   className="h-8 w-8 text-destructive"
                   onClick={() => handleDelete(tag.id)}
+                  aria-label="Delete tag"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

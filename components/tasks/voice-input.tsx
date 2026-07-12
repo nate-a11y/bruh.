@@ -172,6 +172,7 @@ export function VoiceInput({
       size="icon"
       onClick={toggleListening}
       disabled={disabled}
+      aria-label={isListening ? "Stop voice input" : "Start voice input"}
       className={cn(
         "h-8 w-8 shrink-0 transition-colors",
         isListening && "bg-destructive/10 text-destructive hover:bg-destructive/20",

@@ -55,6 +55,7 @@ export function Header({ title, subtitle, action, showTimer = true }: HeaderProp
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6"
+                aria-label={state === "paused" ? "Resume timer" : "Pause timer"}
                 onClick={(e) => {
                   e.preventDefault();
                   if (state === "paused") {

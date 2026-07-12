@@ -125,11 +125,11 @@ export function TimeTracker({
           {timeDisplay}
         </Badge>
         {!isRunning ? (
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleStart}>
+          <Button variant="ghost" size="icon" className="h-6 w-6" aria-label="Start timer" onClick={handleStart}>
             <Play className="h-3 w-3" />
           </Button>
         ) : (
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handlePause}>
+          <Button variant="ghost" size="icon" className="h-6 w-6" aria-label="Pause timer" onClick={handlePause}>
             <Pause className="h-3 w-3" />
           </Button>
         )}

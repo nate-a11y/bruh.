@@ -54,11 +54,20 @@ async function incrementDailyStat(
 
     const currentRecord = current as Record<string, number> | null;
     const currentValue = currentRecord?.[field] ?? 0;
-    await supabase
+    const { error: updateError } = await supabase
       .from("zeroed_daily_stats")
       .update({ [field]: currentValue + value })
       .eq("user_id", userId)
       .eq("date", today);
+
+    if (updateError) {
+      console.error("incrementDailyStat: fallback update failed", {
+        userId,
+        field,
+        value,
+        error: updateError.message,
+      });
+    }
   }
 }
 
@@ -608,12 +617,21 @@ export async function completeFocusSession(
       .eq("id", taskId)
       .single();
 
-    await supabase
+    const { error: taskUpdateError } = await supabase
       .from("zeroed_tasks")
       .update({
         actual_minutes: (task?.actual_minutes || 0) + actualMinutes,
       })
       .eq("id", taskId);
+
+    if (taskUpdateError) {
+      console.error("completeFocusSession: failed to roll up task actual_minutes", {
+        userId: user.id,
+        taskId,
+        actualMinutes,
+        error: taskUpdateError.message,
+      });
+    }
   }
 
   // Update daily stats using the increment helper
@@ -838,10 +856,18 @@ export async function breakdownTaskWithAI(taskId: string) {
 
     // Update parent task estimate if suggested
     if (result.suggested_estimate) {
-      await supabase
+      const { error: estimateError } = await supabase
         .from("zeroed_tasks")
         .update({ estimated_minutes: result.suggested_estimate })
         .eq("id", taskId);
+
+      if (estimateError) {
+        console.error("breakdownTaskWithAI: failed to update parent estimate", {
+          userId: user.id,
+          taskId,
+          error: estimateError.message,
+        });
+      }
     }
 
     revalidatePath("/");
@@ -1185,7 +1211,7 @@ export async function completeRecurringTask(taskId: string) {
 
   // Create next occurrence if not past end date
   if (nextDate) {
-    await supabase.from("zeroed_tasks").insert({
+    const { error: nextError } = await supabase.from("zeroed_tasks").insert({
       user_id: user.id,
       list_id: task.list_id,
       title: task.title,
@@ -1199,6 +1225,15 @@ export async function completeRecurringTask(taskId: string) {
       recurrence_parent_id: task.recurrence_parent_id || task.id,
       recurrence_index: task.recurrence_index + 1,
     });
+
+    if (nextError) {
+      console.error("completeRecurringTask: failed to create next occurrence", {
+        userId: user.id,
+        taskId,
+        error: nextError.message,
+      });
+      return { error: nextError.message };
+    }
   }
 
   // Update daily stats
@@ -1554,7 +1589,7 @@ export async function logHabitCompletion(habitId: string, count: number = 1, not
     const newStreak = habit.streak_current + 1;
     const newBest = Math.max(habit.streak_best, newStreak);
 
-    await supabase
+    const { error: streakError } = await supabase
       .from("zeroed_habits")
       .update({
         total_completions: newTotal,
@@ -1562,6 +1597,15 @@ export async function logHabitCompletion(habitId: string, count: number = 1, not
         streak_best: newBest,
       })
       .eq("id", habitId);
+
+    if (streakError) {
+      console.error("logHabitCompletion: failed to update habit streak", {
+        userId: user.id,
+        habitId,
+        error: streakError.message,
+      });
+      return { error: streakError.message };
+    }
   }
 
   revalidatePath("/habits");
@@ -1609,30 +1653,41 @@ export async function awardPoints(points: number, reason: string, referenceId?: 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
-  // Log points
-  await supabase.from("zeroed_points_history").insert({
-    user_id: user.id,
-    points,
-    reason,
-    reference_id: referenceId || null,
+  // Atomically log the points and increment the running total + level via the
+  // SECURITY DEFINER RPC. This avoids the read-modify-write lost-update race
+  // where two concurrent awards would clobber each other's totals, and it also
+  // surfaces write failures (the old path ignored the insert/update errors and
+  // always returned success).
+  const { data: result, error } = await (supabase as any).rpc("zeroed_add_points", {
+    p_user_id: user.id,
+    p_points: points,
+    p_reason: reason,
+    p_reference_id: referenceId || null,
   });
 
-  // Update total points in user preferences
-  const { data: prefs } = await supabase
-    .from("zeroed_user_preferences")
-    .select("total_points, level")
-    .eq("user_id", user.id)
-    .single();
-
-  const newTotal = (prefs?.total_points || 0) + points;
-
-  await supabase
-    .from("zeroed_user_preferences")
-    .update({ total_points: newTotal })
-    .eq("user_id", user.id);
+  if (error) {
+    console.error("awardPoints: zeroed_add_points RPC failed", {
+      userId: user.id,
+      points,
+      reason,
+      error: error.message,
+    });
+    return { error: error.message };
+  }
 
   revalidatePath("/");
-  return { success: true, newTotal };
+
+  // RPC returns { points, level, xp_to_next_level, leveled_up, points_earned }.
+  const stats = (result || {}) as {
+    points?: number;
+    level?: number;
+    xp_to_next_level?: number;
+    leveled_up?: boolean;
+    points_earned?: number;
+  };
+
+  // Keep `newTotal` for backward-compatible callers.
+  return { success: true, newTotal: stats.points ?? 0, stats };
 }
 
 export async function checkAndAwardAchievement(achievementType: string, value: number) {
@@ -1655,11 +1710,25 @@ export async function checkAndAwardAchievement(achievementType: string, value: n
   const tiers = [1, 5, 10, 25, 50, 100]; // Example tiers
   for (const tier of tiers) {
     if (value >= tier && !earnedTiers.has(tier)) {
-      await supabase.from("zeroed_achievements").insert({
+      const { error: insertError } = await supabase.from("zeroed_achievements").insert({
         user_id: user.id,
         achievement_type: achievementType,
         achievement_tier: tier,
       });
+
+      if (insertError) {
+        // Unique-violation means it was already earned concurrently; not an error.
+        if (insertError.code !== "23505") {
+          console.error("checkAndAwardAchievement: failed to insert achievement", {
+            userId: user.id,
+            achievementType,
+            tier,
+            error: insertError.message,
+          });
+        }
+        continue;
+      }
+
       newAchievements.push(tier);
     }
   }
@@ -1753,14 +1822,28 @@ export async function createTaskFromTemplate(templateId: string, listId: string)
       estimated_minutes: st.estimated_minutes || 15,
       position: i,
     }));
-    await supabase.from("zeroed_tasks").insert(subtasks);
+    const { error: subtaskError } = await supabase.from("zeroed_tasks").insert(subtasks);
+    if (subtaskError) {
+      console.error("createTaskFromTemplate: failed to insert subtasks", {
+        userId: user.id,
+        templateId,
+        error: subtaskError.message,
+      });
+    }
   }
 
   // Update use count
-  await supabase
+  const { error: useCountError } = await supabase
     .from("zeroed_task_templates")
     .update({ use_count: template.use_count + 1 })
     .eq("id", templateId);
+  if (useCountError) {
+    console.error("createTaskFromTemplate: failed to increment use_count", {
+      userId: user.id,
+      templateId,
+      error: useCountError.message,
+    });
+  }
 
   revalidatePath("/");
   return { success: true, task };
@@ -1853,7 +1936,7 @@ export async function createProjectFromTemplate(templateId: string) {
   if (tasksData && tasksData.length > 0) {
     for (let i = 0; i < tasksData.length; i++) {
       const t = tasksData[i];
-      await supabase.from("zeroed_tasks").insert({
+      const { error: taskError } = await supabase.from("zeroed_tasks").insert({
         user_id: user.id,
         list_id: list.id,
         title: t.title,
@@ -1861,14 +1944,29 @@ export async function createProjectFromTemplate(templateId: string) {
         priority: (t.priority as TaskPriority) || "normal",
         position: i,
       });
+      if (taskError) {
+        console.error("createProjectFromTemplate: failed to insert task", {
+          userId: user.id,
+          templateId,
+          listId: list.id,
+          error: taskError.message,
+        });
+      }
     }
   }
 
   // Update use count
-  await supabase
+  const { error: useCountError } = await supabase
     .from("zeroed_project_templates")
     .update({ use_count: template.use_count + 1 })
     .eq("id", templateId);
+  if (useCountError) {
+    console.error("createProjectFromTemplate: failed to increment use_count", {
+      userId: user.id,
+      templateId,
+      error: useCountError.message,
+    });
+  }
 
   revalidatePath("/lists");
   return { success: true, list };
@@ -2072,16 +2170,33 @@ export async function deleteAllData() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
-  // Delete in order to respect foreign keys
-  await supabase.from("zeroed_task_tags").delete().eq("user_id", user.id);
-  await supabase.from("zeroed_tasks").delete().eq("user_id", user.id);
-  await supabase.from("zeroed_lists").delete().eq("user_id", user.id);
-  await supabase.from("zeroed_tags").delete().eq("user_id", user.id);
-  await supabase.from("zeroed_goals").delete().eq("user_id", user.id);
-  await supabase.from("zeroed_habit_logs").delete().eq("user_id", user.id);
-  await supabase.from("zeroed_habits").delete().eq("user_id", user.id);
-  await supabase.from("zeroed_focus_sessions").delete().eq("user_id", user.id);
-  await supabase.from("zeroed_daily_stats").delete().eq("user_id", user.id);
+  // Delete in order to respect foreign keys. A failed delete here must not be
+  // reported as success, or the user believes their data was wiped when it was
+  // not (privacy/GDPR risk).
+  const deletionOrder = [
+    "zeroed_task_tags",
+    "zeroed_tasks",
+    "zeroed_lists",
+    "zeroed_tags",
+    "zeroed_goals",
+    "zeroed_habit_logs",
+    "zeroed_habits",
+    "zeroed_focus_sessions",
+    "zeroed_daily_stats",
+  ] as const;
+
+  for (const table of deletionOrder) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from(table).delete().eq("user_id", user.id);
+    if (error) {
+      console.error("deleteAllData: failed to delete rows", {
+        userId: user.id,
+        table,
+        error: error.message,
+      });
+      return { error: `Failed to delete ${table}: ${error.message}` };
+    }
+  }
 
   revalidatePath("/");
   return { success: true };
@@ -2097,13 +2212,21 @@ export async function completeOnboarding(preferences: Record<string, unknown>, f
   if (!user) return { error: "Unauthorized" };
 
   // Update preferences
-  await supabase
+  const { error: prefsError } = await supabase
     .from("zeroed_user_preferences")
     .update({
       ...preferences,
       onboarding_completed: true,
     })
     .eq("user_id", user.id);
+
+  if (prefsError) {
+    console.error("completeOnboarding: failed to update preferences", {
+      userId: user.id,
+      error: prefsError.message,
+    });
+    return { error: prefsError.message };
+  }
 
   // Create first task if provided
   if (firstTask) {
@@ -2115,12 +2238,19 @@ export async function completeOnboarding(preferences: Record<string, unknown>, f
       .single();
 
     if (inbox) {
-      await supabase.from("zeroed_tasks").insert({
+      const { error: taskError } = await supabase.from("zeroed_tasks").insert({
         user_id: user.id,
         list_id: inbox.id,
         title: firstTask,
         due_date: format(new Date(), "yyyy-MM-dd"),
       });
+
+      if (taskError) {
+        console.error("completeOnboarding: failed to create first task", {
+          userId: user.id,
+          error: taskError.message,
+        });
+      }
     }
   }
 
@@ -2258,13 +2388,21 @@ export async function snoozeTask(
 
   // Save undo state
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase as any).from("zeroed_undo_history").insert({
+  const { error: undoError } = await (supabase as any).from("zeroed_undo_history").insert({
     user_id: user.id,
     action_type: "snooze",
     entity_type: "task",
     entity_id: taskId,
     previous_state: task,
   });
+
+  if (undoError) {
+    console.error("snoozeTask: failed to save undo state", {
+      userId: user.id,
+      taskId,
+      error: undoError.message,
+    });
+  }
 
   // Update task
   const { error } = await supabase
@@ -2370,10 +2508,18 @@ export async function executeUndo(undoId: string) {
   }
 
   // Delete the undo action
-  await supabase
+  const { error: cleanupError } = await supabase
     .from("zeroed_undo_history")
     .delete()
     .eq("id", undoId);
+
+  if (cleanupError) {
+    console.error("executeUndo: failed to delete consumed undo action", {
+      userId: user.id,
+      undoId,
+      error: cleanupError.message,
+    });
+  }
 
   revalidatePath("/");
   return { success: true };
@@ -2531,7 +2677,7 @@ export async function processBrainDump(text: string, listId: string) {
         if (task.subtasks && task.subtasks.length > 0) {
           let subPosition = 0;
           for (const subtaskTitle of task.subtasks) {
-            await supabase.from("zeroed_tasks").insert({
+            const { error: subtaskError } = await supabase.from("zeroed_tasks").insert({
               user_id: user.id,
               list_id: listId,
               title: subtaskTitle,
@@ -2539,6 +2685,13 @@ export async function processBrainDump(text: string, listId: string) {
               priority: "normal",
               position: subPosition++,
             });
+            if (subtaskError) {
+              console.error("processBrainDump: failed to insert subtask", {
+                userId: user.id,
+                parentId: newTask.id,
+                error: subtaskError.message,
+              });
+            }
           }
         }
       }
