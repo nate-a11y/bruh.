@@ -51,7 +51,7 @@ These are live vulnerabilities. All are SQL migrations against the production Su
 - [x] **S5 — SSRF guard added** (`lib/webhooks/index.ts`) — `assertSafeWebhookUrl` blocks private/loopback/link-local/CGNAT IPs (incl. `169.254.169.254`) + non-http(s) schemes, resolves DNS, and the fetch uses `redirect: "error"`. (Feature's tables don't exist in prod; this is defense-in-depth.)
 - [x] **S6 — Inbound-email endpoint authenticated** (`app/api/email/inbound/route.ts`) — requires `INBOUND_EMAIL_SECRET` via `?secret=` or `x-inbound-secret` header (constant-time compare), **fails closed**. ⚠️ Set `INBOUND_EMAIL_SECRET` in Vercel + include it in the provider's inbound webhook URL before enabling email-to-task.
 - [x] **S7 — Template policies fixed.** ✅ Split `FOR ALL` into public-read SELECT + owner-only INSERT/UPDATE/DELETE on both template tables; applied `20260712120100`, verified.
-- [ ] **S9 — Rate-limit public POST routes** (auth, Stripe webhook, inbound email, Slack) — e.g. Upstash.
+- [x] **S9 — Rate limiting** via Upstash Redis (`lib/rate-limit.ts`, sliding window, fails open if Redis down). Gated: login/signup (10/min/IP), inbound email (30/min/IP), AI auto-schedule (20/min/user). Upstash DB provisioned via management API; creds in Vercel prod. Stripe webhook left ungated (already signature-verified; avoid throttling Stripe).
 - [ ] **S10 (P2)** — Google Calendar webhook channel-token verification; encrypt OAuth tokens at rest; signup should honor `signups_enabled` + throttle + not auto-confirm email; validate team-invite role from body.
 
 ## Phase 3 — Correctness / reliability 🟡

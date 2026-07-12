@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireProApi } from "@/lib/subscriptions";
+import { rateLimit } from "@/lib/rate-limit";
 import { findOptimalTimeSlot } from "@/lib/ai/auto-schedule";
 import { format, parseISO } from "date-fns";
 
@@ -9,6 +10,11 @@ export async function POST(request: Request) {
   const gate = await requireProApi();
   if ("response" in gate) return gate.response;
   const { user } = gate;
+
+  const rl = await rateLimit("ai", user.id);
+  if (!rl.ok) {
+    return NextResponse.json({ error: "Rate limit exceeded, slow down." }, { status: 429 });
+  }
 
   const supabase = await createClient();
 
