@@ -48,7 +48,9 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname === "/terms" ||
     request.nextUrl.pathname === "/pricing" ||
     request.nextUrl.pathname === "/sitemap.xml" ||
-    request.nextUrl.pathname === "/robots.txt";
+    request.nextUrl.pathname === "/robots.txt" ||
+    // Sentry browser SDK tunnel — must be reachable without auth.
+    request.nextUrl.pathname.startsWith("/monitoring");
   const isDashboardRoute =
     !isAuthRoute && !isAuthCallback && !isApiRoute && !isLandingPage && !isPublicPage;
 
