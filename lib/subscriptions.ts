@@ -49,8 +49,27 @@ export async function getCurrentUserAccess(): Promise<
 }
 
 /**
+ * True if the user has Pro access — either their own subscription/trial, or by
+ * being a member of a team with an active subscription (owner pays per seat).
+ */
+export async function hasProAccess(userId: string): Promise<boolean> {
+  const access = await checkSubscriptionAccess(userId);
+  if (isPro(access)) return true;
+  const supabase = await createClient();
+  const { data, error } = await (supabase as any).rpc('zeroed_user_has_team_access', {
+    p_user_id: userId,
+  });
+  if (error) {
+    console.error('team access check failed:', error);
+    return false; // fail closed
+  }
+  return data === true;
+}
+
+/**
  * Server-side Pro gate for JSON API routes. Returns the user + access when the
- * caller has Pro, otherwise a ready-to-return NextResponse (401 or 402).
+ * caller has Pro (personal or via a paid team), otherwise a ready-to-return
+ * NextResponse (401 or 402).
  *
  *   const gate = await requireProApi();
  *   if ('response' in gate) return gate.response;
@@ -63,7 +82,7 @@ export async function requireProApi(): Promise<
   if (!user) {
     return { response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
   }
-  if (!isPro(access)) {
+  if (!(await hasProAccess(user.id))) {
     return {
       response: NextResponse.json(
         { error: 'This is a Pro feature.', code: 'upgrade_required', upgradeUrl: '/pricing' },

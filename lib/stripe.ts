@@ -13,6 +13,8 @@ export const stripe = process.env.STRIPE_SECRET_KEY
 
 export const STRIPE_CONFIG = {
   priceId: process.env.STRIPE_PRICE_ID || '',
+  // Per-additional-member seat price ($12/mo) for team subscriptions.
+  teamSeatPriceId: process.env.STRIPE_TEAM_SEAT_PRICE_ID || '',
   webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
   successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/settings?tab=billing&success=true`,
   cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/settings?tab=billing&canceled=true`,

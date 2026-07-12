@@ -115,6 +115,23 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const subscriptionId = typeof session.subscription === 'string'
     ? session.subscription
     : session.subscription?.id;
+
+  // Team checkout: provision the team, not a personal subscription.
+  const teamId = session.metadata?.team_id;
+  if (teamId) {
+    const { error } = await (getSupabaseAdmin() as any)
+      .from('zeroed_teams')
+      .update({
+        subscription_status: 'active',
+        stripe_subscription_id: subscriptionId,
+        stripe_customer_id: customerId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', teamId);
+    if (error) console.error('Error provisioning team subscription:', error);
+    return;
+  }
+
   const userId = session.metadata?.supabase_user_id ||
     (session.subscription && typeof session.subscription === 'object'
       ? session.subscription.metadata?.supabase_user_id
@@ -149,6 +166,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const customerId = typeof subscription.customer === 'string'
     ? subscription.customer
     : subscription.customer.id;
+  const sub0 = subscription as any;
 
   // Map Stripe status to our status
   let status: string;
@@ -168,6 +186,24 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       break;
     default:
       status = subscription.status;
+  }
+
+  // Team subscription: update the team, not a personal subscription row.
+  const teamId = sub0.metadata?.team_id;
+  if (teamId) {
+    const { error } = await (getSupabaseAdmin() as any)
+      .from('zeroed_teams')
+      .update({
+        subscription_status: status,
+        stripe_subscription_id: subscription.id,
+        current_period_end: sub0.current_period_end
+          ? new Date(sub0.current_period_end * 1000).toISOString()
+          : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', teamId);
+    if (error) console.error('Error updating team subscription:', error);
+    return;
   }
 
   // Cast subscription to any for fields that exist but aren't in current types
@@ -202,6 +238,20 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     ? subscription.customer
     : subscription.customer.id;
 
+  const teamId = (subscription as any).metadata?.team_id;
+  if (teamId) {
+    const { error } = await (getSupabaseAdmin() as any)
+      .from('zeroed_teams')
+      .update({
+        subscription_status: 'canceled',
+        stripe_subscription_id: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', teamId);
+    if (error) console.error('Error canceling team subscription:', error);
+    return;
+  }
+
   const { error } = await getSupabaseAdmin()
     .from('zeroed_subscriptions')
     .update({
@@ -224,17 +274,19 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
 
   if (!customerId) return;
 
-  const { error } = await getSupabaseAdmin()
+  const admin = getSupabaseAdmin() as any;
+  const { error } = await admin
     .from('zeroed_subscriptions')
-    .update({
-      status: 'past_due',
-      updated_at: new Date().toISOString(),
-    })
+    .update({ status: 'past_due', updated_at: new Date().toISOString() })
     .eq('stripe_customer_id', customerId);
-
   if (error) {
     console.error('Error updating subscription to past_due:', error);
   }
+  // Same customer may be a team owner instead of a personal subscriber.
+  await admin
+    .from('zeroed_teams')
+    .update({ subscription_status: 'past_due', updated_at: new Date().toISOString() })
+    .eq('stripe_customer_id', customerId);
 }
 
 async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
@@ -244,17 +296,19 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
 
   if (!customerId) return;
 
-  // If it was past_due, set back to active
-  const { error } = await getSupabaseAdmin()
+  // If it was past_due, set back to active (personal or team).
+  const admin = getSupabaseAdmin() as any;
+  const { error } = await admin
     .from('zeroed_subscriptions')
-    .update({
-      status: 'active',
-      updated_at: new Date().toISOString(),
-    })
+    .update({ status: 'active', updated_at: new Date().toISOString() })
     .eq('stripe_customer_id', customerId)
     .eq('status', 'past_due');
-
   if (error) {
     console.error('Error updating subscription to active:', error);
   }
+  await admin
+    .from('zeroed_teams')
+    .update({ subscription_status: 'active', updated_at: new Date().toISOString() })
+    .eq('stripe_customer_id', customerId)
+    .eq('subscription_status', 'past_due');
 }

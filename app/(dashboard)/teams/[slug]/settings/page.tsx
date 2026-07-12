@@ -32,6 +32,7 @@ import {
 import { toast } from "sonner";
 import { ArrowLeft, Settings, Users, Trash2, UserMinus } from "lucide-react";
 import Link from "next/link";
+import { TeamBilling } from "@/components/teams/team-billing";
 
 interface TeamMember {
   id: string;
@@ -47,6 +48,7 @@ interface Team {
   slug: string;
   description: string | null;
   owner_id: string;
+  subscription_status?: string;
 }
 
 export default function TeamSettingsPage() {
@@ -365,6 +367,16 @@ export default function TeamSettingsPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Billing */}
+          {team && (
+            <TeamBilling
+              teamId={team.id}
+              isOwner={isOwner}
+              subscriptionStatus={team.subscription_status || "inactive"}
+              memberCount={members.length}
+            />
+          )}
 
           {/* Danger Zone */}
           {isOwner && (
