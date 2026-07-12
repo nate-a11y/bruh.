@@ -43,6 +43,17 @@ export type ProFeature = keyof typeof ENFORCED_PRO_FEATURES;
 export const PRICE_DISPLAY = "$19.99";
 export const TRIAL_DAYS = 30;
 
+// Team billing: $19.99 base (owner seat) + $12/mo per additional member.
+export const TEAM_BASE_CENTS = 1999;
+export const TEAM_SEAT_CENTS = 1200;
+export const TEAM_SEAT_DISPLAY = "$12";
+
+/** Monthly cost in cents for a team of `memberCount` (owner + members). */
+export function teamMonthlyCents(memberCount: number): number {
+  const additional = Math.max(0, memberCount - 1);
+  return TEAM_BASE_CENTS + additional * TEAM_SEAT_CENTS;
+}
+
 /** Marketing plan content for /pricing and upgrade prompts. */
 export const PLANS = {
   free: {
@@ -70,6 +81,18 @@ export const PLANS = {
       "Google Calendar 2-way sync",
       "Notion & Slack integrations",
       "Priority support",
+    ],
+  },
+  team: {
+    name: "Team",
+    price: PRICE_DISPLAY,
+    period: `+ ${TEAM_SEAT_DISPLAY}/member`,
+    tagline: "For crews. Everyone gets Pro. Owner pays per seat.",
+    features: [
+      "Everything in Pro, for every member",
+      "Shared team projects & task boards",
+      "Assign tasks & comment",
+      `${PRICE_DISPLAY} base + ${TEAM_SEAT_DISPLAY}/mo per additional member`,
     ],
   },
 } as const;

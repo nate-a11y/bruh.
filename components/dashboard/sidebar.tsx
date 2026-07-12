@@ -18,6 +18,7 @@ import {
   Target,
   Calendar,
   Shield,
+  Users,
 } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { toast } from "sonner";
@@ -43,7 +44,7 @@ const navigation = [
   { name: "Goals", href: "/goals", icon: Target },
   { name: "Habits", href: "/habits", icon: Repeat },
   { name: "Stats", href: "/stats", icon: BarChart3 },
-  // Teams is hidden pending polish — re-add here + delete app/(dashboard)/teams/layout.tsx to re-enable.
+  { name: "Teams", href: "/teams", icon: Users },
 ];
 
 export function Sidebar({ lists, isAdmin }: SidebarProps) {

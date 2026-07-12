@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { syncTeamSeats } from "@/lib/teams/billing";
 
 interface RouteParams {
   params: Promise<{ token: string }>;
@@ -79,6 +80,13 @@ export async function POST(request: Request, { params }: RouteParams) {
       .from("zeroed_team_invitations")
       .update({ accepted_at: new Date().toISOString() })
       .eq("id", invitation.id);
+
+    // Keep the team's Stripe seat count in sync (no-op if no active sub).
+    try {
+      await syncTeamSeats(invitation.team_id);
+    } catch (e) {
+      console.error("Seat sync after join failed:", e);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
