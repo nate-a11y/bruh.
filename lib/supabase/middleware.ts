@@ -46,7 +46,9 @@ export async function updateSession(request: NextRequest) {
   const isPublicPage =
     request.nextUrl.pathname === "/privacy" ||
     request.nextUrl.pathname === "/terms" ||
-    request.nextUrl.pathname === "/pricing";
+    request.nextUrl.pathname === "/pricing" ||
+    request.nextUrl.pathname === "/sitemap.xml" ||
+    request.nextUrl.pathname === "/robots.txt";
   const isDashboardRoute =
     !isAuthRoute && !isAuthCallback && !isApiRoute && !isLandingPage && !isPublicPage;
 
