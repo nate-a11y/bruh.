@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { checkSubscriptionAccess } from "@/lib/subscriptions";
+import { isPro } from "@/lib/plans";
 import { getNotionAuthUrl } from "@/lib/integrations/notion";
 import { randomBytes } from "crypto";
 
@@ -9,6 +11,12 @@ export async function GET() {
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Integrations are a Pro feature. Gate server-side, fail closed.
+  const access = await checkSubscriptionAccess(user.id);
+  if (!isPro(access)) {
+    return NextResponse.redirect(new URL("/pricing", process.env.NEXT_PUBLIC_APP_URL));
   }
 
   // Generate state for CSRF protection
