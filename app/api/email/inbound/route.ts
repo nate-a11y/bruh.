@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { timingSafeEqual } from "crypto";
 import { parseNaturalLanguageTask } from "@/lib/utils/natural-language-parser";
 
 // Create service role client at runtime (not module load time)
@@ -8,6 +9,25 @@ function getServiceClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
+}
+
+/**
+ * Verify the inbound request carries the shared secret. This endpoint uses the
+ * service-role client and creates tasks in a user's account, so it must not be
+ * callable by anyone who guesses an email_task_id. Configure the email provider
+ * to POST to `/api/email/inbound?secret=<INBOUND_EMAIL_SECRET>` (or send the
+ * `x-inbound-secret` header). Fails CLOSED: if the secret isn't configured, all
+ * requests are rejected.
+ */
+function verifyInboundSecret(request: Request): boolean {
+  const expected = process.env.INBOUND_EMAIL_SECRET;
+  if (!expected) return false;
+  const url = new URL(request.url);
+  const provided =
+    request.headers.get("x-inbound-secret") || url.searchParams.get("secret") || "";
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
 }
 
 interface InboundEmail {
@@ -26,6 +46,11 @@ interface InboundEmail {
  * Supports SendGrid, Mailgun, and Postmark formats
  */
 export async function POST(request: Request) {
+  // Reject unauthenticated callers before touching the service-role client.
+  if (!verifyInboundSecret(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const supabase = getServiceClient();
 
   try {

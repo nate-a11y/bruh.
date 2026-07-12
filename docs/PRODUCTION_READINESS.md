@@ -8,7 +8,11 @@
 
 ---
 
-## The 3 things that make this urgent
+## Status (2026-07-12)
+
+**Phase 0 (security leaks) + Phase 1 (billing) are SHIPPED to production and verified.** getbruh.app runs the new code (PRs #54, #55). Live Stripe wired (product/price/webhook/portal), account activated for charges. Remaining: owner sets statement descriptor to `GETBRUH.APP` in the dashboard; then Phases 2–4 below. Full details in the phase sections.
+
+## The 3 things that make this urgent (RESOLVED)
 
 1. **Live data leaks.** Two tables shipped with Row Level Security *disabled* (`zeroed_team_invitations`, `zeroed_email_logs`). With the public anon key, anyone can read every team's invite tokens + invited emails and every user's inbound-email metadata. This is exploitable **right now** in production.
 2. **It cannot charge.** No Stripe env vars exist in Vercel (any environment). Checkout would fail. Even if wired, there is **zero server-side paywall enforcement** — the subscription check is called in exactly one place (the settings UI, display only) and **fails open** on any DB error. Every feature is free forever.
@@ -42,10 +46,10 @@ These are live vulnerabilities. All are SQL migrations against the production Su
 
 ## Phase 2 — Security hardening 🟠
 
-- [~] **S3 — SECURITY DEFINER RPC lockdown.** ✅ Revoked EXECUTE from `anon`+`public` on all 9 (kept `authenticated`+`service_role`) — closes the *unauthenticated* attack surface; applied `20260712120100`, verified 0 anon-executable. **Remaining follow-up:** guard `p_user_id` against `auth.uid()` inside each body to also block authenticated→other-user tampering (needs per-function edit + testing).
+- [x] **S3 — SECURITY DEFINER RPC lockdown (complete).** ✅ Revoked EXECUTE from `anon`+`public` on all 9 (`20260712120100`). ✅ Added `auth.uid()` guards on the 5 `p_user_id` RPCs (`add_points`, `aggregate_weekly_stats`, `check_achievements`, `increment_daily_stat`, `redeem_coupon`) — authenticated users can no longer act on another user's id; service-role calls unaffected (`20260712120300`, verified).
 - [x] **S4 — RESOLVED (not live):** the `is_admin` column **doesn't exist** in prod, so the escalation path can't fire. Still worth fixing the code to use the `lib/admin.ts` email allowlist consistently (latent bug), but not a live risk.
-- [ ] **S5 — SSRF via outgoing webhooks** (`lib/webhooks/index.ts:178`) — user URL fetched with no host filtering, response stored. Block private/link-local/loopback IPs + non-http(s) schemes, disable redirects.
-- [ ] **S6 — Authenticate the inbound-email endpoint** (`app/api/email/inbound/route.ts`) — verify the provider's webhook signature/secret before creating tasks. *(anyone can inject tasks)*
+- [x] **S5 — SSRF guard added** (`lib/webhooks/index.ts`) — `assertSafeWebhookUrl` blocks private/loopback/link-local/CGNAT IPs (incl. `169.254.169.254`) + non-http(s) schemes, resolves DNS, and the fetch uses `redirect: "error"`. (Feature's tables don't exist in prod; this is defense-in-depth.)
+- [x] **S6 — Inbound-email endpoint authenticated** (`app/api/email/inbound/route.ts`) — requires `INBOUND_EMAIL_SECRET` via `?secret=` or `x-inbound-secret` header (constant-time compare), **fails closed**. ⚠️ Set `INBOUND_EMAIL_SECRET` in Vercel + include it in the provider's inbound webhook URL before enabling email-to-task.
 - [x] **S7 — Template policies fixed.** ✅ Split `FOR ALL` into public-read SELECT + owner-only INSERT/UPDATE/DELETE on both template tables; applied `20260712120100`, verified.
 - [ ] **S9 — Rate-limit public POST routes** (auth, Stripe webhook, inbound email, Slack) — e.g. Upstash.
 - [ ] **S10 (P2)** — Google Calendar webhook channel-token verification; encrypt OAuth tokens at rest; signup should honor `signups_enabled` + throttle + not auto-confirm email; validate team-invite role from body.
