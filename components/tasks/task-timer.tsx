@@ -89,6 +89,7 @@ export function TaskTimer({
           variant="ghost"
           size="icon"
           className={cn("h-6 w-6", isRunning && "text-primary")}
+          aria-label={isRunning ? "Pause timer" : "Start timer"}
           onClick={isRunning ? handlePause : handleStart}
         >
           {isRunning ? (

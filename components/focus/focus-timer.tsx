@@ -398,7 +398,7 @@ export function FocusTimer({
             </Button>
           ) : (
             <>
-              <Button variant="outline" size="icon" className="h-12 w-12" onClick={handleStop}>
+              <Button variant="outline" size="icon" className="h-12 w-12" onClick={handleStop} aria-label="Stop timer">
                 <Square className="h-5 w-5" />
               </Button>
 
@@ -418,6 +418,7 @@ export function FocusTimer({
                 variant="outline"
                 size="icon"
                 className="h-12 w-12"
+                aria-label="Skip session"
                 onClick={() => {
                   if (sessionType === "focus") {
                     completeTimer();

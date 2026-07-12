@@ -161,6 +161,7 @@ export function TaskItem({ task, onEdit, onUpdate }: TaskItemProps) {
         {hasSubtasks && (
           <button
             onClick={() => setShowSubtasks(!showSubtasks)}
+            aria-label={showSubtasks ? "Collapse subtasks" : "Expand subtasks"}
             className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
           >
             {showSubtasks ? (
@@ -175,6 +176,7 @@ export function TaskItem({ task, onEdit, onUpdate }: TaskItemProps) {
         <button
           onClick={handleComplete}
           disabled={isCompleting}
+          aria-label={isCompleted ? "Mark task incomplete" : "Complete task"}
           className={cn(
             "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
             isCompleted
@@ -210,6 +212,7 @@ export function TaskItem({ task, onEdit, onUpdate }: TaskItemProps) {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
+                aria-label="Start focus timer"
                 onClick={handleStartFocus}
                 disabled={isCompleted}
               >
@@ -217,7 +220,7 @@ export function TaskItem({ task, onEdit, onUpdate }: TaskItemProps) {
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="More options">
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>

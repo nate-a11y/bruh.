@@ -588,6 +588,9 @@ export async function setupCalendarWatch(userId: string): Promise<{ success: boo
           id: channelId,
           type: "web_hook",
           address: webhookUrl,
+          // Shared secret Google echoes back as x-goog-channel-token so our
+          // webhook can verify the notification is genuine. Must be set in env.
+          token: process.env.GOOGLE_WEBHOOK_TOKEN,
           // Watch expires in 7 days (max allowed by Google)
           expiration: String(Date.now() + 7 * 24 * 60 * 60 * 1000),
         }),

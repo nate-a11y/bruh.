@@ -7,17 +7,22 @@ import { Header } from "@/components/dashboard/header";
 import { CalendarView, CalendarViewMode } from "@/components/calendar/calendar-view";
 import { TimeBlockCalendar } from "@/components/calendar/time-block-calendar";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Clock } from "lucide-react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { TaskForm } from "@/components/tasks/task-form";
+import { Clock } from "lucide-react";
 import { toast } from "sonner";
-import type { Task } from "@/lib/supabase/types";
+import type { Task, List } from "@/lib/supabase/types";
 
 type ViewType = CalendarViewMode | "timeblock";
 
 export default function CalendarPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [lists, setLists] = useState<Pick<List, "id" | "name">[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewType>("week");
   const [loading, setLoading] = useState(true);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
 
   async function fetchTasks() {
     const supabase = createClient();
@@ -25,15 +30,30 @@ export default function CalendarPage() {
 
     if (!user) return;
 
-    const { data } = await supabase
-      .from("zeroed_tasks")
-      .select("*, zeroed_lists(name, color)")
-      .eq("user_id", user.id)
-      .neq("status", "cancelled")
-      .order("due_date", { ascending: true });
+    const [{ data }, { data: listData }] = await Promise.all([
+      supabase
+        .from("zeroed_tasks")
+        .select("*, zeroed_lists(name, color)")
+        .eq("user_id", user.id)
+        .neq("status", "cancelled")
+        .order("due_date", { ascending: true }),
+      supabase
+        .from("zeroed_lists")
+        .select("id, name")
+        .eq("user_id", user.id)
+        .eq("is_archived", false)
+        .order("position", { ascending: true }),
+    ]);
 
     setTasks(data || []);
+    setLists(listData || []);
     setLoading(false);
+  }
+
+  function closeTaskDialog() {
+    setEditingTask(null);
+    setAddOpen(false);
+    fetchTasks();
   }
 
   useEffect(() => {
@@ -75,11 +95,11 @@ export default function CalendarPage() {
   }
 
   function handleTaskClick(task: Task) {
-    console.log("Task clicked:", task);
+    setEditingTask(task);
   }
 
-  function handleAddTask(date: Date) {
-    console.log("Add task for:", format(date, "yyyy-MM-dd"));
+  function handleAddTask(_date: Date) {
+    setAddOpen(true);
   }
 
   const getHeaderTitle = () => {
@@ -146,6 +166,23 @@ export default function CalendarPage() {
           />
         )}
       </div>
+
+      <Dialog
+        open={!!editingTask || addOpen}
+        onOpenChange={(open) => {
+          if (!open) closeTaskDialog();
+        }}
+      >
+        <DialogContent>
+          <DialogTitle>{editingTask ? "Edit task" : "New task"}</DialogTitle>
+          <TaskForm
+            lists={lists}
+            defaultListId={lists[0]?.id}
+            task={editingTask ?? undefined}
+            onClose={closeTaskDialog}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -116,6 +116,7 @@ export function EmailToTaskSettings({
                 variant="outline"
                 size="icon"
                 onClick={copyToClipboard}
+                aria-label="Copy email address"
               >
                 {copied ? (
                   <Check className="h-4 w-4 text-green-500" />

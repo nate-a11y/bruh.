@@ -10,7 +10,15 @@
 
 ## Status (2026-07-12)
 
-**Phase 0 (security leaks) + Phase 1 (billing) are SHIPPED to production and verified.** getbruh.app runs the new code (PRs #54, #55). Live Stripe wired (product/price/webhook/portal), account activated for charges. Remaining: owner sets statement descriptor to `GETBRUH.APP` in the dashboard; then Phases 2–4 below. Full details in the phase sections.
+**Phases 0–2 shipped & verified in prod. Phase 3 (correctness) + most of Phase 4 (polish) done in one batch (this PR).**
+- **P0 security leaks** — fixed (0 RLS-off tables).
+- **P1 billing** — freemium live; Stripe wired (product/price/webhook/portal); account activated.
+- **P2 hardening** — RPC anon-revoke + `auth.uid()` guards, SSRF guard, inbound-email auth, Upstash rate limiting.
+- **P3 correctness** — `awardPoints` now atomic (RPC) + error-checked; 16 silent mutation sites now handle errors; calendar click stubs wired to a task dialog.
+- **P4 polish** — 74 `aria-label`s added (a11y C→up), OG image + `metadataBase`, `sitemap.ts`/`robots.ts`, security headers, `.env.example`, README fixed, `.nvmrc` + CI; Teams hidden behind a route guard.
+- **S10** — invite-role validation, `signups_enabled` gate, Google webhook channel-token (+ `GOOGLE_WEBHOOK_TOKEN` set).
+
+Remaining: owner sets Stripe statement descriptor to `GETBRUH.APP`; **Sentry** (needs a DSN from you); onboarding-flow wiring (product call: wire vs delete); the ADHD "level up" features (net-new builds). C4 React-19 lint signals + C6 migration-versioning are low-priority polish.
 
 ## The 3 things that make this urgent (RESOLVED)
 

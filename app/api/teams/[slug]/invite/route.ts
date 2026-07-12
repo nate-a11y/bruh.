@@ -10,13 +10,20 @@ interface RouteParams {
 export async function POST(request: Request, { params }: RouteParams) {
   try {
     const { slug } = await params;
-    const { email, role } = await request.json();
+    const { email, role: rawRole } = await request.json();
 
-    if (!email || !role) {
+    if (!email) {
       return NextResponse.json(
-        { error: "Email and role are required" },
+        { error: "Email is required" },
         { status: 400 }
       );
+    }
+
+    // Validate role against allowlist (never allow "owner" via invite)
+    const allowedRoles = ["member", "admin"];
+    const role = rawRole ?? "member";
+    if (!allowedRoles.includes(role)) {
+      return NextResponse.json({ error: "Invalid role" }, { status: 400 });
     }
 
     const supabase = await createClient() as any;

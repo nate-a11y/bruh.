@@ -436,6 +436,7 @@ export function FloatingTimer({ onClose, autoOpenPiP = false }: FloatingTimerPro
           variant="ghost"
           className="absolute top-4 right-4 h-10 w-10"
           onClick={() => setIsFullscreen(false)}
+          aria-label="Exit fullscreen"
         >
           <X className="h-5 w-5" />
         </Button>
@@ -513,6 +514,7 @@ export function FloatingTimer({ onClose, autoOpenPiP = false }: FloatingTimerPro
             variant="outline"
             className="h-14 w-14"
             onClick={stopTimer}
+            aria-label="Stop timer"
           >
             <Square className="h-6 w-6" />
           </Button>
@@ -590,15 +592,15 @@ export function FloatingTimer({ onClose, autoOpenPiP = false }: FloatingTimerPro
               </span>
               <div className="flex items-center gap-1">
                 {state === "paused" ? (
-                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={resumeTimer}>
+                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={resumeTimer} aria-label="Resume timer">
                     <Play className="h-3.5 w-3.5" />
                   </Button>
                 ) : (
-                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={pauseTimer}>
+                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={pauseTimer} aria-label="Pause timer">
                     <Pause className="h-3.5 w-3.5" />
                   </Button>
                 )}
-                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setIsCollapsed(false)}>
+                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setIsCollapsed(false)} aria-label="Expand timer">
                   <ChevronUp className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -622,6 +624,7 @@ export function FloatingTimer({ onClose, autoOpenPiP = false }: FloatingTimerPro
                     variant="ghost"
                     className="h-6 w-6"
                     onClick={() => setIsCollapsed(true)}
+                    aria-label="Collapse timer"
                   >
                     <ChevronDown className="h-3 w-3" />
                   </Button>
@@ -633,6 +636,7 @@ export function FloatingTimer({ onClose, autoOpenPiP = false }: FloatingTimerPro
                       className="h-6 w-6"
                       onClick={openPiP}
                       title="Pop out window (stays on top of other apps)"
+                      aria-label="Pop out timer window"
                     >
                       <PictureInPicture2 className="h-3 w-3" />
                     </Button>
@@ -644,12 +648,13 @@ export function FloatingTimer({ onClose, autoOpenPiP = false }: FloatingTimerPro
                       className="h-6 w-6"
                       onClick={toggleFullscreen}
                       title="Fullscreen timer"
+                      aria-label="Fullscreen timer"
                     >
                       <Smartphone className="h-3 w-3" />
                     </Button>
                   )}
                   <Link href="/focus">
-                    <Button size="icon" variant="ghost" className="h-6 w-6" title="Open full timer">
+                    <Button size="icon" variant="ghost" className="h-6 w-6" title="Open full timer" aria-label="Open full timer">
                       <Maximize2 className="h-3 w-3" />
                     </Button>
                   </Link>
@@ -724,6 +729,7 @@ export function FloatingTimer({ onClose, autoOpenPiP = false }: FloatingTimerPro
                   variant="outline"
                   className="h-8 w-8"
                   onClick={stopTimer}
+                  aria-label="Stop timer"
                 >
                   <Square className="h-3.5 w-3.5" />
                 </Button>

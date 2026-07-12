@@ -18,17 +18,25 @@ A task manager that doesn't take itself too seriously. But takes your productivi
 
 ## Tech Stack
 
-- **Framework**: Next.js 14+ (App Router, Server Components, Server Actions)
+- **Framework**: Next.js 16 (App Router, Server Components, Server Actions), React 19
 - **Database**: Supabase (Postgres with RLS)
 - **Auth**: Supabase Auth (email/password + magic link)
-- **Styling**: Tailwind CSS + shadcn/ui
+- **Billing**: Stripe (subscriptions + webhooks)
+- **Email**: Resend (transactional email, invites, digests, inbound task-by-email)
+- **AI**: Anthropic Claude (Brain Dump parsing, with a local fallback parser)
+- **Integrations**: Google Calendar, Notion, Slack (OAuth)
+- **Rate limiting**: Upstash Redis
+- **Jobs**: Vercel Cron (recurring tasks, scheduled digests)
+- **Styling**: Tailwind CSS v4 + shadcn/ui
 - **State**: Zustand for timer state
 - **Animations**: Framer Motion
 
 ## Getting Started
 
+Requires Node 22+ (see `.nvmrc`).
+
 1. Clone the repository
-2. Copy `.env.local.example` to `.env.local` and fill in your Supabase credentials
+2. Copy `.env.example` to `.env.local` and fill in your credentials
 3. Run the database migrations in Supabase
 4. Install dependencies:
 
@@ -46,18 +54,58 @@ Open [http://localhost:3000](http://localhost:3000) to view the app.
 
 ## Environment Variables
 
+See [`.env.example`](./.env.example) for the full list with per-variable notes. Copy it to `.env.local` and fill in the values.
+
+**Required**
+
 ```
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+# App
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 
-# Optional: For AI Brain Dump feature
-ANTHROPIC_API_KEY=your_anthropic_api_key
+# Supabase (database + auth)
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
 
-# Optional: For Google Calendar integration
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
+# Cron (scheduled jobs)
+CRON_SECRET=
+
+# Stripe (billing)
+STRIPE_SECRET_KEY=
+STRIPE_PRICE_ID=
+STRIPE_WEBHOOK_SECRET=
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+
+# Resend (transactional email)
+RESEND_API_KEY=
+RESEND_FROM_EMAIL=
+```
+
+**Optional**
+
+```
+# Anthropic (AI Brain Dump)
+ANTHROPIC_API_KEY=
+
+# Google Calendar integration
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+
+# Notion integration
+NOTION_CLIENT_ID=
+NOTION_CLIENT_SECRET=
+
+# Slack integration
+SLACK_CLIENT_ID=
+SLACK_CLIENT_SECRET=
+SLACK_SIGNING_SECRET=
+
+# Inbound email (task-by-email)
+INBOUND_EMAIL_SECRET=
+
+# Upstash Redis (rate limiting)
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
 ```
 
 > **Note**: The Brain Dump feature works without an API key using a fallback parser, but works much better with Claude AI.

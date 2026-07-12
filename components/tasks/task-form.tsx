@@ -97,6 +97,7 @@ export function TaskForm({
               type="button"
               variant="ghost"
               size="icon"
+              aria-label="Close"
               onClick={onClose}
             >
               <X className="h-4 w-4" />

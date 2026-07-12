@@ -7,6 +7,7 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { sendEmail, welcomeEmail } from "@/lib/email";
 import { redeemCoupon, validateCoupon } from "@/lib/subscriptions";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { getPlatformSetting } from "@/lib/platform-settings";
 
 export async function login(formData: FormData) {
   const rl = await rateLimit("auth", clientIp(await headers()));
@@ -36,6 +37,12 @@ export async function signup(formData: FormData) {
   const rl = await rateLimit("auth", clientIp(await headers()));
   if (!rl.ok) {
     return { error: "Too many attempts. Please wait a minute and try again." };
+  }
+
+  // Respect the platform-wide signups toggle before creating any user
+  const signupsEnabled = await getPlatformSetting("signups_enabled");
+  if (!signupsEnabled) {
+    return { error: "Signups are currently disabled." };
   }
 
   const email = formData.get("email") as string;

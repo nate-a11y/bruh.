@@ -320,6 +320,7 @@ export function ActivityTracker({
                   variant="destructive"
                   size="icon"
                   onClick={handleStop}
+                  aria-label="Stop tracking"
                 >
                   <Square className="h-4 w-4" />
                 </Button>

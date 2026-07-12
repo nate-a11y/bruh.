@@ -49,10 +49,10 @@ export function DashboardHeader({
       </div>
 
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={onSearch}>
+        <Button variant="ghost" size="icon" onClick={onSearch} aria-label="Search">
           <Search className="w-5 h-5" />
         </Button>
-        <Button variant="ghost" size="icon" onClick={onSettings}>
+        <Button variant="ghost" size="icon" onClick={onSettings} aria-label="Settings">
           <Settings className="w-5 h-5" />
         </Button>
         <Button size="default" onClick={onAddTask}>

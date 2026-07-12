@@ -103,6 +103,7 @@ export function SoundPicker({ defaultSound = 'none', defaultVolume = 50, onSound
                   size="icon"
                   className="h-6 w-6"
                   onClick={togglePlayback}
+                  aria-label={isPlaying ? "Stop sound preview" : "Play sound preview"}
                 >
                   {isPlaying ? (
                     <Volume2 className="h-4 w-4" />

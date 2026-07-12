@@ -150,6 +150,7 @@ export function WebhookSettings() {
                   variant="outline"
                   size="sm"
                   onClick={() => copyToClipboard(newKeySecret, "new-key")}
+                  aria-label="Copy API key"
                 >
                   {copiedKey === "new-key" ? (
                     <Check className="h-4 w-4" />
@@ -236,6 +237,7 @@ export function WebhookSettings() {
                   variant="outline"
                   size="sm"
                   onClick={() => copyToClipboard(newWebhookSecret, "new-webhook")}
+                  aria-label="Copy signing secret"
                 >
                   {copiedKey === "new-webhook" ? (
                     <Check className="h-4 w-4" />
@@ -303,6 +305,7 @@ export function WebhookSettings() {
                       "url"
                     )
                   }
+                  aria-label="Copy webhook URL"
                 >
                   {copiedKey === "url" ? (
                     <Check className="h-4 w-4" />
@@ -478,6 +481,7 @@ function DeleteApiKeyButton({
       size="icon"
       onClick={handleDelete}
       disabled={deleting}
+      aria-label="Delete API key"
     >
       {deleting ? (
         <Loader2 className="h-4 w-4 animate-spin" />
@@ -743,6 +747,7 @@ function WebhookItem({
             size="sm"
             onClick={handleDelete}
             disabled={deleting}
+            aria-label="Delete webhook"
           >
             {deleting ? (
               <Loader2 className="h-4 w-4 animate-spin" />

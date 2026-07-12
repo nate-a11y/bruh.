@@ -68,7 +68,7 @@ export function SnoozePicker({ taskId, taskTitle, onSnoozed }: SnoozePickerProps
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm">
+        <Button variant="ghost" size="sm" aria-label="Snooze task">
           <Clock className="h-4 w-4" />
         </Button>
       </PopoverTrigger>

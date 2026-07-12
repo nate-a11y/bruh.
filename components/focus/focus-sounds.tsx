@@ -126,6 +126,7 @@ export function FocusSounds({
                   size="sm"
                   className="h-6 w-6 p-0"
                   onClick={() => setIsMuted(!isMuted)}
+                  aria-label={isMuted ? "Unmute" : "Mute"}
                 >
                   {isMuted ? (
                     <VolumeX className="h-3 w-3" />

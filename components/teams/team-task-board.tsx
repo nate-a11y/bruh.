@@ -140,7 +140,7 @@ export function TeamTaskBoard({
                     {canManage && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-6 w-6 -mr-1">
+                          <Button variant="ghost" size="icon" className="h-6 w-6 -mr-1" aria-label="Task actions">
                             <MoreVertical className="h-3 w-3" />
                           </Button>
                         </DropdownMenuTrigger>

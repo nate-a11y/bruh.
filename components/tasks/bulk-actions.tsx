@@ -155,6 +155,7 @@ export function BulkActions({
           variant="ghost"
           size="icon"
           className="h-8 w-8 ml-auto"
+          aria-label="Clear selection"
           onClick={onClearSelection}
         >
           <X className="h-4 w-4" />

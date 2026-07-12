@@ -26,7 +26,7 @@ export function QuickCaptureBar({
         lists={lists}
         defaultListId={defaultListId}
         trigger={
-          <Button variant="outline" size="icon" className="shrink-0" title="Brain Dump">
+          <Button variant="outline" size="icon" className="shrink-0" aria-label="Brain dump" title="Brain Dump">
             <Brain className="h-4 w-4" />
           </Button>
         }

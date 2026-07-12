@@ -140,6 +140,7 @@ export function SmartSuggestions({ suggestions, onDismiss }: SmartSuggestionsPro
                       size="icon"
                       className="h-6 w-6 shrink-0 opacity-50 hover:opacity-100"
                       onClick={() => handleDismiss(suggestion.id)}
+                      aria-label="Dismiss suggestion"
                     >
                       <X className="h-3 w-3" />
                     </Button>
