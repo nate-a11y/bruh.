@@ -2,11 +2,18 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { sendEmail, welcomeEmail } from "@/lib/email";
 import { redeemCoupon, validateCoupon } from "@/lib/subscriptions";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 export async function login(formData: FormData) {
+  const rl = await rateLimit("auth", clientIp(await headers()));
+  if (!rl.ok) {
+    return { error: "Too many attempts. Please wait a minute and try again." };
+  }
+
   const supabase = await createClient();
 
   const email = formData.get("email") as string;
@@ -26,6 +33,11 @@ export async function login(formData: FormData) {
 }
 
 export async function signup(formData: FormData) {
+  const rl = await rateLimit("auth", clientIp(await headers()));
+  if (!rl.ok) {
+    return { error: "Too many attempts. Please wait a minute and try again." };
+  }
+
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const couponCode = formData.get("couponCode") as string | null;

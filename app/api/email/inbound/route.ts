@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { timingSafeEqual } from "crypto";
 import { parseNaturalLanguageTask } from "@/lib/utils/natural-language-parser";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 // Create service role client at runtime (not module load time)
 function getServiceClient() {
@@ -49,6 +50,11 @@ export async function POST(request: Request) {
   // Reject unauthenticated callers before touching the service-role client.
   if (!verifyInboundSecret(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const rl = await rateLimit("inbound", clientIp(request.headers));
+  if (!rl.ok) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
   const supabase = getServiceClient();
