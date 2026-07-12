@@ -62,6 +62,9 @@ export async function POST() {
       ],
       success_url: STRIPE_CONFIG.successUrl,
       cancel_url: STRIPE_CONFIG.cancelUrl,
+      metadata: {
+        supabase_user_id: user.id,
+      },
       subscription_data: {
         metadata: {
           supabase_user_id: user.id,

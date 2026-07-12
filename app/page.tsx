@@ -105,6 +105,12 @@ export default function LandingPage() {
         <Logo size="md" showIcon={false} />
         <div className="flex items-center gap-4">
           <Link
+            href="/pricing"
+            className="text-sm text-muted-foreground hover:text-foreground transition"
+          >
+            Pricing
+          </Link>
+          <Link
             href="/login"
             className="text-sm text-muted-foreground hover:text-foreground transition"
           >
@@ -254,7 +260,12 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-3 gap-6 text-center">
             <div className="p-6">
               <p className="text-4xl font-bold text-primary mb-2">$0</p>
-              <p className="text-muted-foreground text-sm">Free to start. No trial BS.</p>
+              <p className="text-muted-foreground text-sm">
+                Free forever. Core app, no card.{" "}
+                <Link href="/pricing" className="text-primary hover:underline">
+                  See Pro
+                </Link>
+              </p>
             </div>
             <div className="p-6">
               <p className="text-4xl font-bold text-primary mb-2">AI</p>
@@ -272,11 +283,14 @@ export default function LandingPage() {
       <section className="max-w-4xl mx-auto px-6 py-24 text-center">
         <h2 className="text-4xl font-display font-bold text-foreground mb-4">Ready?</h2>
         <p className="text-muted-foreground mb-8">
-          Free to start. No credit card required.
+          Free forever. Go Pro for AI planning &amp; integrations &mdash; $19.99/mo with a 30-day trial.
         </p>
         <div className="flex items-center justify-center gap-4">
           <Button size="lg" asChild>
             <Link href="/signup">Let&apos;s go</Link>
+          </Button>
+          <Button variant="outline" size="lg" asChild>
+            <Link href="/pricing">See pricing</Link>
           </Button>
         </div>
       </section>
@@ -286,6 +300,9 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-4">
           <Logo size="sm" showIcon={false} />
           <div className="flex items-center gap-6">
+            <Link href="/pricing" className="text-xs text-muted-foreground hover:text-foreground">
+              Pricing
+            </Link>
             <Link href="/privacy" className="text-xs text-muted-foreground hover:text-foreground">
               Privacy
             </Link>

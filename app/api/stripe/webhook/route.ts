@@ -47,6 +47,20 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Idempotency: Stripe retries and can deliver out of order. Record each event
+  // id once; if we've seen it, acknowledge and skip reprocessing.
+  const { error: dupError } = await (getSupabaseAdmin() as any)
+    .from('zeroed_stripe_events')
+    .insert({ event_id: event.id, type: event.type });
+
+  if (dupError) {
+    if (dupError.code === '23505') {
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+    // Table missing or transient error: log and continue rather than drop the event.
+    console.error('Stripe idempotency insert failed:', dupError);
+  }
+
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
@@ -95,26 +109,40 @@ export async function POST(request: NextRequest) {
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  const customerId = typeof session.customer === 'string'
+    ? session.customer
+    : session.customer?.id;
+  const subscriptionId = typeof session.subscription === 'string'
+    ? session.subscription
+    : session.subscription?.id;
   const userId = session.metadata?.supabase_user_id ||
     (session.subscription && typeof session.subscription === 'object'
       ? session.subscription.metadata?.supabase_user_id
-      : null);
+      : undefined);
 
-  if (!userId) {
-    // Try to find by customer ID
-    const { data: sub } = await getSupabaseAdmin()
-      .from('zeroed_subscriptions')
-      .select('user_id')
-      .eq('stripe_customer_id', session.customer as string)
-      .single();
-
-    if (!sub) {
-      console.error('Could not find user for checkout session');
-      return;
-    }
+  if (!customerId && !userId) {
+    console.error('Could not resolve customer or user for checkout session');
+    return;
   }
 
-  console.log('Checkout completed for user:', userId);
+  // Provision access immediately rather than depending on the ordering of the
+  // separate customer.subscription.* event. Match by user id when available
+  // (unique), else by the customer id stored during checkout.
+  const update: Record<string, unknown> = {
+    status: 'active',
+    updated_at: new Date().toISOString(),
+  };
+  if (subscriptionId) update.stripe_subscription_id = subscriptionId;
+  if (customerId) update.stripe_customer_id = customerId;
+
+  const base = (getSupabaseAdmin() as any).from('zeroed_subscriptions').update(update);
+  const { error } = userId
+    ? await base.eq('user_id', userId)
+    : await base.eq('stripe_customer_id', customerId);
+
+  if (error) {
+    console.error('Error provisioning subscription on checkout:', error);
+  }
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {

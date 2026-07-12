@@ -1,4 +1,7 @@
+import { NextResponse } from 'next/server';
+import type { User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
+import { isPro } from '@/lib/plans';
 import type { SubscriptionAccess, CouponRedemptionResult, Subscription } from '@/lib/supabase/types';
 
 const PRICE_MONTHLY = 1999; // $19.99 in cents
@@ -23,11 +26,52 @@ export async function checkSubscriptionAccess(userId: string): Promise<Subscript
 
   if (error) {
     console.error('Error checking subscription:', error);
-    // Default to allowing access on error (fail open for better UX)
-    return { has_access: true, status: 'trialing', days_remaining: 30 };
+    // Fail CLOSED: a DB error must not silently hand out paid access. Treat as
+    // no Pro access; the core app stays usable, only Pro features are gated.
+    return { has_access: false, status: 'trial_expired', days_remaining: 0 };
   }
 
   return data as SubscriptionAccess;
+}
+
+/**
+ * Get the current authenticated user and their subscription access in one call.
+ * Returns nulls if not authenticated.
+ */
+export async function getCurrentUserAccess(): Promise<
+  { user: User; access: SubscriptionAccess } | { user: null; access: null }
+> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { user: null, access: null };
+  const access = await checkSubscriptionAccess(user.id);
+  return { user, access };
+}
+
+/**
+ * Server-side Pro gate for JSON API routes. Returns the user + access when the
+ * caller has Pro, otherwise a ready-to-return NextResponse (401 or 402).
+ *
+ *   const gate = await requireProApi();
+ *   if ('response' in gate) return gate.response;
+ *   const { user } = gate;
+ */
+export async function requireProApi(): Promise<
+  { user: User; access: SubscriptionAccess } | { response: NextResponse }
+> {
+  const { user, access } = await getCurrentUserAccess();
+  if (!user) {
+    return { response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
+  }
+  if (!isPro(access)) {
+    return {
+      response: NextResponse.json(
+        { error: 'This is a Pro feature.', code: 'upgrade_required', upgradeUrl: '/pricing' },
+        { status: 402 }
+      ),
+    };
+  }
+  return { user, access };
 }
 
 /**
