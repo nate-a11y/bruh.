@@ -8,4 +8,5 @@ export {
   weeklySummaryEmail,
   paymentFailedEmail,
   subscriptionCanceledEmail,
+  disputeAlertEmail,
 } from "./templates";

@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { stripe, STRIPE_CONFIG } from '@/lib/stripe';
 import { createClient } from '@supabase/supabase-js';
 import { DUNNING_GRACE_DAYS, sendPaymentFailedEmail } from '@/lib/billing/dunning';
+import { handleDisputeCreated, handleDisputeClosed } from '@/lib/billing/disputes';
 import type Stripe from 'stripe';
 
 // Lazy initialization to avoid build-time errors
@@ -92,6 +93,24 @@ export async function POST(request: NextRequest) {
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object as Stripe.Invoice;
         await handlePaymentSucceeded(invoice);
+        break;
+      }
+
+      case 'charge.dispute.created': {
+        const dispute = event.data.object as Stripe.Dispute;
+        await handleDisputeCreated(getSupabaseAdmin(), dispute);
+        break;
+      }
+
+      case 'charge.dispute.closed': {
+        const dispute = event.data.object as Stripe.Dispute;
+        await handleDisputeClosed(getSupabaseAdmin(), dispute);
+        break;
+      }
+
+      case 'charge.refunded': {
+        const charge = event.data.object as Stripe.Charge;
+        await handleChargeRefunded(charge);
         break;
       }
 
@@ -399,4 +418,24 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
     })
     .eq('stripe_customer_id', customerId)
     .eq('subscription_status', 'past_due');
+}
+
+async function handleChargeRefunded(charge: Stripe.Charge) {
+  // Only revoke on a full refund; partial refunds keep access.
+  if (!charge.refunded) return;
+  const customerId = typeof charge.customer === 'string'
+    ? charge.customer
+    : charge.customer?.id;
+  if (!customerId) return;
+
+  const admin = getSupabaseAdmin() as any;
+  const now = new Date().toISOString();
+  await admin
+    .from('zeroed_subscriptions')
+    .update({ status: 'canceled', canceled_at: now, updated_at: now })
+    .eq('stripe_customer_id', customerId);
+  await admin
+    .from('zeroed_teams')
+    .update({ subscription_status: 'canceled', updated_at: now })
+    .eq('stripe_customer_id', customerId);
 }
