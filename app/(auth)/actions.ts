@@ -93,6 +93,8 @@ export async function signup(formData: FormData) {
     to: email,
     subject: welcomeContent.subject,
     html: welcomeContent.html,
+    userId,
+    emailType: "welcome",
   }).catch((err) => console.error("Welcome email failed:", err));
 
   // Now sign in the user
