@@ -14,14 +14,19 @@ interface BeforeInstallPromptEvent extends Event {
 export function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
+  // Derive the initial installed state from the display mode with a lazy
+  // initializer instead of a setState-in-effect. (First paint always renders
+  // null since showPrompt/deferredPrompt are unset, so there's no hydration
+  // mismatch.)
+  const [isInstalled, setIsInstalled] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(display-mode: standalone)").matches
+  );
 
   useEffect(() => {
-    // Check if already installed
-    if (window.matchMedia("(display-mode: standalone)").matches) {
-      setIsInstalled(true);
-      return;
-    }
+    // Already installed: nothing to prompt.
+    if (isInstalled) return;
 
     // Check if user dismissed prompt before
     const dismissed = localStorage.getItem("bruh-install-dismissed");
@@ -49,7 +54,7 @@ export function InstallPrompt() {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
       window.removeEventListener("appinstalled", handleAppInstalled);
     };
-  }, []);
+  }, [isInstalled]);
 
   async function handleInstall() {
     if (!deferredPrompt) return;

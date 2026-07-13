@@ -119,13 +119,15 @@ export function ActivityTracker({
     };
   }, [activeSession]);
 
-  // Sync with currentSession prop
-  useEffect(() => {
-    if (currentSession) {
-      setActiveSession(currentSession);
-      setIsTracking(true);
-    }
-  }, [currentSession]);
+  // Sync with the currentSession prop when it changes. Adjusted during render
+  // (instead of an effect + setState) so a new prop value is reflected without a
+  // cascading re-render.
+  const [prevCurrentSession, setPrevCurrentSession] = useState(currentSession);
+  if (currentSession && currentSession !== prevCurrentSession) {
+    setPrevCurrentSession(currentSession);
+    setActiveSession(currentSession);
+    setIsTracking(true);
+  }
 
   const formatDuration = useCallback((seconds: number) => {
     const hrs = Math.floor(seconds / 3600);

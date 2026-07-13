@@ -1,12 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Timer, Pause, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTimerStore } from "@/lib/hooks/use-timer";
 import { formatTimerDisplay } from "@/lib/utils";
 import { CommandMenu } from "./command-menu";
+
+// Returns false during SSR / hydration and true once mounted on the client,
+// without a setState-in-effect (useSyncExternalStore renders the server
+// snapshot first, then re-renders with the client snapshot — no hydration
+// mismatch).
+const emptySubscribe = () => () => {};
 
 interface HeaderProps {
   title: string;
@@ -18,11 +24,11 @@ interface HeaderProps {
 export function Header({ title, subtitle, action, showTimer = true }: HeaderProps) {
   const { state, timeRemaining, task, pauseTimer, resumeTimer } =
     useTimerStore();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
 
   const isTimerActive = state === "running" || state === "paused" || state === "break";
 

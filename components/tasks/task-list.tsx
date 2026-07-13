@@ -30,10 +30,12 @@ export function TaskList({
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  // Clear selection when tasks change
-  useEffect(() => {
-    setSelectedIds((prev) => prev.filter((id) => tasks.some((t) => t.id === id)));
-  }, [tasks]);
+  // Prune selection to ids that still exist. Adjusted during render (instead of
+  // an effect + setState) so it doesn't trigger a cascading re-render.
+  const validSelectedIds = selectedIds.filter((id) => tasks.some((t) => t.id === id));
+  if (validSelectedIds.length !== selectedIds.length) {
+    setSelectedIds(validSelectedIds);
+  }
 
   // Keyboard shortcut for select all
   useEffect(() => {

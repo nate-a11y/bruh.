@@ -30,8 +30,13 @@ export function TodayExtras({ todayTasks, completedTasks }: TodayExtrasProps) {
     const hour = new Date().getHours();
     const hasCompletedRitual = localStorage.getItem(`ritual-${new Date().toDateString()}`);
 
+    // Genuinely syncing from external state on mount: the prompt depends on the
+    // client clock (time of day) and localStorage, which aren't available during
+    // SSR — deriving it during render would cause a hydration mismatch, so this
+    // must be a post-mount effect.
     if (!hasCompletedRitual) {
       if (hour >= 5 && hour < 10) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setShowRitualPrompt(true);
         setRitualType("morning");
       } else if (hour >= 17 && hour < 22) {
@@ -41,20 +46,18 @@ export function TodayExtras({ todayTasks, completedTasks }: TodayExtrasProps) {
     }
 
     // Load smart suggestions
-    loadSuggestions();
-  }, []);
-
-  async function loadSuggestions() {
-    try {
-      const res = await fetch("/api/suggestions");
-      if (res.ok) {
-        const data = await res.json();
-        setSuggestions(data.suggestions || []);
+    (async () => {
+      try {
+        const res = await fetch("/api/suggestions");
+        if (res.ok) {
+          const data = await res.json();
+          setSuggestions(data.suggestions || []);
+        }
+      } catch {
+        // Suggestions are optional, fail silently
       }
-    } catch {
-      // Suggestions are optional, fail silently
-    }
-  }
+    })();
+  }, []);
 
   function handleRitualComplete() {
     localStorage.setItem(`ritual-${new Date().toDateString()}`, "true");

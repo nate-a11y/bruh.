@@ -28,12 +28,16 @@ export function TimeTracker({
   const [elapsedSeconds, setElapsedSeconds] = useState(actualMinutes * 60);
   const [sessionStart, setSessionStart] = useState<Date | null>(null);
 
-  // Load active timer from localStorage
+  // Load active timer from localStorage. This genuinely syncs from an external
+  // store (localStorage) that isn't available during SSR, so it must run
+  // post-mount — a lazy initializer would read localStorage during the hydration
+  // render and cause a mismatch with the server-rendered time.
   useEffect(() => {
     const stored = localStorage.getItem(`timer-${taskId}`);
     if (stored) {
       const { startTime, elapsed } = JSON.parse(stored);
       if (startTime) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSessionStart(new Date(startTime));
         setIsRunning(true);
         // Calculate elapsed time since start

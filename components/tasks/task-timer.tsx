@@ -29,7 +29,11 @@ export function TaskTimer({
 
   useEffect(() => {
     if (isRunning) {
-      startTimeRef.current = Date.now() - (elapsedSeconds - sessionStartSeconds) * 1000;
+      // handleStart always sets sessionStartSeconds to the current elapsedSeconds
+      // right before flipping isRunning on, so the timer's virtual start is just
+      // "now". Reading elapsedSeconds here would force the interval to be torn
+      // down and recreated on every tick.
+      startTimeRef.current = Date.now();
 
       intervalRef.current = setInterval(() => {
         if (startTimeRef.current) {

@@ -54,9 +54,12 @@ export function FloatingTimer({ onClose, autoOpenPiP = false }: FloatingTimerPro
   const [isDragging, setIsDragging] = useState(false);
   const [pipWindow, setPipWindow] = useState<Window | null>(null);
   const [pipContainer, setPipContainer] = useState<HTMLElement | null>(null);
-  const [pipSupported, setPipSupported] = useState(false);
+  // Client-only capability checks: derive lazily instead of a setState-in-effect
+  // (both helpers are SSR-safe and the timer renders null while idle on the
+  // server, so there is no hydration mismatch).
+  const [pipSupported] = useState(isPiPSupported);
   const [pipError, setPipError] = useState<string | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(isMobileDevice);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [wakeLockActive, setWakeLockActive] = useState(false);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
@@ -85,12 +88,8 @@ export function FloatingTimer({ onClose, autoOpenPiP = false }: FloatingTimerPro
     completeTask(subtaskId).catch(console.error);
   }, [toggleSubtask]);
 
-  // Check PiP support and mobile on mount
+  // Keep mobile detection in sync with viewport resizes.
   useEffect(() => {
-    setPipSupported(isPiPSupported());
-    setIsMobile(isMobileDevice());
-
-    // Handle resize for mobile detection
     const handleResize = () => setIsMobile(isMobileDevice());
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -124,13 +123,18 @@ export function FloatingTimer({ onClose, autoOpenPiP = false }: FloatingTimerPro
     }
   }, []);
 
-  // Auto-acquire wake lock when timer is running
+  // Auto-acquire wake lock when timer is running. The state setters inside
+  // request/releaseWakeLock only run after their awaits, so drive them from a
+  // nested async function rather than calling them synchronously in the effect.
   useEffect(() => {
-    if (state === "running") {
-      requestWakeLock();
-    } else if (state === "idle") {
-      releaseWakeLock();
+    async function syncWakeLock() {
+      if (state === "running") {
+        await requestWakeLock();
+      } else if (state === "idle") {
+        await releaseWakeLock();
+      }
     }
+    syncWakeLock();
   }, [state, requestWakeLock, releaseWakeLock]);
 
   // Re-acquire wake lock when page becomes visible again
@@ -332,12 +336,12 @@ export function FloatingTimer({ onClose, autoOpenPiP = false }: FloatingTimerPro
     }
   }, [isActive]);
 
-  // Close PiP when timer stops
+  // Close PiP when timer stops. Closing the window fires its "pagehide" handler
+  // (registered in openPiP), which clears pipWindow/pipContainer — so we don't
+  // setState synchronously here.
   useEffect(() => {
     if (!isActive && pipWindow) {
       pipWindow.close();
-      setPipWindow(null);
-      setPipContainer(null);
     }
   }, [isActive, pipWindow]);
 
