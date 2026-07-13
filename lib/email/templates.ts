@@ -392,6 +392,52 @@ export function paymentFailedEmail({
   };
 }
 
+// Trial-ending reminder. Sent a few days before, then a day before, a user's
+// 30-day Pro trial lapses to nudge trial -> paid conversion. Tone is warm and
+// low-pressure on purpose: the audience is ADHD / neurodivergent, so no guilt,
+// no countdown-clock panic, just a clear heads-up and a one-click path to keep
+// the features they've been using. Nothing breaks if they do nothing; they just
+// drop to the (genuinely usable) free plan.
+export function trialEndingEmail({
+  daysLeft,
+  upgradeUrl = "https://getbruh.app/pricing",
+}: {
+  daysLeft: number;
+  upgradeUrl?: string;
+}): { subject: string; html: string } {
+  const when =
+    daysLeft <= 1 ? "tomorrow" : `in ${daysLeft} days`;
+  const subject =
+    daysLeft <= 1
+      ? "Your bruh. Pro trial ends tomorrow"
+      : `Your bruh. Pro trial ends in ${daysLeft} days`;
+  return {
+    subject,
+    html: baseTemplate(`
+      <h1>Heads up: your Pro trial ends ${when}</h1>
+      <p>No pressure and nothing to do right now. Just a friendly nudge that your free Pro trial wraps up ${when}, and we didn't want it to sneak up on you.</p>
+
+      <div class="highlight">
+        <p style="margin: 0 0 8px 0;"><strong>Keep these if you upgrade:</strong></p>
+        <ul style="margin: 0; padding-left: 20px; color: #a3a3a3;">
+          <li>AI planning: auto-schedule your day</li>
+          <li>Google Calendar 2-way sync</li>
+          <li>Notion &amp; Slack integrations</li>
+          <li>Priority support</li>
+        </ul>
+      </div>
+
+      <p>Like what you've been using? Keep it going for $19.99/mo. Not ready? Totally fine. Your account stays put and the core app is free forever, so nothing you've built goes anywhere.</p>
+
+      ${ctaButton(upgradeUrl, "Keep Pro")}
+
+      <hr class="divider">
+
+      <p class="muted">Whatever you decide, we're glad you're here. bruh.</p>
+    `),
+  };
+}
+
 // Subscription canceled after the grace window expired with no successful payment.
 export function subscriptionCanceledEmail({
   payLink,
