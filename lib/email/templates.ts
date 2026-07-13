@@ -20,22 +20,18 @@ function baseTemplate(content: string): string {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="color-scheme" content="light dark">
-  <meta name="supported-color-schemes" content="light dark">
+  <meta name="color-scheme" content="dark">
+  <meta name="supported-color-schemes" content="dark">
   <title>bruh.</title>
   <style>
-    :root { color-scheme: light dark; supported-color-schemes: light dark; }
-    /* Outlook dark-mode overrides: keep the logo readable and the accent on-brand
-       when the client force-inverts colors (it remaps text via [data-ogsc]). */
-    [data-ogsc] .logo { color: #ffffff !important; }
-    [data-ogsc] .logo span { color: #FF6B00 !important; }
+    :root { color-scheme: dark; supported-color-schemes: dark; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       line-height: 1.6;
-      color: #1a1a1a;
+      color: #e5e5e5;
       margin: 0;
       padding: 0;
-      background-color: #f5f5f5;
+      background-color: #0a0a0a;
     }
     .container {
       max-width: 600px;
@@ -43,15 +39,15 @@ function baseTemplate(content: string): string {
       padding: 40px 20px;
     }
     .card {
-      background: white;
+      background: #171717;
+      border: 1px solid #262626;
       border-radius: 12px;
       padding: 32px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
     .logo {
       font-size: 24px;
       font-weight: 700;
-      color: #000;
+      color: #ffffff;
       text-decoration: none;
       margin-bottom: 24px;
       display: block;
@@ -62,63 +58,48 @@ function baseTemplate(content: string): string {
     h1 {
       font-size: 24px;
       font-weight: 600;
+      color: #ffffff;
       margin: 0 0 16px 0;
     }
     p {
       margin: 0 0 16px 0;
-      color: #4b5563;
-    }
-    .button {
-      display: inline-block;
-      background: #FF6B00;
-      color: white !important;
-      text-decoration: none;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-weight: 500;
-      margin: 16px 0;
-    }
-    .button:hover {
-      background: #FF8533;
-    }
-    .secondary-button {
-      background: #f3f4f6;
-      color: #1f2937 !important;
+      color: #a3a3a3;
     }
     .muted {
-      color: #9ca3af;
+      color: #737373;
       font-size: 14px;
     }
     .footer {
       text-align: center;
       padding-top: 24px;
-      color: #9ca3af;
+      color: #737373;
       font-size: 12px;
     }
     .divider {
       border: 0;
-      border-top: 1px solid #e5e7eb;
+      border-top: 1px solid #2a2a2a;
       margin: 24px 0;
     }
     .highlight {
-      background: #f3f4f6;
+      background: #212121;
       border-radius: 8px;
       padding: 16px;
       margin: 16px 0;
     }
     code {
-      background: #f3f4f6;
+      background: #212121;
       padding: 2px 6px;
       border-radius: 4px;
       font-family: monospace;
+      color: #e5e5e5;
     }
   </style>
 </head>
-<body>
+<body bgcolor="#0a0a0a" style="background-color: #0a0a0a; margin: 0; padding: 0;">
   <div class="container">
-    <div class="card">
-      <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://getbruh.app'}" class="logo">
-        bruh<span>.</span>
+    <div class="card" bgcolor="#171717" style="background-color: #171717;">
+      <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://getbruh.app'}" class="logo" style="color: #ffffff;">
+        bruh<span style="color: #FF6B00;">.</span>
       </a>
       ${content}
     </div>
@@ -152,7 +133,7 @@ export function teamInviteEmail({
 
       <div class="highlight">
         <p style="margin: 0;"><strong>What you'll be able to do:</strong></p>
-        <ul style="margin: 8px 0 0 0; padding-left: 20px; color: #4b5563;">
+        <ul style="margin: 8px 0 0 0; padding-left: 20px; color: #a3a3a3;">
           ${role === 'admin' ? `
             <li>Manage team settings and members</li>
             <li>Create and manage projects</li>
@@ -192,7 +173,7 @@ export function welcomeEmail({
 
       <div class="highlight">
         <p style="margin: 0 0 8px 0;"><strong>Here's what you can do:</strong></p>
-        <ul style="margin: 0; padding-left: 20px; color: #4b5563;">
+        <ul style="margin: 0; padding-left: 20px; color: #a3a3a3;">
           <li>Create tasks and organize them in lists</li>
           <li>Use the Pomodoro timer to stay focused</li>
           <li>Track your habits and goals</li>
@@ -254,7 +235,7 @@ export function taskAssignedEmail({
 
       <div class="highlight">
         <p style="margin: 0; font-weight: 600; font-size: 16px;">${taskTitle}</p>
-        ${dueDate ? `<p style="margin: 8px 0 0 0; color: #6b7280;">Due: ${dueDate}</p>` : ''}
+        ${dueDate ? `<p style="margin: 8px 0 0 0; color: #a3a3a3;">Due: ${dueDate}</p>` : ''}
       </div>
 
       ${ctaButton(taskLink, "View Task")}
@@ -285,15 +266,15 @@ export function dailyDigestEmail({
       <p>Here's what's on your plate today.</p>
 
       ${completedYesterday > 0 ? `
-        <div class="highlight" style="background: #dcfce7;">
-          <p style="margin: 0; color: #166534;">🎉 You completed <strong>${completedYesterday} task${completedYesterday === 1 ? '' : 's'}</strong> yesterday!</p>
+        <div class="highlight" style="background: #14261a; border: 1px solid #1f3a29;">
+          <p style="margin: 0; color: #86efac;">🎉 You completed <strong style="color: #bbf7d0;">${completedYesterday} task${completedYesterday === 1 ? '' : 's'}</strong> yesterday!</p>
         </div>
       ` : ''}
 
       ${overdueTasks.length > 0 ? `
-        <div class="highlight" style="background: #fef2f2;">
-          <p style="margin: 0 0 8px 0; color: #991b1b;"><strong>⚠️ Overdue (${overdueTasks.length})</strong></p>
-          <ul style="margin: 0; padding-left: 20px; color: #991b1b;">
+        <div class="highlight" style="background: #2a1815; border: 1px solid #4a2b22;">
+          <p style="margin: 0 0 8px 0; color: #fca5a5;"><strong>⚠️ Overdue (${overdueTasks.length})</strong></p>
+          <ul style="margin: 0; padding-left: 20px; color: #fca5a5;">
             ${overdueTasks.slice(0, 5).map(t => `<li>${t.title} (${t.daysOverdue}d)</li>`).join('')}
           </ul>
         </div>
@@ -302,14 +283,14 @@ export function dailyDigestEmail({
       ${todayTasks.length > 0 ? `
         <div class="highlight">
           <p style="margin: 0 0 8px 0;"><strong>📋 Today's Tasks (${todayTasks.length})</strong></p>
-          <ul style="margin: 0; padding-left: 20px; color: #4b5563;">
+          <ul style="margin: 0; padding-left: 20px; color: #a3a3a3;">
             ${todayTasks.slice(0, 8).map(t => `<li>${t.title}${t.time ? ` at ${t.time}` : ''}</li>`).join('')}
             ${todayTasks.length > 8 ? `<li>...and ${todayTasks.length - 8} more</li>` : ''}
           </ul>
         </div>
       ` : `
         <div class="highlight">
-          <p style="margin: 0; color: #166534;">✅ No tasks scheduled for today!</p>
+          <p style="margin: 0; color: #86efac;">✅ No tasks scheduled for today!</p>
         </div>
       `}
 
@@ -345,15 +326,15 @@ export function weeklySummaryEmail({
       <div style="display: flex; gap: 16px; flex-wrap: wrap; margin: 24px 0;">
         <div class="highlight" style="flex: 1; min-width: 120px; text-align: center;">
           <p style="margin: 0; font-size: 32px; font-weight: 700; color: #FF6B00;">${tasksCompleted}</p>
-          <p style="margin: 4px 0 0 0; font-size: 14px; color: #6b7280;">Tasks Done</p>
+          <p style="margin: 4px 0 0 0; font-size: 14px; color: #a3a3a3;">Tasks Done</p>
         </div>
         <div class="highlight" style="flex: 1; min-width: 120px; text-align: center;">
           <p style="margin: 0; font-size: 32px; font-weight: 700; color: #10b981;">${focusHours}h</p>
-          <p style="margin: 4px 0 0 0; font-size: 14px; color: #6b7280;">Focus Time</p>
+          <p style="margin: 4px 0 0 0; font-size: 14px; color: #a3a3a3;">Focus Time</p>
         </div>
         <div class="highlight" style="flex: 1; min-width: 120px; text-align: center;">
           <p style="margin: 0; font-size: 32px; font-weight: 700; color: #f59e0b;">${streakDays}</p>
-          <p style="margin: 4px 0 0 0; font-size: 14px; color: #6b7280;">Day Streak</p>
+          <p style="margin: 4px 0 0 0; font-size: 14px; color: #a3a3a3;">Day Streak</p>
         </div>
       </div>
 
@@ -394,9 +375,9 @@ export function paymentFailedEmail({
       <h1>We couldn't process your payment</h1>
       <p>The last payment for ${what} didn't go through. No stress, it happens. Update your card and you're back in business.</p>
 
-      <div class="highlight" style="background: #fef2f2;">
-        <p style="margin: 0; color: #991b1b;">
-          You still have Pro access for <strong>${daysLeft} more day${daysLeft === 1 ? "" : "s"}</strong>.
+      <div class="highlight" style="background: #2a1815; border: 1px solid #4a2b22;">
+        <p style="margin: 0; color: #fca5a5;">
+          You still have Pro access for <strong style="color: #fecaca;">${daysLeft} more day${daysLeft === 1 ? "" : "s"}</strong>.
           After that, your subscription will be canceled and you'll drop to the free plan.
         </p>
       </div>
