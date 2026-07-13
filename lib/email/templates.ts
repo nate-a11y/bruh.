@@ -418,6 +418,55 @@ export function subscriptionCanceledEmail({
   };
 }
 
+// Owner alert when a customer files a dispute (chargeback). Internal-facing.
+export function disputeAlertEmail({
+  amount,
+  currency,
+  reason,
+  customerEmail,
+  dueBy,
+  evidenceSubmitted,
+  accessRevoked,
+  stripeUrl,
+  evidenceText,
+}: {
+  amount: string;
+  currency: string;
+  reason: string;
+  customerEmail: string;
+  dueBy?: string;
+  evidenceSubmitted: boolean;
+  accessRevoked: boolean;
+  stripeUrl: string;
+  evidenceText: string;
+}): { subject: string; html: string } {
+  return {
+    subject: `⚠️ Dispute filed: ${amount} ${currency.toUpperCase()} (${reason})`,
+    html: baseTemplate(`
+      <h1>A customer filed a dispute</h1>
+      <p>Heads up, a chargeback was filed. Here's what happened and what bruh. did automatically.</p>
+
+      <div class="highlight">
+        <p style="margin: 0 0 4px 0;"><strong>Amount:</strong> ${amount} ${currency.toUpperCase()}</p>
+        <p style="margin: 0 0 4px 0;"><strong>Reason:</strong> ${reason}</p>
+        <p style="margin: 0 0 4px 0;"><strong>Customer:</strong> ${customerEmail}</p>
+        ${dueBy ? `<p style="margin: 0 0 4px 0;"><strong>Respond by:</strong> ${dueBy}</p>` : ""}
+        <p style="margin: 0 0 4px 0;"><strong>Access revoked:</strong> ${accessRevoked ? "Yes" : "No"}</p>
+        <p style="margin: 0;"><strong>Evidence auto-submitted:</strong> ${evidenceSubmitted ? "Yes ✅" : "No — submit manually"}</p>
+      </div>
+
+      ${ctaButton(stripeUrl, "Review in Stripe")}
+
+      <hr class="divider">
+
+      <p style="margin: 0 0 8px 0;"><strong>Evidence submitted:</strong></p>
+      <div class="highlight"><div style="white-space: pre-wrap; font-size: 13px; color: #a3a3a3;">${evidenceText}</div></div>
+
+      <p class="muted">Evidence can only be submitted once. If you want to add more (screenshots, extra context), do it in Stripe before the deadline.</p>
+    `),
+  };
+}
+
 // Admin email (sent from admin dashboard)
 export function adminEmail({
   message,

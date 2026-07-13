@@ -1,7 +1,7 @@
 // Admin configuration
 // Only these email addresses have access to the admin interface
 
-const ADMIN_EMAILS = [
+export const ADMIN_EMAILS = [
   "nate@moovsapp.com",
 ];
 
