@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { stripe, STRIPE_CONFIG } from '@/lib/stripe';
 import { getSubscription } from '@/lib/subscriptions';
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
     if (!stripe) {
       return NextResponse.json(
@@ -21,6 +21,14 @@ export async function POST() {
         { status: 401 }
       );
     }
+
+    // Monthly (default) or annual Pro price.
+    const body = await request.json().catch(() => ({}));
+    const interval = body?.interval === 'annual' ? 'annual' : 'monthly';
+    const priceId =
+      interval === 'annual' && STRIPE_CONFIG.annualPriceId
+        ? STRIPE_CONFIG.annualPriceId
+        : STRIPE_CONFIG.priceId;
 
     // Get existing subscription to check for Stripe customer
     const subscription = await getSubscription(user.id);
@@ -56,7 +64,7 @@ export async function POST() {
       payment_method_types: ['card'],
       line_items: [
         {
-          price: STRIPE_CONFIG.priceId,
+          price: priceId,
           quantity: 1,
         },
       ],

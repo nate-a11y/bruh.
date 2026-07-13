@@ -43,6 +43,12 @@ export type ProFeature = keyof typeof ENFORCED_PRO_FEATURES;
 export const PRICE_DISPLAY = "$19.99";
 export const TRIAL_DAYS = 30;
 
+// Annual Pro: $199/yr vs $19.99 x 12 ($239.88) -- about 2 months free (~17% off).
+export const ANNUAL_PRICE_DISPLAY = "$199";
+export const ANNUAL_PERIOD = "/yr";
+export const ANNUAL_SAVINGS_DISPLAY = "Save 17%";
+export const ANNUAL_MONTHLY_EQUIV = "$16.58/mo billed yearly";
+
 // Team billing: $19.99 base (owner seat) + $12/mo per additional member.
 export const TEAM_BASE_CENTS = 1999;
 export const TEAM_SEAT_CENTS = 1200;

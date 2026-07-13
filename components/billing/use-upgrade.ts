@@ -32,11 +32,15 @@ export function useUpgrade(source?: string) {
     setOpen(true);
   }, [source]);
 
-  const startCheckout = useCallback(async () => {
+  const startCheckout = useCallback(async (interval: "monthly" | "annual" = "monthly") => {
     setCheckingOut(true);
-    trackEvent("checkout_started", { plan: "pro", source: source ?? "upgrade_modal" });
+    trackEvent("checkout_started", { plan: "pro", interval, source: source ?? "upgrade_modal" });
     try {
-      const res = await fetch("/api/stripe/checkout", { method: "POST" });
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ interval }),
+      });
       const data = await res.json();
 
       if (data.error) {

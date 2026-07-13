@@ -13,6 +13,8 @@ export const stripe = process.env.STRIPE_SECRET_KEY
 
 export const STRIPE_CONFIG = {
   priceId: process.env.STRIPE_PRICE_ID || '',
+  // Annual Pro price ($199/yr, ~2 months free vs monthly).
+  annualPriceId: process.env.STRIPE_ANNUAL_PRICE_ID || '',
   // Per-additional-member seat price ($12/mo) for team subscriptions.
   teamSeatPriceId: process.env.STRIPE_TEAM_SEAT_PRICE_ID || '',
   webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
