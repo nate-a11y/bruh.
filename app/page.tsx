@@ -96,6 +96,47 @@ const integrations = [
   { name: "Make", logo: "🔧" },
 ];
 
+const faqs = [
+  {
+    q: "What is bruh.?",
+    a: "bruh. is an AI task manager and focus app. You brain-dump your thoughts, AI turns them into organized tasks, and a built-in Pomodoro focus timer helps you actually get them done. It's designed for people (especially ADHD/neurodivergent brains) who bounce off heavier tools like Todoist or Asana.",
+  },
+  {
+    q: "Is bruh. free?",
+    a: "Yes. The core app — unlimited tasks, lists, projects, AI Brain Dump, and focus mode — is free forever, no credit card. Pro ($19.99/mo) adds AI planning and integrations, and Team is $19.99 base plus $12/mo per additional member.",
+  },
+  {
+    q: "How does bruh. help with ADHD?",
+    a: "It's built around executive dysfunction: Brain Dump clears mental overwhelm, a 'what now?' picker beats task paralysis by choosing your next single action, a visual focus timer fights time blindness, and there's no shame-based streak guilt. Get your shit together without the friction.",
+  },
+  {
+    q: "Does bruh. use AI?",
+    a: "Yes — bruh. uses Claude to turn messy brain dumps into structured tasks, break big projects into steps, and plan your day. AI output is a suggestion you stay in control of.",
+  },
+  {
+    q: "Does bruh. sync with my calendar?",
+    a: "Yes. Pro includes two-way Google Calendar sync, plus Notion and Slack integrations.",
+  },
+  {
+    q: "Is my data private?",
+    a: "Yes. Your data is stored securely with row-level security, card payments are handled by Stripe (bruh. never stores card numbers), and there's no third-party ad tracking. You can export or delete your data anytime.",
+  },
+  {
+    q: "Can I cancel anytime?",
+    a: "Yes. Cancel in one click from billing settings and keep access through the end of your billing period.",
+  },
+];
+
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((f) => ({
+    "@type": "Question",
+    name: f.q,
+    acceptedAnswer: { "@type": "Answer", text: f.a },
+  })),
+};
+
 export default function LandingPage() {
   // Note: Logged-in users are redirected to /today by middleware
   return (
@@ -279,6 +320,28 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* FAQ */}
+      <section className="max-w-3xl mx-auto px-6 py-24">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
+        <h2 className="text-2xl md:text-3xl font-display font-bold text-foreground text-center mb-10">
+          Questions?
+        </h2>
+        <div className="divide-y divide-border">
+          {faqs.map((f) => (
+            <details key={f.q} className="group py-4">
+              <summary className="cursor-pointer list-none font-medium text-foreground flex items-center justify-between">
+                {f.q}
+                <span className="text-primary transition group-open:rotate-45">+</span>
+              </summary>
+              <p className="mt-3 text-sm text-muted-foreground">{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="max-w-4xl mx-auto px-6 py-24 text-center">
         <h2 className="text-4xl font-display font-bold text-foreground mb-4">Ready?</h2>
@@ -300,6 +363,9 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-4">
           <Logo size="sm" showIcon={false} />
           <div className="flex items-center gap-6">
+            <Link href="/for-adhd" className="text-xs text-muted-foreground hover:text-foreground">
+              For ADHD
+            </Link>
             <Link href="/pricing" className="text-xs text-muted-foreground hover:text-foreground">
               Pricing
             </Link>

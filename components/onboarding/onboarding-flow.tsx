@@ -21,6 +21,7 @@ export function OnboardingFlow() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [prefs, setPrefs] = useState({
+    displayName: "",
     dailyGoal: 5,
     focusDuration: 25,
     firstTask: "",
@@ -29,6 +30,7 @@ export function OnboardingFlow() {
   async function handleComplete() {
     const result = await completeOnboarding(
       {
+        display_name: prefs.displayName.trim(),
         daily_goal_tasks: prefs.dailyGoal,
         default_focus_minutes: prefs.focusDuration,
       },
@@ -72,9 +74,21 @@ export function OnboardingFlow() {
             <h1 className="text-2xl font-bold mb-4">{step.title}</h1>
 
             {currentStep === 0 && (
-              <p className="text-muted-foreground mb-8">
-                Let&apos;s get your shit together. Quick setup, then you&apos;re in.
-              </p>
+              <div className="space-y-4">
+                <p className="text-muted-foreground mb-4">
+                  Let&apos;s get your shit together. Quick setup, then you&apos;re in.
+                </p>
+                <Input
+                  placeholder="What should we call you?"
+                  value={prefs.displayName}
+                  autoFocus
+                  onChange={(e) => setPrefs({ ...prefs, displayName: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && prefs.displayName.trim()) next();
+                  }}
+                  className="text-center"
+                />
+              </div>
             )}
 
             {currentStep === 1 && (
@@ -129,7 +143,12 @@ export function OnboardingFlow() {
               </div>
             )}
 
-            <Button onClick={next} className="mt-8 w-full" size="lg">
+            <Button
+              onClick={next}
+              disabled={currentStep === 0 && !prefs.displayName.trim()}
+              className="mt-8 w-full"
+              size="lg"
+            >
               {currentStep === steps.length - 1 ? (
                 <>
                   <Check className="mr-2 h-4 w-4" />

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/dashboard/header";
 import { TaskList } from "@/components/tasks/task-list";
 import { QuickCaptureBar } from "@/components/tasks/quick-capture-bar";
+import { WhatsNext } from "@/components/tasks/whats-next";
 import { TodayExtras } from "@/components/dashboard/today-extras";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -152,6 +153,11 @@ export default async function DashboardPage() {
             />
           </div>
         )}
+
+        {/* Task-paralysis breaker */}
+        <div className="mb-6">
+          <WhatsNext />
+        </div>
 
         {/* Today's Tasks */}
         <div className="space-y-6">
