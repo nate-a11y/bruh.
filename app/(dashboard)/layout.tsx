@@ -104,9 +104,21 @@ export default async function DashboardLayout({
         )}
         {/* Mobile sidebar (hidden in the native shell) */}
         {!isNative && <MobileSidebar lists={lists || []} isAdmin={userIsAdmin} />}
+        {/* In the native shell, strip the mobile-hamburger left indent from
+            page headers (the hamburger is hidden) so content isn't pushed over. */}
+        {isNative && (
+          <style
+            dangerouslySetInnerHTML={{
+              __html: "[data-dashboard-header]{padding-left:1rem!important}",
+            }}
+          />
+        )}
         <main className="flex-1 overflow-auto">
-          {/* Trial countdown + upgrade nudge (renders only while 'trialing') */}
-          <TrialBanner status={access.status} daysRemaining={access.days_remaining} />
+          {/* Trial countdown + upgrade nudge (web only; the native shell surfaces
+              billing via Settings, and the banner reads as odd chrome there). */}
+          {!isNative && (
+            <TrialBanner status={access.status} daysRemaining={access.days_remaining} />
+          )}
           {children}
         </main>
         {/* Floating timer - shows when focus session is active (native owns this) */}
