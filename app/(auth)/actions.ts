@@ -2,9 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { sendEmail, welcomeEmail } from "@/lib/email";
+import { recordReferral } from "@/lib/referrals";
 import { redeemCoupon, validateCoupon } from "@/lib/subscriptions";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { getPlatformSetting } from "@/lib/platform-settings";
@@ -84,6 +85,16 @@ export async function signup(formData: FormData) {
       console.error("Coupon redemption failed:", result.message);
       // Don't fail signup, just log it - user can apply later
     }
+  }
+
+  // Attribute the signup to a referrer if they arrived via a ?ref link.
+  try {
+    const refCode = (await cookies()).get("bruh_ref")?.value;
+    if (refCode) {
+      await recordReferral(adminClient, { code: refCode, referredUserId: userId });
+    }
+  } catch (err) {
+    console.error("Referral capture failed:", err);
   }
 
   // Send welcome email (don't await - fire and forget)
