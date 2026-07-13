@@ -107,6 +107,9 @@ export default function PricingPage() {
             <Link href="/terms" className="text-xs text-muted-foreground hover:text-foreground">
               Terms
             </Link>
+            <Link href="/cookies" className="text-xs text-muted-foreground hover:text-foreground">
+              Cookies
+            </Link>
             <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} bruh.</p>
           </div>
         </div>
