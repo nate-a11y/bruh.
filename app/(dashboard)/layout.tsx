@@ -4,9 +4,11 @@ import { Sidebar, MobileSidebar } from "@/components/dashboard/sidebar";
 import { FloatingTimerWrapper } from "@/components/focus/floating-timer-wrapper";
 import { BrainDumpProvider } from "@/components/tasks/brain-dump-provider";
 import { OnboardingFlow } from "@/components/onboarding/onboarding-flow";
+import { TrialBanner } from "@/components/billing/trial-banner";
 import { PWAProvider } from "@/components/pwa/pwa-provider";
 import { isAdmin } from "@/lib/admin";
 import { getPlatformSetting } from "@/lib/platform-settings";
+import { checkSubscriptionAccess } from "@/lib/subscriptions";
 
 export default async function DashboardLayout({
   children,
@@ -76,6 +78,10 @@ export default async function DashboardLayout({
 
   const needsOnboarding = !prefs?.onboarding_completed && !prefs?.display_name;
 
+  // Trial status drives the upgrade banner. The banner itself no-ops for any
+  // status other than 'trialing', so this is a cheap fetch either way.
+  const access = await checkSubscriptionAccess(user.id);
+
   return (
     <PWAProvider>
       <div className="flex h-screen overflow-hidden">
@@ -85,7 +91,11 @@ export default async function DashboardLayout({
         </div>
         {/* Mobile sidebar */}
         <MobileSidebar lists={lists || []} isAdmin={userIsAdmin} />
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="flex-1 overflow-auto">
+          {/* Trial countdown + upgrade nudge (renders only while 'trialing') */}
+          <TrialBanner status={access.status} daysRemaining={access.days_remaining} />
+          {children}
+        </main>
         {/* Floating timer - shows when focus session is active */}
         <FloatingTimerWrapper />
         {/* Global brain dump dialog - triggered via ⌘B or command menu */}
