@@ -48,6 +48,9 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname === "/terms" ||
     request.nextUrl.pathname === "/cookies" ||
     request.nextUrl.pathname === "/for-adhd" ||
+    // Native session bridge: sets cookies from the native app's tokens, so it
+    // must be reachable before the web session exists.
+    request.nextUrl.pathname === "/auth/native" ||
     request.nextUrl.pathname === "/pricing" ||
     request.nextUrl.pathname === "/sitemap.xml" ||
     request.nextUrl.pathname === "/robots.txt" ||
