@@ -25,21 +25,32 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  // Check maintenance mode - only admins can access during maintenance
   const userIsAdmin = isAdmin(user.email);
-  const maintenanceMode = await getPlatformSetting("maintenance_mode");
 
+  // Fetch everything the shell needs in parallel rather than in series -- these
+  // reads are independent, so one round-trip instead of four.
+  const [maintenanceMode, listsRes, prefsRes, access] = await Promise.all([
+    getPlatformSetting("maintenance_mode"),
+    supabase
+      .from("zeroed_lists")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("is_archived", false)
+      .order("position", { ascending: true }),
+    supabase
+      .from("zeroed_user_preferences")
+      .select("onboarding_completed, display_name")
+      .eq("user_id", user.id)
+      .single(),
+    checkSubscriptionAccess(user.id),
+  ]);
+
+  // Check maintenance mode - only admins can access during maintenance
   if (maintenanceMode && !userIsAdmin) {
     redirect("/maintenance");
   }
 
-  // Fetch user's lists
-  let { data: lists } = await supabase
-    .from("zeroed_lists")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("is_archived", false)
-    .order("position", { ascending: true });
+  let lists = listsRes.data;
 
   // First-time user setup: create Inbox list and preferences if needed
   if (!lists || lists.length === 0) {
@@ -69,18 +80,10 @@ export default async function DashboardLayout({
   // Check if user needs onboarding. The dedicated `onboarding_completed` flag is
   // the primary signal, but existing users predate that flag (default false) and
   // already have a display_name from the old welcome flow -- treat them as onboarded
-  // so they aren't forced back through the flow.
-  const { data: prefs } = await supabase
-    .from("zeroed_user_preferences")
-    .select("onboarding_completed, display_name")
-    .eq("user_id", user.id)
-    .single();
-
+  // so they aren't forced back through the flow. `prefs` and `access` were fetched
+  // in the parallel batch above.
+  const prefs = prefsRes.data;
   const needsOnboarding = !prefs?.onboarding_completed && !prefs?.display_name;
-
-  // Trial status drives the upgrade banner. The banner itself no-ops for any
-  // status other than 'trialing', so this is a cheap fetch either way.
-  const access = await checkSubscriptionAccess(user.id);
 
   return (
     <PWAProvider>

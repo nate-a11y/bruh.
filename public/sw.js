@@ -1,6 +1,10 @@
 // bruh. Service Worker - Offline Support
-const CACHE_NAME = "bruh-v1";
-const STATIC_CACHE = "bruh-static-v1";
+// v2: only caches immutable static assets. It deliberately does NOT intercept
+// navigations, RSC payloads, or API requests -- a service worker that caches
+// those interferes with the Next.js App Router and makes client-side navigation
+// feel slow/stale. Those requests pass straight through to the network.
+const CACHE_NAME = "bruh-v2";
+const STATIC_CACHE = "bruh-static-v2";
 
 // Static assets to cache immediately
 const STATIC_ASSETS = [
@@ -36,72 +40,41 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Fetch event - network first, fall back to cache
+// Only immutable, hashed static assets are safe to cache-first. Everything else
+// (navigations, RSC payloads, API, dynamic routes) must go to the network so the
+// App Router works normally.
+function isCacheableAsset(url) {
+  if (url.pathname.startsWith("/_next/static/")) return true;
+  return /\.(?:png|jpe?g|gif|svg|webp|ico|woff2?|ttf|otf)$/i.test(url.pathname);
+}
+
+// Fetch event - cache-first for static assets only; pass everything else through.
 self.addEventListener("fetch", (event) => {
   const { request } = event;
+
+  // Never intercept non-GET, cross-origin, navigations, RSC payloads, or API.
+  if (request.method !== "GET") return;
+  if (request.mode === "navigate") return;
+  if (request.headers.get("RSC") === "1") return;
+
   const url = new URL(request.url);
+  if (url.origin !== location.origin) return;
+  if (url.pathname.startsWith("/api/")) return;
+  if (url.searchParams.has("_rsc")) return;
+  if (!isCacheableAsset(url)) return;
 
-  // Skip non-GET requests
-  if (request.method !== "GET") {
-    return;
-  }
-
-  // Skip external requests
-  if (url.origin !== location.origin) {
-    return;
-  }
-
-  // Skip API requests (we don't want to cache dynamic data)
-  if (url.pathname.startsWith("/api/")) {
-    return;
-  }
-
-  // For navigation requests (HTML pages), try network first
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // Cache the response for offline use
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseClone);
-          });
-          return response;
-        })
-        .catch(() => {
-          // Fall back to cache
-          return caches.match(request).then((cachedResponse) => {
-            if (cachedResponse) {
-              return cachedResponse;
-            }
-            // Return offline page if available
-            return caches.match("/");
-          });
-        })
-    );
-    return;
-  }
-
-  // For other requests (JS, CSS, images), use stale-while-revalidate
+  // Cache-first for immutable static assets, revalidating in the background.
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       const fetchPromise = fetch(request)
         .then((networkResponse) => {
-          // Update cache with fresh response
           if (networkResponse.ok) {
             const responseClone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, responseClone);
-            });
+            caches.open(STATIC_CACHE).then((cache) => cache.put(request, responseClone));
           }
           return networkResponse;
         })
-        .catch(() => {
-          // Network failed, return cached response if available
-          return cachedResponse;
-        });
-
-      // Return cached response immediately, or wait for network
+        .catch(() => cachedResponse);
       return cachedResponse || fetchPromise;
     })
   );
