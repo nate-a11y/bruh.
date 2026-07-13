@@ -47,6 +47,7 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname === "/privacy" ||
     request.nextUrl.pathname === "/terms" ||
     request.nextUrl.pathname === "/cookies" ||
+    request.nextUrl.pathname === "/for-adhd" ||
     request.nextUrl.pathname === "/pricing" ||
     request.nextUrl.pathname === "/sitemap.xml" ||
     request.nextUrl.pathname === "/robots.txt" ||
