@@ -9,6 +9,7 @@ import { PWAProvider } from "@/components/pwa/pwa-provider";
 import { isAdmin } from "@/lib/admin";
 import { getPlatformSetting } from "@/lib/platform-settings";
 import { checkSubscriptionAccess } from "@/lib/subscriptions";
+import { isPro } from "@/lib/plans";
 
 export default async function DashboardLayout({
   children,
@@ -105,6 +106,7 @@ export default async function DashboardLayout({
         <BrainDumpProvider
           lists={lists || []}
           defaultListId={lists?.find(l => l.name === "Inbox")?.id || lists?.[0]?.id}
+          isPro={isPro(access)}
         />
         {/* Onboarding flow for first-time users */}
         {needsOnboarding && <OnboardingFlow />}

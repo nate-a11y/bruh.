@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { VoiceBrainDump } from "./voice-brain-dump";
 import { processBrainDump } from "@/app/(dashboard)/actions";
 import { useRouter } from "next/navigation";
 import type { List } from "@/lib/supabase/types";
@@ -30,6 +31,8 @@ interface BrainDumpDialogProps {
   lists: List[];
   defaultListId?: string;
   trigger?: React.ReactNode;
+  /** Whether the current user has Pro access (gates the voice mic). */
+  isPro?: boolean;
   // Controlled mode
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -54,6 +57,7 @@ export function BrainDumpDialog({
   lists,
   defaultListId,
   trigger,
+  isPro = false,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
 }: BrainDumpDialogProps) {
@@ -98,6 +102,16 @@ export function BrainDumpDialog({
     } finally {
       setIsProcessing(false);
     }
+  }
+
+  // Append dictated speech to the existing text so the unchanged "Parse It" flow
+  // sends it straight to the AI. Insert a space/newline so chunks don't collide.
+  function handleTranscript(chunk: string) {
+    setText((prev) => {
+      if (!prev.trim()) return chunk;
+      const separator = /\s$/.test(prev) ? "" : prev.endsWith("\n") ? "" : " ";
+      return `${prev}${separator}${chunk}`;
+    });
   }
 
   function handleClose() {
@@ -173,7 +187,18 @@ export function BrainDumpDialog({
               </div>
 
               {/* Text input */}
-              <div className="flex-1 min-h-0">
+              <div className="flex-1 min-h-0 space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Your dump</Label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Or speak it</span>
+                    <VoiceBrainDump
+                      isPro={isPro}
+                      onTranscript={handleTranscript}
+                      disabled={isProcessing}
+                    />
+                  </div>
+                </div>
                 <Textarea
                   value={text}
                   onChange={(e) => setText(e.target.value)}
