@@ -58,7 +58,7 @@ function baseTemplate(content: string): string {
       margin: 16px 0;
     }
     .button:hover {
-      background: #E55F00;
+      background: #FF8533;
     }
     .secondary-button {
       background: #f3f4f6;
