@@ -5,6 +5,7 @@ import { TaskList } from "@/components/tasks/task-list";
 import { QuickCaptureBar } from "@/components/tasks/quick-capture-bar";
 import { WhatsNext } from "@/components/tasks/whats-next";
 import { PlanMyDay } from "@/components/tasks/plan-my-day";
+import { CoachCard } from "@/components/tasks/coach-card";
 import { TodayExtras } from "@/components/dashboard/today-extras";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -164,6 +165,8 @@ export default async function DashboardPage() {
             <WhatsNext />
             <PlanMyDay taskIds={unscheduledTaskIds} />
           </div>
+          {/* AI accountability coach (Pro) */}
+          <CoachCard />
         </div>
 
         {/* Today's Tasks */}
