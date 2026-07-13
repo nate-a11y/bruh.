@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/brand/logo";
 import { Badge } from "@/components/ui/badge";
+import { Testimonials } from "@/components/marketing/testimonials";
 
 const coreFeatures = [
   {
@@ -341,6 +342,9 @@ export default function LandingPage() {
           ))}
         </div>
       </section>
+
+      {/* Social proof */}
+      <Testimonials />
 
       {/* CTA */}
       <section className="max-w-4xl mx-auto px-6 py-24 text-center">
