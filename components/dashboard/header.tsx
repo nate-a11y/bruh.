@@ -33,7 +33,7 @@ export function Header({ title, subtitle, action, showTimer = true }: HeaderProp
   const isTimerActive = state === "running" || state === "paused" || state === "break";
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border bg-card pl-14 pr-4 md:px-6">
+    <header data-dashboard-header className="flex h-16 items-center justify-between border-b border-border bg-card pl-14 pr-4 md:px-6">
       <div className="flex items-center gap-4 min-w-0">
         <div className="min-w-0">
           <h1 className="text-xl font-semibold truncate">{title}</h1>
