@@ -31,6 +31,7 @@ import { Separator } from "@/components/ui/separator";
 import { signOut } from "@/app/(auth)/actions";
 import { createListDirect } from "@/app/(dashboard)/actions";
 import { KeyboardShortcutsModal } from "./keyboard-shortcuts-modal";
+import { FeedbackButton } from "@/components/feedback/feedback-button";
 import type { List } from "@/lib/supabase/types";
 
 interface SidebarProps {
@@ -198,6 +199,7 @@ export function Sidebar({ lists, isAdmin }: SidebarProps) {
         <div className="px-3 py-1">
           <KeyboardShortcutsModal />
         </div>
+        <FeedbackButton />
         {isAdmin && (
           <Link
             href="/admin"

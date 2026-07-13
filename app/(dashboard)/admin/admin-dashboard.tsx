@@ -54,6 +54,7 @@ import { TrendCharts } from "@/components/admin/trend-charts";
 import { ReferralPanel } from "@/components/admin/referral-panel";
 import { CouponManager } from "@/components/admin/coupon-manager";
 import { UserDetailDialog } from "@/components/admin/user-detail-dialog";
+import { FeedbackPanel } from "@/components/admin/feedback-panel";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -373,6 +374,7 @@ export function AdminDashboard({ stats, recentUsers }: AdminDashboardProps) {
           <TabsTrigger value="billing">Billing</TabsTrigger>
           <TabsTrigger value="referrals">Referrals</TabsTrigger>
           <TabsTrigger value="promos">Promos</TabsTrigger>
+          <TabsTrigger value="feedback">Feedback</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
@@ -820,6 +822,11 @@ export function AdminDashboard({ stats, recentUsers }: AdminDashboardProps) {
         {/* Promos Tab */}
         <TabsContent value="promos" className="space-y-4">
           <CouponManager />
+        </TabsContent>
+
+        {/* Feedback Tab */}
+        <TabsContent value="feedback" className="space-y-4">
+          <FeedbackPanel />
         </TabsContent>
 
         {/* Settings Tab */}
