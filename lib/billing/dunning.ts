@@ -37,7 +37,14 @@ export async function sendPaymentFailedEmail(
     daysLeft: Math.max(0, opts.daysLeft),
     isTeam: opts.isTeam,
   });
-  const res = await sendEmail({ to, subject, html, bypassSettingsCheck: true });
+  const res = await sendEmail({
+    to,
+    subject,
+    html,
+    bypassSettingsCheck: true,
+    userId: opts.userId ?? undefined,
+    emailType: "dunning",
+  });
   return res.success;
 }
 
@@ -52,6 +59,13 @@ export async function sendSubscriptionCanceledEmail(
     payLink: resolvePayLink(opts.invoiceUrl),
     isTeam: opts.isTeam,
   });
-  const res = await sendEmail({ to, subject, html, bypassSettingsCheck: true });
+  const res = await sendEmail({
+    to,
+    subject,
+    html,
+    bypassSettingsCheck: true,
+    userId: opts.userId ?? undefined,
+    emailType: "subscription_canceled",
+  });
   return res.success;
 }
