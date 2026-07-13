@@ -2,7 +2,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { sendEmail, disputeAlertEmail } from "@/lib/email";
-import { ADMIN_EMAILS } from "@/lib/admin";
+
+// Where billing/dispute alerts go. The bruh. business owner, overridable per env.
+const OWNER_ALERT_EMAIL = process.env.BILLING_ALERT_EMAIL || "nate@lakeridepros.com";
 
 // Auto-submit compiled evidence to Stripe. Evidence can only be submitted once,
 // so if you'd rather review first, flip this to false — the handler will still
@@ -190,26 +192,31 @@ export async function handleDisputeCreated(admin: SupabaseClient, dispute: Strip
     }
   }
 
-  const accessRevoked = customerId ? await revokeAccess(admin, customerId) : false;
-
   let evidenceSubmitted = false;
   let evidenceText = "Could not resolve the customer for this dispute; no evidence compiled.";
   let customerEmail = "unknown";
+  let evidence: Evidence | null = null;
 
+  // Compile evidence BEFORE revoking so it reflects the subscription's real
+  // (active) state at dispute time rather than showing it already canceled.
   if (customerId) {
     const compiled = await compileEvidence(admin, { userId, customerId, dispute });
     evidenceText = compiled.summary;
     customerEmail = compiled.email || "unknown";
-    if (AUTO_SUBMIT_EVIDENCE && stripe) {
-      try {
-        await stripe.disputes.update(dispute.id, {
-          evidence: compiled.evidence as Stripe.DisputeUpdateParams.Evidence,
-          submit: true,
-        });
-        evidenceSubmitted = true;
-      } catch (err) {
-        console.error("Failed to submit dispute evidence:", err);
-      }
+    evidence = compiled.evidence;
+  }
+
+  const accessRevoked = customerId ? await revokeAccess(admin, customerId) : false;
+
+  if (evidence && AUTO_SUBMIT_EVIDENCE && stripe) {
+    try {
+      await stripe.disputes.update(dispute.id, {
+        evidence: evidence as Stripe.DisputeUpdateParams.Evidence,
+        submit: true,
+      });
+      evidenceSubmitted = true;
+    } catch (err) {
+      console.error("Failed to submit dispute evidence:", err);
     }
   }
 
@@ -247,7 +254,7 @@ export async function handleDisputeCreated(admin: SupabaseClient, dispute: Strip
     stripeUrl: dashboardUrl(dispute.id),
     evidenceText,
   });
-  await sendEmail({ to: ADMIN_EMAILS, subject, html, bypassSettingsCheck: true, emailType: "dispute_alert" });
+  await sendEmail({ to: OWNER_ALERT_EMAIL, subject, html, bypassSettingsCheck: true, emailType: "dispute_alert" });
 }
 
 // Dispute resolved (won/lost): record the outcome and notify the owner.
@@ -258,7 +265,7 @@ export async function handleDisputeClosed(admin: SupabaseClient, dispute: Stripe
     .eq("stripe_dispute_id", dispute.id);
   const won = dispute.status === "won";
   await sendEmail({
-    to: ADMIN_EMAILS,
+    to: OWNER_ALERT_EMAIL,
     subject: `Dispute ${won ? "WON ✅" : `closed: ${dispute.status}`} — ${formatAmount(dispute.amount, dispute.currency)}`,
     html: `<p>Dispute <code>${dispute.id}</code> closed with status <strong>${dispute.status}</strong>.</p><p><a href="${dashboardUrl(dispute.id)}">View in Stripe</a></p>`,
     bypassSettingsCheck: true,

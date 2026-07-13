@@ -1,8 +1,8 @@
 // Admin configuration
 // Only these email addresses have access to the admin interface
 
-export const ADMIN_EMAILS = [
-  "nate@moovsapp.com",
+const ADMIN_EMAILS = [
+  "nate@lakeridepros.com",
 ];
 
 export function isAdmin(email: string | undefined | null): boolean {
