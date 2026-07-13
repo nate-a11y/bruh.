@@ -68,7 +68,10 @@ export function FocusMusic({
   const [customUrl, setCustomUrl] = useState('');
   const [customTracks, setCustomTracks] = useState<FocusTrack[]>([]);
 
-  // Handle timer state changes
+  // Handle timer state changes. This effect synchronizes the external audio
+  // players (YouTube / ambient) with the timer, and isPlaying mirrors whether
+  // audio is actually playing — a genuine external-system sync that can't be
+  // derived (the play/pause button also toggles isPlaying independently).
   useEffect(() => {
     if (audioSource === 'none') return;
 
@@ -76,6 +79,7 @@ export function FocusMusic({
       if (audioSource === 'youtube' && selectedTrack) {
         const player = getYouTubePlayer();
         player.play(selectedTrack.videoId, volume);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsPlaying(true);
       } else if (audioSource === 'ambient' && selectedAmbient !== 'none') {
         const player = getFocusSoundPlayer();

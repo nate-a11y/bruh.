@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Moon, ArrowRight, Check, Trophy, Calendar, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -44,15 +44,18 @@ export function ShutdownFlow({
   const step = STEPS[currentStep];
   const Icon = step.icon;
 
-  async function handleIncompleteAction(taskId: string, action: 'tomorrow' | 'next_week') {
-    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const handleIncompleteAction = useCallback(
+    async (taskId: string, action: 'tomorrow' | 'next_week') => {
+      const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-    await updateTask(taskId, {
-      due_date: action === 'tomorrow' ? tomorrow : nextWeek
-    });
-    toast.success("Task rescheduled");
-  }
+      await updateTask(taskId, {
+        due_date: action === 'tomorrow' ? tomorrow : nextWeek
+      });
+      toast.success("Task rescheduled");
+    },
+    []
+  );
 
   async function handleComplete() {
     setIsSubmitting(true);

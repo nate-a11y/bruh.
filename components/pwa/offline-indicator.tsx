@@ -1,27 +1,38 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useSyncExternalStore } from "react";
 import { WifiOff, Wifi } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
+// Subscribe to the browser's online/offline events. useSyncExternalStore keeps
+// isOnline in sync with the external browser state without a setState-in-effect,
+// and renders the server snapshot (online) first to avoid hydration mismatches.
+function subscribeOnlineStatus(callback: () => void) {
+  window.addEventListener("online", callback);
+  window.addEventListener("offline", callback);
+  return () => {
+    window.removeEventListener("online", callback);
+    window.removeEventListener("offline", callback);
+  };
+}
+
 export function OfflineIndicator() {
-  const [isOnline, setIsOnline] = useState(true);
+  const isOnline = useSyncExternalStore(
+    subscribeOnlineStatus,
+    () => navigator.onLine,
+    () => true
+  );
   const [showReconnected, setShowReconnected] = useState(false);
 
   useEffect(() => {
-    // Set initial state
-    setIsOnline(navigator.onLine);
-
     function handleOnline() {
-      setIsOnline(true);
       setShowReconnected(true);
       // Hide "back online" message after 3 seconds
       setTimeout(() => setShowReconnected(false), 3000);
     }
 
     function handleOffline() {
-      setIsOnline(false);
       setShowReconnected(false);
     }
 

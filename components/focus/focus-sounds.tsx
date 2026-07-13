@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -31,13 +31,17 @@ export function FocusSounds({
   const [sound, setSound] = useState<SoundType>(defaultSound);
   const [volume, setVolume] = useState(defaultVolume);
   const [isMuted, setIsMuted] = useState(false);
+  // Latest volume, read when (re)starting playback. Volume changes are applied
+  // live by the effect below, so the playback effect must not depend on volume
+  // (that would restart the sound on every slider tick).
+  const volumeRef = useRef(volume);
 
   // Control playback based on isPlaying and sound selection
   useEffect(() => {
     const player = getFocusSoundPlayer();
 
     if (isPlaying && sound !== "none" && !isMuted) {
-      player.play(sound, volume / 100);
+      player.play(sound, volumeRef.current / 100);
     } else {
       player.stop();
     }
@@ -49,6 +53,7 @@ export function FocusSounds({
 
   // Update volume in real-time
   useEffect(() => {
+    volumeRef.current = volume;
     const player = getFocusSoundPlayer();
     if (isMuted) {
       player.setVolume(0);

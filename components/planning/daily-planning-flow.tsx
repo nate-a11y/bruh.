@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Sun, ArrowRight, Check, Calendar, Target, Sparkles, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -47,18 +47,21 @@ export function DailyPlanningFlow({
   const step = STEPS[currentStep];
   const Icon = step.icon;
 
-  async function handleCarryoverAction(taskId: string, action: 'today' | 'tomorrow' | 'delete') {
-    const today = new Date().toISOString().split('T')[0];
-    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const handleCarryoverAction = useCallback(
+    async (taskId: string, action: 'today' | 'tomorrow' | 'delete') => {
+      const today = new Date().toISOString().split('T')[0];
+      const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-    if (action === 'today') {
-      await updateTask(taskId, { due_date: today });
-    } else if (action === 'tomorrow') {
-      await updateTask(taskId, { due_date: tomorrow });
-    } else {
-      await deleteTask(taskId);
-    }
-  }
+      if (action === 'today') {
+        await updateTask(taskId, { due_date: today });
+      } else if (action === 'tomorrow') {
+        await updateTask(taskId, { due_date: tomorrow });
+      } else {
+        await deleteTask(taskId);
+      }
+    },
+    []
+  );
 
   async function handleComplete() {
     setIsSubmitting(true);

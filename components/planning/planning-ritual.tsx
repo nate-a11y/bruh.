@@ -461,6 +461,9 @@ export function PlanningRitual({
 export function useRitualPrompt() {
   const [ritualType, setRitualType] = useState<RitualType | null>(null);
 
+  // Genuinely syncing from external state on mount: depends on the client clock
+  // and localStorage, neither available during SSR. Deriving it during render
+  // would cause a hydration mismatch, so keep it as a post-mount effect.
   useEffect(() => {
     const hour = new Date().getHours();
     const lastMorning = localStorage.getItem("bruh-last-morning-ritual");
@@ -469,6 +472,7 @@ export function useRitualPrompt() {
 
     // Morning ritual: 6-10 AM
     if (hour >= 6 && hour < 10 && lastMorning !== today) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setRitualType("morning");
     }
     // Evening ritual: 5-9 PM

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useSyncExternalStore } from "react";
 import { Mic, MicOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -72,6 +72,11 @@ const isSpeechRecognitionSupported = () => {
   return "webkitSpeechRecognition" in window || "SpeechRecognition" in window;
 };
 
+// Support is a client-only value that never changes at runtime, so read it via
+// useSyncExternalStore (no subscription) instead of a setState-in-effect. This
+// renders the server snapshot (false) first, avoiding a hydration mismatch.
+const emptySubscribe = () => () => {};
+
 export function VoiceInput({
   onResult,
   onInterimResult,
@@ -79,12 +84,12 @@ export function VoiceInput({
   className,
 }: VoiceInputProps) {
   const [isListening, setIsListening] = useState(false);
-  const [isSupported, setIsSupported] = useState(false);
+  const isSupported = useSyncExternalStore(
+    emptySubscribe,
+    isSpeechRecognitionSupported,
+    () => false
+  );
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
-
-  useEffect(() => {
-    setIsSupported(isSpeechRecognitionSupported());
-  }, []);
 
   const startListening = useCallback(() => {
     if (!isSupported) {
@@ -197,12 +202,12 @@ export function useVoiceInput() {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [interimTranscript, setInterimTranscript] = useState("");
-  const [isSupported, setIsSupported] = useState(false);
+  const isSupported = useSyncExternalStore(
+    emptySubscribe,
+    isSpeechRecognitionSupported,
+    () => false
+  );
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
-
-  useEffect(() => {
-    setIsSupported(isSpeechRecognitionSupported());
-  }, []);
 
   const startListening = useCallback(() => {
     if (!isSupported) {
