@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { useTimerStore, type TimerSubtask } from "@/lib/hooks/use-timer";
 import { completeTask } from "@/app/(dashboard)/actions";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 interface FloatingTimerProps {
   onClose?: () => void;
@@ -314,7 +315,10 @@ export function FloatingTimer({ onClose, autoOpenPiP = false }: FloatingTimerPro
     }
   }, [pipWindow]);
 
-  // Only show when timer is active
+  // Only show when timer is active, and not on the Focus page itself (where the
+  // full-size timer already lives, so the floating one would just be a duplicate).
+  const pathname = usePathname();
+  const onFocusPage = pathname === "/focus";
   const isActive = state === "running" || state === "paused" || state === "break";
 
   // Auto-open PiP when timer becomes active (only once per session)
@@ -410,7 +414,7 @@ export function FloatingTimer({ onClose, autoOpenPiP = false }: FloatingTimerPro
     );
   }
 
-  if (!isActive) return null;
+  if (!isActive || onFocusPage) return null;
 
   // Mobile fullscreen mode
   if (isFullscreen) {
