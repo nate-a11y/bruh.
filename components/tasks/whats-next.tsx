@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Sparkles, Play, RotateCcw, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { trackEvent } from "@/lib/analytics";
 
 interface NextAction {
   taskId: string;
@@ -22,6 +23,7 @@ export function WhatsNext() {
 
   async function pick() {
     setLoading(true);
+    trackEvent("feature_used", { feature: "whats_next" });
     try {
       const res = await fetch("/api/tasks/next-action");
       const data = await res.json();
