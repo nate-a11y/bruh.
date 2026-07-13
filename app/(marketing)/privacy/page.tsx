@@ -15,7 +15,7 @@ export default function PrivacyPage() {
         </Link>
       </nav>
 
-      <main className="max-w-4xl mx-auto px-6 py-12 prose prose-invert">
+      <main className="max-w-3xl mx-auto px-6 py-12 prose">
         <h1>Privacy Policy</h1>
         <p className="text-muted-foreground">Last updated: July 12, 2026</p>
 

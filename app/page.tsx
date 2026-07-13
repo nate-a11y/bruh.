@@ -51,7 +51,7 @@ const coreFeatures = [
   {
     icon: Mic,
     title: "Voice Input",
-    description: "Speak your tasks. Web Speech API for hands-free task creation.",
+    description: "Speak your tasks out loud. Hands-free capture, zero typing.",
   },
 ];
 
@@ -79,7 +79,7 @@ const moreFeatures = [
   {
     icon: Webhook,
     title: "Zapier & Make",
-    description: "Connect to 5000+ apps via webhooks. Build automations.",
+    description: "Connect to 5,000+ apps and automate the busywork.",
   },
   {
     icon: Smartphone,
@@ -119,7 +119,7 @@ const faqs = [
   },
   {
     q: "Is my data private?",
-    a: "Yes. Your data is stored securely with row-level security, card payments are handled by Stripe (bruh. never stores card numbers), and there's no third-party ad tracking. You can export or delete your data anytime.",
+    a: "Yes. Your data is private and locked to your account, payments run securely through Stripe (we never see or store your card number), and we don't sell your data or run ad trackers. You can export or delete everything anytime.",
   },
   {
     q: "Can I cancel anytime?",
@@ -272,7 +272,7 @@ export default function LandingPage() {
             Connects with everything
           </h2>
           <p className="text-muted-foreground">
-            Sync calendars, get Slack notifications, or connect to 5000+ apps via webhooks.
+            Sync calendars, get Slack notifications, or connect to 5,000+ apps with Zapier &amp; Make.
           </p>
         </div>
 
