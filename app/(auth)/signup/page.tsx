@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { SignupForm } from "@/components/auth/signup-form";
 import { getPlatformSetting } from "@/lib/platform-settings";
 import { Logo } from "@/components/brand/logo";
@@ -32,5 +32,9 @@ export default async function SignupPage() {
     );
   }
 
-  return <SignupForm />;
+  return (
+    <Suspense fallback={null}>
+      <SignupForm />
+    </Suspense>
+  );
 }

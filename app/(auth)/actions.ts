@@ -124,13 +124,24 @@ export async function signup(formData: FormData) {
 }
 
 export async function signInWithMagicLink(formData: FormData) {
+  const email = ((formData.get("email") as string) || "").trim();
+  if (!email) return { error: "Enter your email address." };
+
+  // Route an unknown email to signup instead of silently creating an account.
+  const admin = createServiceClient();
+  const { data: exists } = await (admin as any).rpc("zeroed_email_exists", {
+    p_email: email,
+  });
+  if (!exists) {
+    return { needsSignup: true, email };
+  }
+
   const supabase = await createClient();
-
-  const email = formData.get("email") as string;
-
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
+      // The account exists (checked above); never create a new one here.
+      shouldCreateUser: false,
       emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
     },
   });
