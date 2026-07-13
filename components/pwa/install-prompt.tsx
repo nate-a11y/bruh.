@@ -11,7 +11,26 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
 }
 
+// Module-level guard so only one InstallPrompt is ever active, even if the
+// component is mounted in more than one place (e.g. the root layout for the
+// marketing surface AND the dashboard layout for logged-in users). The
+// first instance to mount claims the singleton and renders the banner; any
+// other instance stays inert to avoid stacked, duplicate prompts.
+let promptClaimed = false;
+
 export function InstallPrompt() {
+  // Claim the singleton during the first client render with a lazy initializer
+  // (same window-guarded pattern as isInstalled below, so no setState-in-effect
+  // and no hydration mismatch: the component renders null on both server and
+  // client until a prompt is actually available). The first instance to render
+  // wins; the root layout renders before the dashboard layout, so the root one
+  // is always primary and the dashboard copy stays inert.
+  const [isPrimary] = useState(() => {
+    if (typeof window === "undefined") return false;
+    if (promptClaimed) return false;
+    promptClaimed = true;
+    return true;
+  });
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   // Derive the initial installed state from the display mode with a lazy
@@ -25,8 +44,8 @@ export function InstallPrompt() {
   );
 
   useEffect(() => {
-    // Already installed: nothing to prompt.
-    if (isInstalled) return;
+    // Only the primary instance runs, and only when not already installed.
+    if (!isPrimary || isInstalled) return;
 
     // Check if user dismissed prompt before
     const dismissed = localStorage.getItem("bruh-install-dismissed");
@@ -54,7 +73,7 @@ export function InstallPrompt() {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
       window.removeEventListener("appinstalled", handleAppInstalled);
     };
-  }, [isInstalled]);
+  }, [isPrimary, isInstalled]);
 
   async function handleInstall() {
     if (!deferredPrompt) return;
@@ -74,7 +93,7 @@ export function InstallPrompt() {
     localStorage.setItem("bruh-install-dismissed", Date.now().toString());
   }
 
-  if (isInstalled || !showPrompt || !deferredPrompt) {
+  if (!isPrimary || isInstalled || !showPrompt || !deferredPrompt) {
     return null;
   }
 

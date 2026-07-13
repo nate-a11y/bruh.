@@ -2,13 +2,23 @@ import type { Metadata, Viewport } from "next";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { Toaster } from "sonner";
 import { Analytics } from "@vercel/analytics/next";
+import { PwaRoot } from "@/components/pwa/pwa-root";
 import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://getbruh.app"),
+  applicationName: "bruh.",
   title: "bruh. - Get your shit together.",
   description: "A task manager that doesn't take itself too seriously. But takes your productivity very seriously.",
   manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "bruh.",
+  },
+  formatDetection: {
+    telephone: false,
+  },
   icons: {
     icon: [
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
@@ -44,6 +54,9 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#ff6b00",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 const jsonLd = {
@@ -81,6 +94,7 @@ export default function RootLayout({
         >
           {children}
           <Toaster richColors position="bottom-right" />
+          <PwaRoot />
         </ThemeProvider>
         <Analytics />
       </body>

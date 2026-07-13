@@ -125,7 +125,7 @@ export default function ForAdhdPage() {
       <footer className="border-t border-border py-8 px-6">
         <div className="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-4">
           <Logo size="sm" showIcon={false} />
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 sm:gap-6">
             <Link href="/pricing" className="text-xs text-muted-foreground hover:text-foreground">
               Pricing
             </Link>
