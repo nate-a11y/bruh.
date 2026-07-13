@@ -8,6 +8,7 @@ import {
   FolderOpen,
   Timer,
   BarChart3,
+  LineChart,
   Settings,
   LogOut,
   Plus,
@@ -45,6 +46,7 @@ const navigation = [
   { name: "Goals", href: "/goals", icon: Target },
   { name: "Habits", href: "/habits", icon: Repeat },
   { name: "Stats", href: "/stats", icon: BarChart3 },
+  { name: "Insights", href: "/insights", icon: LineChart },
   { name: "Teams", href: "/teams", icon: Users },
   { name: "Refer", href: "/refer", icon: Gift },
 ];

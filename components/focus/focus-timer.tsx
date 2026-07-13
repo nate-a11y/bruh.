@@ -67,6 +67,7 @@ export function FocusTimer({
   } = useTimerStore();
 
   const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [completedMinutes, setCompletedMinutes] = useState(defaultFocusMinutes);
   const [selectedTask, setSelectedTask] = useState<TaskWithList | null>(task as TaskWithList | null);
   const [mounted, setMounted] = useState(false);
 
@@ -150,6 +151,7 @@ export function FocusTimer({
           const actualMinutes = Math.ceil(
             (Date.now() - startTimeRef.current.getTime()) / 1000 / 60
           );
+          setCompletedMinutes(actualMinutes);
           completeFocusSession(
             sessionIdRef.current,
             actualMinutes,
@@ -470,6 +472,7 @@ export function FocusTimer({
         onContinue={handleContinue}
         task={selectedTask}
         sessionsCompleted={sessionsCompleted}
+        completedMinutes={completedMinutes}
         isLongBreak={(sessionsCompleted + 1) % sessionsBeforeLongBreak === 0}
       />
     </>
