@@ -45,6 +45,21 @@ export const viewport: Viewport = {
   themeColor: "#ff6b00",
 };
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "bruh.",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Web, iOS, Android",
+  url: "https://getbruh.app",
+  description:
+    "The AI task manager and focus app for brains that won't cooperate. Brain dump, Pomodoro focus, and calendar sync — no shame, no friction.",
+  offers: [
+    { "@type": "Offer", price: "0", priceCurrency: "USD", name: "Free" },
+    { "@type": "Offer", price: "19.99", priceCurrency: "USD", name: "Pro" },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -53,6 +68,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="font-sans antialiased">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"

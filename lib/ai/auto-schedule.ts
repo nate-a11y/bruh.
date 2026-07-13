@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { CLAUDE_MODEL } from "./model";
 import { format, addDays, parseISO, isBefore, startOfDay } from "date-fns";
 
 const client = new Anthropic();
@@ -188,7 +189,7 @@ Respond with ONLY valid JSON:
 
   try {
     const response = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: CLAUDE_MODEL,
       max_tokens: 200,
       messages: [{ role: "user", content: prompt }],
     });

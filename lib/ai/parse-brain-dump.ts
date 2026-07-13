@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { CLAUDE_MODEL } from "./model";
 
 export interface ParsedTask {
   title: string;
@@ -59,7 +60,7 @@ export async function parseBrainDump(text: string): Promise<ParsedBrainDump> {
     const userPrompt = `Today's date is ${today}. Parse this brain dump into tasks:\n\n${text}`;
 
     const response = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: CLAUDE_MODEL,
       max_tokens: 2000,
       messages: [
         {

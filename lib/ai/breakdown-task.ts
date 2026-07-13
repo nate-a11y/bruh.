@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { CLAUDE_MODEL } from "./model";
 
 export interface GeneratedSubtask {
   title: string;
@@ -65,7 +66,7 @@ export async function breakdownTask(
     }
 
     const response = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: CLAUDE_MODEL,
       max_tokens: 1500,
       messages: [
         {

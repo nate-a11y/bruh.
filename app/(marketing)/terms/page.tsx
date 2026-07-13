@@ -17,191 +17,234 @@ export default function TermsPage() {
 
       <main className="max-w-4xl mx-auto px-6 py-12 prose prose-invert">
         <h1>Terms of Service</h1>
-        <p className="text-muted-foreground">Last updated: January 4, 2026</p>
+        <p className="text-muted-foreground">Last updated: July 12, 2026</p>
 
         <h2>1. Acceptance of Terms</h2>
         <p>
-          By creating an account or using bruh. (&quot;the Service&quot;), you agree to be bound by these
-          Terms of Service and our Privacy Policy. If you do not agree to these terms, do not use the Service.
-          By clicking &quot;Create account&quot; or using the Service, you acknowledge that you have read,
-          understood, and agree to be bound by these Terms.
+          These Terms of Service (&quot;Terms&quot;) are a legal agreement between you and [Company Legal
+          Name] (&quot;bruh.&quot;, &quot;we&quot;, &quot;our&quot;, or &quot;us&quot;), the company that
+          operates bruh. (&quot;the Service&quot;) at getbruh.app. By creating an account or using the
+          Service, you agree to these Terms and our Privacy Policy. If you do not agree, do not use the
+          Service.
         </p>
 
-        <h2>2. Description of Service</h2>
+        <h2>2. Eligibility</h2>
         <p>
-          bruh. is a productivity application that helps you manage tasks, track habits,
-          and stay focused. The Service includes web access, integrations with
-          third-party services like Google Calendar, Slack, and Notion, and premium features
-          available through paid subscriptions.
+          You must be at least 13 years old to use the Service (or older where your country requires a
+          higher minimum age). If you use the Service on behalf of an organization, you represent that
+          you are authorized to accept these Terms on its behalf.
         </p>
 
-        <h2>3. User Accounts</h2>
+        <h2>3. Description of Service</h2>
         <p>
-          You are responsible for maintaining the confidentiality of your account credentials
-          and for all activities that occur under your account. You must provide accurate
-          information when creating your account. You must be at least 13 years old to use
-          the Service.
+          bruh. is an AI-powered task manager and focus app that helps you capture tasks, plan your
+          work, track goals and habits, and stay focused. The Service includes web access, optional
+          AI features, optional integrations with third-party services (such as Google Calendar, Notion,
+          and Slack), and premium features available through paid subscriptions.
         </p>
 
-        <h2>4. Free Trial</h2>
+        <h2>4. Your Account</h2>
         <p>
-          New users receive a 30-day free trial with full access to all features. No payment
-          information is required during the trial period. After your trial expires, you will
-          need to subscribe to continue using the Service.
+          You are responsible for maintaining the confidentiality of your account credentials and for
+          all activity under your account. You agree to provide accurate information and to keep it up to
+          date. Notify us promptly at{" "}
+          <a href="mailto:legal@getbruh.app">legal@getbruh.app</a> if you suspect unauthorized use of
+          your account.
         </p>
 
-        <h2>5. Subscription and Billing</h2>
-        <h3>Pricing</h3>
-        <p>
-          The Service is offered as a monthly subscription at $19.99/month. Prices are subject
-          to change with 30 days notice to existing subscribers.
-        </p>
-
-        <h3>Billing Cycle</h3>
-        <p>
-          Subscriptions are billed monthly on the anniversary of your subscription start date.
-          You authorize us to charge your payment method on a recurring basis until you cancel.
-        </p>
+        <h2>5. Plans, Subscriptions, and Billing</h2>
+        <h3>Plans</h3>
+        <p>The Service is offered on the following plans:</p>
+        <ul>
+          <li><strong>Free</strong> — a free tier with limited features, at no cost</li>
+          <li><strong>Pro</strong> — $19.99 per month</li>
+          <li>
+            <strong>Team</strong> — $19.99 per month base, plus $12 per month for each additional team
+            member
+          </li>
+        </ul>
 
         <h3>Payment Processing</h3>
         <p>
-          All payments are processed securely by Stripe. By subscribing, you also agree to
-          Stripe&apos;s terms of service. We do not store your full payment card information.
+          Paid subscriptions are billed through Stripe. By subscribing, you authorize us and Stripe to
+          charge your payment method, and you agree to Stripe&apos;s terms of service. We do not store
+          your full payment card information.
+        </p>
+
+        <h3>Auto-Renewal</h3>
+        <p>
+          Paid subscriptions are billed monthly in advance and renew automatically each month until you
+          cancel. You authorize recurring charges to your payment method for the plan you select
+          (including per-member charges for Team plans) until cancellation.
+        </p>
+
+        <h3>Cancellation</h3>
+        <p>
+          You may cancel your subscription at any time from the Settings page. When you cancel, you keep
+          access to paid features until the end of your current billing period, and no further charges
+          will be made after that. The free tier remains available to you.
+        </p>
+
+        <h3>Refunds</h3>
+        <p>
+          Except where required by applicable law, payments are non-refundable and we do not provide
+          refunds or credits for partial billing periods or unused time. If the law in your jurisdiction
+          gives you a right to a refund, that right still applies and these Terms do not override it.
+        </p>
+
+        <h3>Price Changes</h3>
+        <p>
+          We may change our prices from time to time. If we change the price of a plan you subscribe to,
+          we will give you at least 30 days&apos; notice, and the new price will take effect on your
+          next billing cycle after the notice period. Your continued use after the change takes effect
+          constitutes acceptance of the new price.
+        </p>
+
+        <h3>Taxes</h3>
+        <p>
+          Prices shown do not necessarily include taxes. You are responsible for any applicable sales,
+          use, VAT, or similar taxes, which may be added to your charges where required.
         </p>
 
         <h3>Failed Payments</h3>
         <p>
-          If a payment fails, we will attempt to charge your payment method again. After
-          multiple failed attempts, your subscription may be suspended until payment is resolved.
+          If a payment fails, we may retry the charge. If payment cannot be collected, we may suspend or
+          downgrade your access to paid features until the balance is resolved.
         </p>
 
-        <h2>6. Refund Policy</h2>
-        <p className="font-semibold">
-          ALL SALES ARE FINAL. NO REFUNDS WILL BE ISSUED UNDER ANY CIRCUMSTANCES.
-        </p>
-        <p>
-          By subscribing to the Service, you acknowledge and agree that:
-        </p>
-        <ul>
-          <li>All subscription payments are non-refundable</li>
-          <li>No partial refunds will be given for unused portions of a billing period</li>
-          <li>No refunds will be issued for any reason, including but not limited to: dissatisfaction with the Service, failure to use the Service, or accidental purchases</li>
-          <li>Cancellation of your subscription will stop future charges but will not result in a refund of any previous payments</li>
-        </ul>
-        <p>
-          We strongly encourage you to use the full 30-day free trial to evaluate the Service
-          before subscribing. The trial period provides complete access to all features,
-          allowing you to make an informed decision.
-        </p>
-
-        <h2>7. Cancellation</h2>
-        <p>
-          You may cancel your subscription at any time from the Settings page. Upon cancellation:
-        </p>
-        <ul>
-          <li>You will retain access to the Service until the end of your current billing period</li>
-          <li>No future charges will be made</li>
-          <li>No refunds will be issued for the current or any previous billing periods</li>
-          <li>Your data will be retained and accessible if you resubscribe within 90 days</li>
-        </ul>
-
-        <h2>8. Promotional Codes</h2>
-        <p>
-          Promotional codes, when offered, are subject to specific terms and conditions.
-          Codes are non-transferable, cannot be combined, and may expire. Abuse of promotional
-          codes may result in account termination.
-        </p>
-
-        <h2>9. Acceptable Use</h2>
+        <h2>6. Acceptable Use</h2>
         <p>You agree not to:</p>
         <ul>
-          <li>Use the Service for any unlawful purpose</li>
-          <li>Attempt to gain unauthorized access to our systems</li>
-          <li>Interfere with or disrupt the Service</li>
-          <li>Upload malicious code or content</li>
-          <li>Resell, redistribute, or share your account without permission</li>
-          <li>Create multiple accounts to abuse free trials or promotions</li>
-          <li>Use automated tools to access the Service without permission</li>
+          <li>Use the Service for any unlawful, harmful, or fraudulent purpose</li>
+          <li>Attempt to gain unauthorized access to our systems or other users&apos; accounts</li>
+          <li>Interfere with, disrupt, or overload the Service</li>
+          <li>Upload or transmit malicious code or content</li>
+          <li>Resell, redistribute, or share your account without our permission</li>
+          <li>Use automated tools to access the Service except as we expressly permit</li>
+          <li>Infringe the intellectual property or privacy rights of others</li>
         </ul>
 
-        <h2>10. Your Content</h2>
+        <h2>7. Your Content</h2>
         <p>
-          You retain ownership of all content you create in the Service (tasks, notes, etc.).
-          By using the Service, you grant us a license to store, process, and display your
-          content as necessary to provide the Service.
+          You retain full ownership of the content you create in the Service (tasks, notes, projects,
+          goals, habits, and similar). You grant bruh. a limited, non-exclusive license to host, store,
+          process, and display your content solely as needed to operate and provide the Service to you,
+          including sending content you submit to AI or integration providers when you use those
+          features. This license ends when you delete your content or account, except for backups or
+          records we are required to keep.
         </p>
 
-        <h2>11. Third-Party Integrations</h2>
+        <h2>8. AI Features</h2>
         <p>
-          The Service may integrate with third-party services. Your use of these integrations
-          is also subject to the terms and privacy policies of those third parties. We are
-          not responsible for third-party services.
+          The Service includes AI-assisted features. AI-generated output may be inaccurate, incomplete,
+          or unsuitable for your situation, and you are responsible for reviewing it before relying on
+          it. bruh. is not liable for decisions you make based on AI output. See our Privacy Policy for
+          how AI features process your content.
         </p>
 
-        <h2>12. Service Availability</h2>
+        <h2>9. Third-Party Integrations</h2>
         <p>
-          We strive to maintain high availability but do not guarantee uninterrupted access
-          to the Service. We may modify, suspend, or discontinue features at any time.
-          Planned maintenance will be announced in advance when possible.
+          The Service may integrate with third-party services. Your use of those services is governed by
+          their own terms and privacy policies, and we are not responsible for third-party services,
+          their availability, or their content. Enabling an integration is at your discretion.
         </p>
 
-        <h2>13. Limitation of Liability</h2>
+        <h2>10. Service Availability</h2>
         <p>
-          THE SERVICE IS PROVIDED &quot;AS IS&quot; WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED.
-          TO THE MAXIMUM EXTENT PERMITTED BY LAW, WE ARE NOT LIABLE FOR ANY INDIRECT,
-          INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING FROM YOUR USE OF
-          THE SERVICE, INCLUDING BUT NOT LIMITED TO LOSS OF DATA, PROFITS, OR BUSINESS OPPORTUNITIES.
-        </p>
-        <p>
-          OUR TOTAL LIABILITY TO YOU FOR ANY CLAIMS ARISING FROM YOUR USE OF THE SERVICE
-          SHALL NOT EXCEED THE AMOUNT YOU PAID US IN THE TWELVE (12) MONTHS PRECEDING THE CLAIM.
+          We work to keep the Service available and reliable but do not guarantee uninterrupted or
+          error-free access. We may modify, suspend, or discontinue features at any time. When possible,
+          we will announce planned maintenance in advance.
         </p>
 
-        <h2>14. Indemnification</h2>
+        <h2>11. Warranty Disclaimer</h2>
         <p>
-          You agree to indemnify and hold harmless bruh. and its officers, directors, employees,
-          and agents from any claims, damages, or expenses arising from your use of the Service
-          or violation of these Terms.
+          THE SERVICE IS PROVIDED &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot; WITHOUT WARRANTIES OF
+          ANY KIND, WHETHER EXPRESS OR IMPLIED, INCLUDING IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+          FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. WE DO NOT WARRANT THAT THE SERVICE WILL BE
+          UNINTERRUPTED, SECURE, OR ERROR-FREE. SOME JURISDICTIONS DO NOT ALLOW CERTAIN WARRANTY
+          EXCLUSIONS, SO SOME OF THESE MAY NOT APPLY TO YOU.
         </p>
 
-        <h2>15. Termination</h2>
+        <h2>12. Limitation of Liability</h2>
         <p>
-          You may delete your account at any time from Settings. We may terminate or
-          suspend your account immediately if you violate these Terms. Upon termination,
-          your right to use the Service ceases immediately and no refunds will be issued.
+          TO THE MAXIMUM EXTENT PERMITTED BY LAW, bruh. AND ITS OWNERS AND PERSONNEL WILL NOT BE LIABLE
+          FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR FOR ANY LOSS OF
+          DATA, PROFITS, OR BUSINESS OPPORTUNITIES, ARISING FROM YOUR USE OF THE SERVICE.
+        </p>
+        <p>
+          OUR TOTAL LIABILITY FOR ANY CLAIMS ARISING FROM OR RELATING TO THE SERVICE WILL NOT EXCEED THE
+          GREATER OF THE AMOUNT YOU PAID US IN THE TWELVE (12) MONTHS BEFORE THE CLAIM OR USD $50. SOME
+          JURISDICTIONS DO NOT ALLOW CERTAIN LIABILITY LIMITATIONS, SO SOME OF THESE MAY NOT APPLY TO
+          YOU.
         </p>
 
-        <h2>16. Changes to Terms</h2>
+        <h2>13. Indemnification</h2>
         <p>
-          We may update these Terms from time to time. We will notify you of material changes
-          via email or through the Service. Continued use of the Service after changes
-          constitutes acceptance of the new Terms.
+          You agree to indemnify and hold harmless bruh. and its owners, personnel, and agents from any
+          claims, damages, losses, or expenses (including reasonable legal fees) arising from your use of
+          the Service, your content, or your violation of these Terms.
         </p>
 
-        <h2>17. Dispute Resolution</h2>
+        <h2>14. Termination</h2>
         <p>
-          Any disputes arising from these Terms or your use of the Service shall be resolved
-          through binding arbitration in accordance with the rules of the American Arbitration
-          Association. You waive any right to participate in a class action lawsuit or
-          class-wide arbitration.
+          You may stop using the Service and delete your account at any time from Settings. We may
+          suspend or terminate your access if you violate these Terms or if required by law. On
+          termination, your right to use the Service ends, and sections that by their nature should
+          survive (such as content ownership, disclaimers, limitations of liability, and governing law)
+          will remain in effect.
         </p>
 
-        <h2>18. Governing Law</h2>
+        <h2>15. Governing Law and Venue</h2>
         <p>
-          These Terms are governed by the laws of the United States, without regard to
-          conflict of law principles.
+          These Terms are governed by the laws of the State of Missouri, USA, without regard to its
+          conflict-of-law principles. Subject to the dispute resolution section below, you agree that
+          the state and federal courts located in Missouri will have exclusive jurisdiction over any
+          disputes, and you consent to venue there.
+        </p>
+
+        <h2>16. Dispute Resolution</h2>
+        <p>
+          <strong>Informal resolution first.</strong> If you have a dispute with us, please contact{" "}
+          <a href="mailto:legal@getbruh.app">legal@getbruh.app</a> first so we can try to resolve it
+          informally. We will work in good faith to resolve most concerns this way within 60 days.
+        </p>
+        <p>
+          <strong>Arbitration (optional placeholder).</strong> [If the owner elects to require
+          arbitration: Any dispute not resolved informally may be resolved through binding arbitration on
+          an individual basis under the rules of the American Arbitration Association, and you and bruh.
+          waive the right to a jury trial and to participate in a class action. Consult a lawyer before
+          adopting this clause, as arbitration and class-waiver terms are subject to specific legal
+          requirements.] If no arbitration clause is adopted, disputes will be resolved in the courts
+          identified in the Governing Law and Venue section.
+        </p>
+
+        <h2>17. International Users</h2>
+        <p>
+          The Service is operated from the United States. If you access it from outside the U.S., you are
+          responsible for complying with your local laws, and you consent to your information being
+          processed in the U.S. as described in our Privacy Policy. Nothing in these Terms removes any
+          mandatory consumer-protection rights you have under the laws of your country.
+        </p>
+
+        <h2>18. Changes to These Terms</h2>
+        <p>
+          We may update these Terms from time to time. We will post the updated Terms here and revise the
+          &quot;Last updated&quot; date, and we will notify you of material changes by email or through
+          the Service. Your continued use after changes take effect constitutes acceptance of the updated
+          Terms.
         </p>
 
         <h2>19. Severability</h2>
         <p>
-          If any provision of these Terms is found to be unenforceable, the remaining
-          provisions will continue in full force and effect.
+          If any provision of these Terms is found unenforceable, the remaining provisions will continue
+          in full force and effect.
         </p>
 
         <h2>20. Contact</h2>
         <p>
           For questions about these Terms, contact us at{" "}
-          <a href="mailto:legal@getbruh.app">legal@getbruh.app</a>.
+          <a href="mailto:legal@getbruh.app">legal@getbruh.app</a>, or by mail at [Company Legal Name],
+          [Business Address, Missouri, USA].
         </p>
       </main>
     </div>

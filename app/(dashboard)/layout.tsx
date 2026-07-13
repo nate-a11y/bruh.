@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Sidebar, MobileSidebar } from "@/components/dashboard/sidebar";
 import { FloatingTimerWrapper } from "@/components/focus/floating-timer-wrapper";
 import { BrainDumpProvider } from "@/components/tasks/brain-dump-provider";
-import { WelcomeModal } from "@/components/onboarding/welcome-modal";
+import { OnboardingFlow } from "@/components/onboarding/onboarding-flow";
 import { PWAProvider } from "@/components/pwa/pwa-provider";
 import { isAdmin } from "@/lib/admin";
 import { getPlatformSetting } from "@/lib/platform-settings";
@@ -64,14 +64,17 @@ export default async function DashboardLayout({
       .upsert({ user_id: user.id }, { onConflict: "user_id" });
   }
 
-  // Check if user has set their display name
+  // Check if user needs onboarding. The dedicated `onboarding_completed` flag is
+  // the primary signal, but existing users predate that flag (default false) and
+  // already have a display_name from the old welcome flow -- treat them as onboarded
+  // so they aren't forced back through the flow.
   const { data: prefs } = await supabase
     .from("zeroed_user_preferences")
-    .select("display_name")
+    .select("onboarding_completed, display_name")
     .eq("user_id", user.id)
     .single();
 
-  const needsName = !prefs?.display_name;
+  const needsOnboarding = !prefs?.onboarding_completed && !prefs?.display_name;
 
   return (
     <PWAProvider>
@@ -90,8 +93,8 @@ export default async function DashboardLayout({
           lists={lists || []}
           defaultListId={lists?.find(l => l.name === "Inbox")?.id || lists?.[0]?.id}
         />
-        {/* Welcome modal for first-time users */}
-        {needsName && <WelcomeModal open={true} />}
+        {/* Onboarding flow for first-time users */}
+        {needsOnboarding && <OnboardingFlow />}
       </div>
     </PWAProvider>
   );
