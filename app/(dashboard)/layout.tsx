@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { Sidebar, MobileSidebar } from "@/components/dashboard/sidebar";
 import { FloatingTimerWrapper } from "@/components/focus/floating-timer-wrapper";
@@ -28,6 +29,11 @@ export default async function DashboardLayout({
   }
 
   const userIsAdmin = isAdmin(user.email);
+
+  // Embedded mode: when the app runs inside the native WebView shell (bruh_native
+  // cookie set by /auth/native), the native tab bar owns navigation, so drop the
+  // web nav chrome (sidebars, floating timer, product tour) and just render content.
+  const isNative = (await cookies()).get("bruh_native")?.value === "1";
 
   // Fetch everything the shell needs in parallel rather than in series -- these
   // reads are independent, so one round-trip instead of four.
@@ -90,19 +96,21 @@ export default async function DashboardLayout({
   return (
     <PWAProvider>
       <div className="flex h-screen overflow-hidden">
-        {/* Desktop sidebar */}
-        <div className="hidden md:block">
-          <Sidebar lists={lists || []} isAdmin={userIsAdmin} />
-        </div>
-        {/* Mobile sidebar */}
-        <MobileSidebar lists={lists || []} isAdmin={userIsAdmin} />
+        {/* Desktop sidebar (hidden in the native shell -- tab bar owns nav) */}
+        {!isNative && (
+          <div className="hidden md:block">
+            <Sidebar lists={lists || []} isAdmin={userIsAdmin} />
+          </div>
+        )}
+        {/* Mobile sidebar (hidden in the native shell) */}
+        {!isNative && <MobileSidebar lists={lists || []} isAdmin={userIsAdmin} />}
         <main className="flex-1 overflow-auto">
           {/* Trial countdown + upgrade nudge (renders only while 'trialing') */}
           <TrialBanner status={access.status} daysRemaining={access.days_remaining} />
           {children}
         </main>
-        {/* Floating timer - shows when focus session is active */}
-        <FloatingTimerWrapper />
+        {/* Floating timer - shows when focus session is active (native owns this) */}
+        {!isNative && <FloatingTimerWrapper />}
         {/* Global brain dump dialog - triggered via ⌘B or command menu */}
         <BrainDumpProvider
           lists={lists || []}
@@ -111,8 +119,9 @@ export default async function DashboardLayout({
         />
         {/* Onboarding flow for first-time users */}
         {needsOnboarding && <OnboardingFlow />}
-        {/* Guided product tour (auto-runs once after onboarding, replayable) */}
-        <ProductTour enabled={!needsOnboarding} />
+        {/* Guided product tour (auto-runs once; skipped in the native shell -- it
+            points at the web nav that isn't rendered here) */}
+        {!isNative && <ProductTour enabled={!needsOnboarding} />}
       </div>
     </PWAProvider>
   );
