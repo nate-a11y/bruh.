@@ -1,3 +1,17 @@
+// Bulletproof CTA button. Uses a table with an HTML `bgcolor` attribute rather
+// than a CSS-only <a> background, because dark-mode engines (Outlook especially)
+// respect bgcolor but recolor CSS backgrounds — which was turning our orange red.
+function ctaButton(href: string, label: string): string {
+  return `
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 16px 0;">
+    <tr>
+      <td align="center" bgcolor="#FF6B00" style="border-radius: 8px;">
+        <a href="${href}" target="_blank" style="display: inline-block; padding: 13px 26px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 15px; font-weight: 600; color: #ffffff !important; text-decoration: none; border-radius: 8px;">${label}</a>
+      </td>
+    </tr>
+  </table>`;
+}
+
 // Base email template wrapper
 function baseTemplate(content: string): string {
   return `
@@ -6,8 +20,15 @@ function baseTemplate(content: string): string {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
   <title>bruh.</title>
   <style>
+    :root { color-scheme: light dark; supported-color-schemes: light dark; }
+    /* Outlook dark-mode overrides: keep the logo readable and the accent on-brand
+       when the client force-inverts colors (it remaps text via [data-ogsc]). */
+    [data-ogsc] .logo { color: #ffffff !important; }
+    [data-ogsc] .logo span { color: #FF6B00 !important; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       line-height: 1.6;
@@ -147,7 +168,7 @@ export function teamInviteEmail({
         </ul>
       </div>
 
-      <a href="${inviteLink}" class="button">Accept Invitation</a>
+      ${ctaButton(inviteLink, "Accept Invitation")}
 
       <hr class="divider">
 
@@ -179,7 +200,7 @@ export function welcomeEmail({
         </ul>
       </div>
 
-      <a href="${appUrl}/today" class="button">Get Started</a>
+      ${ctaButton(`${appUrl}/today`, "Get Started")}
 
       <hr class="divider">
 
@@ -200,7 +221,7 @@ export function passwordResetEmail({
       <h1>Reset Your Password</h1>
       <p>We received a request to reset your password. Click the button below to create a new password.</p>
 
-      <a href="${resetLink}" class="button">Reset Password</a>
+      ${ctaButton(resetLink, "Reset Password")}
 
       <hr class="divider">
 
@@ -236,7 +257,7 @@ export function taskAssignedEmail({
         ${dueDate ? `<p style="margin: 8px 0 0 0; color: #6b7280;">Due: ${dueDate}</p>` : ''}
       </div>
 
-      <a href="${taskLink}" class="button">View Task</a>
+      ${ctaButton(taskLink, "View Task")}
     `),
   };
 }
@@ -292,7 +313,7 @@ export function dailyDigestEmail({
         </div>
       `}
 
-      <a href="${dashboardLink}" class="button">Open bruh.</a>
+      ${ctaButton(dashboardLink, "Open bruh.")}
     `),
   };
 }
@@ -340,7 +361,7 @@ export function weeklySummaryEmail({
         <p>Your most active project: <strong>${topProject}</strong></p>
       ` : ''}
 
-      <a href="${dashboardLink}" class="button">View Full Stats</a>
+      ${ctaButton(dashboardLink, "View Full Stats")}
 
       <hr class="divider">
 
@@ -380,7 +401,7 @@ export function paymentFailedEmail({
         </p>
       </div>
 
-      <a href="${payLink}" class="button">Update payment &amp; keep Pro</a>
+      ${ctaButton(payLink, "Update payment &amp; keep Pro")}
 
       <hr class="divider">
 
@@ -407,7 +428,7 @@ export function subscriptionCanceledEmail({
 
       <p>Want Pro back? Resubscribe anytime, it takes about 20 seconds.</p>
 
-      <a href="${payLink}" class="button">Resubscribe</a>
+      ${ctaButton(payLink, "Resubscribe")}
 
       <hr class="divider">
 
