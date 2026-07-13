@@ -7,9 +7,11 @@ import type { List } from "@/lib/supabase/types";
 interface BrainDumpProviderProps {
   lists: List[];
   defaultListId?: string;
+  /** Whether the current user has Pro access (gates the voice mic). */
+  isPro?: boolean;
 }
 
-export function BrainDumpProvider({ lists, defaultListId }: BrainDumpProviderProps) {
+export function BrainDumpProvider({ lists, defaultListId, isPro = false }: BrainDumpProviderProps) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -25,6 +27,7 @@ export function BrainDumpProvider({ lists, defaultListId }: BrainDumpProviderPro
     <BrainDumpDialog
       lists={lists}
       defaultListId={defaultListId}
+      isPro={isPro}
       open={open}
       onOpenChange={setOpen}
     />
