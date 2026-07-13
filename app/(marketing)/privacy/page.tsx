@@ -22,7 +22,7 @@ export default function PrivacyPage() {
         <h2>Overview</h2>
         <p>
           bruh. (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) is an AI-powered task manager and focus
-          app operated by [Company Legal Name], based in Missouri, USA. We care about your privacy and
+          app operated by Elite LOZ Transportation, LLC (d/b/a getBruh.app), based in Missouri, USA. We care about your privacy and
           keep things simple: you own your data, we don&apos;t sell it, and we only collect what we need
           to run the Service at getbruh.app.
         </p>
@@ -247,8 +247,8 @@ export default function PrivacyPage() {
         <h2>Contact Us</h2>
         <p>
           If you have questions about this Privacy Policy or how we handle your data, contact us at{" "}
-          <a href="mailto:privacy@getbruh.app">privacy@getbruh.app</a> or by mail at [Company Legal Name],
-          [Business Address, Missouri, USA].
+          <a href="mailto:privacy@getbruh.app">privacy@getbruh.app</a> or by mail at Elite LOZ
+          Transportation, LLC, Rocky Mount, Missouri, USA.
         </p>
       </main>
     </div>
