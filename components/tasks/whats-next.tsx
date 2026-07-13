@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Sparkles, Play, RotateCcw, X } from "lucide-react";
+import { Sparkles, Play, RotateCcw, X, CalendarClock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
+import { UpgradeModal } from "@/components/billing/upgrade-modal";
+import { useUpgrade } from "@/components/billing/use-upgrade";
 
 interface NextAction {
   taskId: string;
@@ -20,6 +22,7 @@ export function WhatsNext() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [action, setAction] = useState<NextAction | null>(null);
+  const upgrade = useUpgrade("whats_next");
 
   async function pick() {
     setLoading(true);
@@ -85,7 +88,22 @@ export function WhatsNext() {
             Not this
           </Button>
         </div>
+        <button
+          type="button"
+          onClick={upgrade.openUpgrade}
+          className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-primary"
+        >
+          <CalendarClock className="h-3.5 w-3.5" aria-hidden="true" />
+          Tired of picking one at a time? Let Pro plan your whole day.
+        </button>
       </CardContent>
+      <UpgradeModal
+        open={upgrade.open}
+        onOpenChange={upgrade.setOpen}
+        onUpgrade={upgrade.startCheckout}
+        loading={upgrade.checkingOut}
+        feature="Plan my day"
+      />
     </Card>
   );
 }
