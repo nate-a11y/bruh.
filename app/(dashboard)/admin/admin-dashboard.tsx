@@ -50,6 +50,10 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { MetricsOverview } from "@/components/admin/metrics-overview";
+import { TrendCharts } from "@/components/admin/trend-charts";
+import { ReferralPanel } from "@/components/admin/referral-panel";
+import { CouponManager } from "@/components/admin/coupon-manager";
+import { UserDetailDialog } from "@/components/admin/user-detail-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -128,6 +132,7 @@ export function AdminDashboard({ stats, recentUsers }: AdminDashboardProps) {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [detailUserId, setDetailUserId] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showActivityDialog, setShowActivityDialog] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
@@ -366,6 +371,8 @@ export function AdminDashboard({ stats, recentUsers }: AdminDashboardProps) {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="billing">Billing</TabsTrigger>
+          <TabsTrigger value="referrals">Referrals</TabsTrigger>
+          <TabsTrigger value="promos">Promos</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
@@ -373,6 +380,9 @@ export function AdminDashboard({ stats, recentUsers }: AdminDashboardProps) {
         <TabsContent value="overview" className="space-y-6">
           {/* Business metrics: MRR, subscriptions, dunning, disputes */}
           <MetricsOverview />
+
+          {/* Growth trends over time */}
+          <TrendCharts />
 
           {/* Stats Grid */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -566,6 +576,10 @@ export function AdminDashboard({ stats, recentUsers }: AdminDashboardProps) {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => setDetailUserId(user.id)}>
+                                <Search className="h-4 w-4 mr-2" />
+                                View Details
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleSendEmail(user)}>
                                 <Mail className="h-4 w-4 mr-2" />
                                 Send Email
@@ -798,6 +812,16 @@ export function AdminDashboard({ stats, recentUsers }: AdminDashboardProps) {
           </Card>
         </TabsContent>
 
+        {/* Referrals Tab */}
+        <TabsContent value="referrals" className="space-y-4">
+          <ReferralPanel />
+        </TabsContent>
+
+        {/* Promos Tab */}
+        <TabsContent value="promos" className="space-y-4">
+          <CouponManager />
+        </TabsContent>
+
         {/* Settings Tab */}
         <TabsContent value="settings" className="space-y-4">
           <Card>
@@ -874,6 +898,15 @@ export function AdminDashboard({ stats, recentUsers }: AdminDashboardProps) {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Per-user detail drill-down */}
+      <UserDetailDialog
+        userId={detailUserId}
+        open={detailUserId !== null}
+        onOpenChange={(o) => {
+          if (!o) setDetailUserId(null);
+        }}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
