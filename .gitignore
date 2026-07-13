@@ -46,3 +46,6 @@ next-env.d.ts
 .crystl/
 AGENTS.md
 CLAUDE.md
+
+# Crystl agent worktrees
+.claude/worktrees/

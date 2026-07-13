@@ -49,6 +49,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { MetricsOverview } from "@/components/admin/metrics-overview";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -370,6 +371,9 @@ export function AdminDashboard({ stats, recentUsers }: AdminDashboardProps) {
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
+          {/* Business metrics: MRR, subscriptions, dunning, disputes */}
+          <MetricsOverview />
+
           {/* Stats Grid */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <StatsCard
