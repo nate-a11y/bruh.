@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { isAdmin } from '@/lib/admin';
 
 // GET /api/admin/subscriptions - Get all subscriptions with user info
 export async function GET() {
@@ -11,14 +12,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is admin
-    const { data: profile } = await supabase
-      .from('zeroed_user_preferences')
-      .select('is_admin')
-      .eq('user_id', user.id)
-      .single() as { data: { is_admin: boolean } | null };
-
-    if (!profile?.is_admin) {
+    if (!isAdmin(user.email)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -100,14 +94,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is admin
-    const { data: profile } = await supabase
-      .from('zeroed_user_preferences')
-      .select('is_admin')
-      .eq('user_id', user.id)
-      .single() as { data: { is_admin: boolean } | null };
-
-    if (!profile?.is_admin) {
+    if (!isAdmin(user.email)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
