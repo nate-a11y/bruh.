@@ -227,3 +227,41 @@
 }
 .prose a { text-decoration: none; font-weight: 500; }
 .prose a:hover { text-decoration: underline; }
+
+/* driver.js product-tour popover, themed to bruh. dark + brand orange */
+.driver-popover {
+  background-color: #171717;
+  color: #e5e5e5;
+  border: 1px solid #262626;
+  border-radius: 12px;
+}
+.driver-popover-title {
+  color: #ffffff;
+  font-size: 16px;
+}
+.driver-popover-description {
+  color: #a3a3a3;
+}
+.driver-popover-progress-text {
+  color: #737373;
+}
+.driver-popover-close-btn {
+  color: #737373;
+}
+.driver-popover-navigation-btns button.driver-popover-next-btn,
+.driver-popover-navigation-btns button.driver-popover-prev-btn {
+  background-color: #FF6B00;
+  color: #ffffff;
+  text-shadow: none;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+}
+.driver-popover-navigation-btns button.driver-popover-prev-btn {
+  background-color: #262626;
+  color: #e5e5e5;
+}
+.driver-popover-arrow-side-left.driver-popover-arrow { border-left-color: #171717; }
+.driver-popover-arrow-side-right.driver-popover-arrow { border-right-color: #171717; }
+.driver-popover-arrow-side-top.driver-popover-arrow { border-top-color: #171717; }
+.driver-popover-arrow-side-bottom.driver-popover-arrow { border-bottom-color: #171717; }

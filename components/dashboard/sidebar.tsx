@@ -22,6 +22,7 @@ import {
   Users,
   Gift,
   Map,
+  Compass,
 } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { toast } from "sonner";
@@ -105,6 +106,7 @@ export function Sidebar({ lists, isAdmin }: SidebarProps) {
             <Link
               key={item.name}
               href={item.href}
+              data-tour={item.name.toLowerCase()}
               className={cn(
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                 isActive
@@ -202,6 +204,14 @@ export function Sidebar({ lists, isAdmin }: SidebarProps) {
           <KeyboardShortcutsModal />
         </div>
         <FeedbackButton />
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new Event("start-tour"))}
+          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <Compass className="h-4 w-4" />
+          Take a tour
+        </button>
         {isAdmin && (
           <Link
             href="/admin"

@@ -4,6 +4,7 @@ import { Sidebar, MobileSidebar } from "@/components/dashboard/sidebar";
 import { FloatingTimerWrapper } from "@/components/focus/floating-timer-wrapper";
 import { BrainDumpProvider } from "@/components/tasks/brain-dump-provider";
 import { OnboardingFlow } from "@/components/onboarding/onboarding-flow";
+import { ProductTour } from "@/components/onboarding/product-tour";
 import { TrialBanner } from "@/components/billing/trial-banner";
 import { PWAProvider } from "@/components/pwa/pwa-provider";
 import { isAdmin } from "@/lib/admin";
@@ -110,6 +111,8 @@ export default async function DashboardLayout({
         />
         {/* Onboarding flow for first-time users */}
         {needsOnboarding && <OnboardingFlow />}
+        {/* Guided product tour (auto-runs once after onboarding, replayable) */}
+        <ProductTour enabled={!needsOnboarding} />
       </div>
     </PWAProvider>
   );
