@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import { Loader2, Mail } from "lucide-react";
 import { toast } from "sonner";
@@ -31,6 +32,7 @@ function SubmitButton({ children }: { children: React.ReactNode }) {
 
 export function LoginForm() {
   const [showMagicLink, setShowMagicLink] = useState(false);
+  const router = useRouter();
 
   async function handleLogin(formData: FormData) {
     const result = await login(formData);
@@ -41,7 +43,10 @@ export function LoginForm() {
 
   async function handleMagicLink(formData: FormData) {
     const result = await signInWithMagicLink(formData);
-    if (result?.error) {
+    if (result?.needsSignup) {
+      toast.info("No account found for that email. Let's set one up.");
+      router.push(`/signup?email=${encodeURIComponent(result.email)}`);
+    } else if (result?.error) {
       toast.error(result.error);
     } else if (result?.success) {
       toast.success(result.success);

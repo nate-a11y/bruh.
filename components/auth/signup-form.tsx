@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import { Loader2, Gift, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
@@ -32,6 +33,7 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
 export function SignupForm() {
   const [showCoupon, setShowCoupon] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const prefillEmail = useSearchParams().get("email") ?? "";
 
   async function handleSignup(formData: FormData) {
     const password = formData.get("password") as string;
@@ -75,6 +77,7 @@ export function SignupForm() {
               name="email"
               type="email"
               placeholder="you@example.com"
+              defaultValue={prefillEmail}
               required
             />
           </div>
