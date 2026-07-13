@@ -49,7 +49,7 @@ export default function PricingPage() {
           {plans.map((plan) => (
             <div
               key={plan.name}
-              className={`rounded-2xl border p-8 flex flex-col ${
+              className={`rounded-2xl border p-6 sm:p-8 flex flex-col ${
                 plan.highlight
                   ? "border-primary bg-primary/5 shadow-lg shadow-primary/10"
                   : "border-border bg-card"
@@ -100,7 +100,7 @@ export default function PricingPage() {
       <footer className="border-t border-border py-8 px-6 mt-8">
         <div className="max-w-5xl mx-auto flex items-center justify-between flex-wrap gap-4">
           <Logo size="sm" showIcon={false} />
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 sm:gap-6">
             <Link href="/privacy" className="text-xs text-muted-foreground hover:text-foreground">
               Privacy
             </Link>

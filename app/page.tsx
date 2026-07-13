@@ -142,9 +142,9 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Nav */}
-      <nav className="flex items-center justify-between p-6 max-w-6xl mx-auto">
+      <nav className="flex items-center justify-between p-4 sm:p-6 max-w-6xl mx-auto">
         <Logo size="md" showIcon={false} />
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
           <Link
             href="/pricing"
             className="text-sm text-muted-foreground hover:text-foreground transition"
@@ -164,13 +164,13 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <main className="max-w-4xl mx-auto px-6 pt-24 pb-32 text-center">
+      <main className="max-w-4xl mx-auto px-6 pt-16 sm:pt-24 pb-24 sm:pb-32 text-center">
         <Badge variant="secondary" className="mb-6">
           <Sparkles className="h-3 w-3 mr-1" />
           Now with AI-powered task management
         </Badge>
 
-        <h1 className="text-5xl md:text-7xl font-display font-bold text-foreground mb-6">
+        <h1 className="text-4xl sm:text-5xl md:text-7xl font-display font-bold text-foreground mb-6">
           Get your shit
           <br />
           <span className="text-primary">together.</span>
@@ -226,7 +226,7 @@ export default function LandingPage() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
           {coreFeatures.map((feature) => (
             <div key={feature.title} className="p-6 rounded-xl bg-card border border-border hover:border-primary/50 transition-colors">
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
@@ -249,7 +249,7 @@ export default function LandingPage() {
             </h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
             {moreFeatures.map((feature) => (
               <div key={feature.title} className="p-6 rounded-xl bg-background border border-border">
                 <div className="flex items-center gap-3 mb-3">
@@ -362,7 +362,7 @@ export default function LandingPage() {
       <footer className="border-t border-border py-8 px-6">
         <div className="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-4">
           <Logo size="sm" showIcon={false} />
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 sm:gap-6">
             <Link href="/for-adhd" className="text-xs text-muted-foreground hover:text-foreground">
               For ADHD
             </Link>
