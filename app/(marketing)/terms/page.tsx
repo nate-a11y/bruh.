@@ -243,8 +243,8 @@ export default function TermsPage() {
         <h2>20. Contact</h2>
         <p>
           For questions about these Terms, contact us at{" "}
-          <a href="mailto:legal@getbruh.app">legal@getbruh.app</a>, or by mail at [Company Legal Name],
-          [Business Address, Missouri, USA].
+          <a href="mailto:legal@getbruh.app">legal@getbruh.app</a>, or by mail at Elite LOZ
+          Transportation, LLC, Rocky Mount, Missouri, USA.
         </p>
       </main>
     </div>
