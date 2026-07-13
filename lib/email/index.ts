@@ -6,4 +6,6 @@ export {
   taskAssignedEmail,
   dailyDigestEmail,
   weeklySummaryEmail,
+  paymentFailedEmail,
+  subscriptionCanceledEmail,
 } from "./templates";

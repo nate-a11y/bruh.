@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { stripe, STRIPE_CONFIG } from '@/lib/stripe';
 import { createClient } from '@supabase/supabase-js';
+import { DUNNING_GRACE_DAYS, sendPaymentFailedEmail } from '@/lib/billing/dunning';
 import type Stripe from 'stripe';
 
 // Lazy initialization to avoid build-time errors
@@ -252,6 +253,9 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       .update({
         subscription_status: 'canceled',
         stripe_subscription_id: null,
+        past_due_since: null,
+        dunning_last_emailed_at: null,
+        dunning_email_count: 0,
         updated_at: new Date().toISOString(),
       })
       .eq('id', teamId);
@@ -259,12 +263,15 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     return;
   }
 
-  const { error } = await getSupabaseAdmin()
+  const { error } = await (getSupabaseAdmin() as any)
     .from('zeroed_subscriptions')
     .update({
       status: 'canceled',
       stripe_subscription_id: null,
       canceled_at: new Date().toISOString(),
+      past_due_since: null,
+      dunning_last_emailed_at: null,
+      dunning_email_count: 0,
       updated_at: new Date().toISOString(),
     })
     .eq('stripe_customer_id', customerId);
@@ -282,18 +289,76 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
   if (!customerId) return;
 
   const admin = getSupabaseAdmin() as any;
-  const { error } = await admin
+  const invoiceUrl = (invoice as any).hosted_invoice_url as string | null;
+  const nowIso = new Date().toISOString();
+
+  // A given Stripe customer maps to either a personal subscriber OR a team
+  // owner, not both. Find whichever it is, start the grace clock on the first
+  // failure of a streak, and send the initial dunning email. The daily
+  // reminders and the eventual cancel are driven by the payment-dunning cron.
+  const { data: sub } = await admin
     .from('zeroed_subscriptions')
-    .update({ status: 'past_due', updated_at: new Date().toISOString() })
-    .eq('stripe_customer_id', customerId);
-  if (error) {
-    console.error('Error updating subscription to past_due:', error);
+    .select('user_id, past_due_since')
+    .eq('stripe_customer_id', customerId)
+    .maybeSingle();
+
+  if (sub) {
+    const firstFailure = !sub.past_due_since;
+    const { error } = await admin
+      .from('zeroed_subscriptions')
+      .update({
+        status: 'past_due',
+        past_due_since: sub.past_due_since || nowIso,
+        latest_invoice_url: invoiceUrl,
+        updated_at: nowIso,
+      })
+      .eq('stripe_customer_id', customerId);
+    if (error) console.error('Error updating subscription to past_due:', error);
+    if (firstFailure) {
+      await sendPaymentFailedEmail(admin, {
+        userId: sub.user_id,
+        invoiceUrl,
+        isTeam: false,
+        daysLeft: DUNNING_GRACE_DAYS,
+      });
+      await admin
+        .from('zeroed_subscriptions')
+        .update({ dunning_last_emailed_at: nowIso, dunning_email_count: 1 })
+        .eq('stripe_customer_id', customerId);
+    }
+    return;
   }
-  // Same customer may be a team owner instead of a personal subscriber.
-  await admin
+
+  const { data: team } = await admin
     .from('zeroed_teams')
-    .update({ subscription_status: 'past_due', updated_at: new Date().toISOString() })
-    .eq('stripe_customer_id', customerId);
+    .select('owner_id, past_due_since')
+    .eq('stripe_customer_id', customerId)
+    .maybeSingle();
+
+  if (team) {
+    const firstFailure = !team.past_due_since;
+    await admin
+      .from('zeroed_teams')
+      .update({
+        subscription_status: 'past_due',
+        past_due_since: team.past_due_since || nowIso,
+        latest_invoice_url: invoiceUrl,
+        updated_at: nowIso,
+      })
+      .eq('stripe_customer_id', customerId);
+    if (firstFailure) {
+      await sendPaymentFailedEmail(admin, {
+        userId: team.owner_id,
+        invoiceUrl,
+        isTeam: true,
+        daysLeft: DUNNING_GRACE_DAYS,
+      });
+      await admin
+        .from('zeroed_teams')
+        .update({ dunning_last_emailed_at: nowIso, dunning_email_count: 1 })
+        .eq('stripe_customer_id', customerId);
+    }
+  }
 }
 
 async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
@@ -303,11 +368,20 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
 
   if (!customerId) return;
 
-  // If it was past_due, set back to active (personal or team).
+  // If it was past_due, set back to active and clear the dunning clock so the
+  // cron stops reminding and re-arms for any future failure streak.
   const admin = getSupabaseAdmin() as any;
+  const cleared = {
+    status: 'active',
+    past_due_since: null,
+    dunning_last_emailed_at: null,
+    dunning_email_count: 0,
+    latest_invoice_url: null,
+    updated_at: new Date().toISOString(),
+  };
   const { error } = await admin
     .from('zeroed_subscriptions')
-    .update({ status: 'active', updated_at: new Date().toISOString() })
+    .update(cleared)
     .eq('stripe_customer_id', customerId)
     .eq('status', 'past_due');
   if (error) {
@@ -315,7 +389,14 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
   }
   await admin
     .from('zeroed_teams')
-    .update({ subscription_status: 'active', updated_at: new Date().toISOString() })
+    .update({
+      subscription_status: 'active',
+      past_due_since: null,
+      dunning_last_emailed_at: null,
+      dunning_email_count: 0,
+      latest_invoice_url: null,
+      updated_at: new Date().toISOString(),
+    })
     .eq('stripe_customer_id', customerId)
     .eq('subscription_status', 'past_due');
 }

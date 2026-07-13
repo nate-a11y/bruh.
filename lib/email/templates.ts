@@ -349,6 +349,73 @@ export function weeklySummaryEmail({
   };
 }
 
+// Payment failed / dunning reminder email.
+// Used for both the initial failure notice (dayNumber 1) and the daily
+// reminders that follow, up to the grace window. `payLink` is Stripe's hosted
+// invoice URL so the customer can pay the exact failed invoice in one click.
+export function paymentFailedEmail({
+  payLink,
+  daysLeft,
+  isTeam,
+}: {
+  payLink: string;
+  daysLeft: number;
+  isTeam?: boolean;
+}): { subject: string; html: string } {
+  const what = isTeam ? "your team's bruh. subscription" : "your bruh. Pro subscription";
+  const subject =
+    daysLeft <= 1
+      ? `Last chance: update your payment to keep bruh. Pro`
+      : `Your bruh. payment didn't go through`;
+  return {
+    subject,
+    html: baseTemplate(`
+      <h1>We couldn't process your payment</h1>
+      <p>The last payment for ${what} didn't go through. No stress, it happens. Update your card and you're back in business.</p>
+
+      <div class="highlight" style="background: #fef2f2;">
+        <p style="margin: 0; color: #991b1b;">
+          You still have Pro access for <strong>${daysLeft} more day${daysLeft === 1 ? "" : "s"}</strong>.
+          After that, your subscription will be canceled and you'll drop to the free plan.
+        </p>
+      </div>
+
+      <a href="${payLink}" class="button">Update payment &amp; keep Pro</a>
+
+      <hr class="divider">
+
+      <p class="muted">If you already updated your card, you can ignore this. If the button doesn't work, paste this link into your browser:</p>
+      <p class="muted" style="word-break: break-all;">${payLink}</p>
+    `),
+  };
+}
+
+// Subscription canceled after the grace window expired with no successful payment.
+export function subscriptionCanceledEmail({
+  payLink,
+  isTeam,
+}: {
+  payLink: string;
+  isTeam?: boolean;
+}): { subject: string; html: string } {
+  const what = isTeam ? "Your team's bruh. subscription" : "Your bruh. Pro subscription";
+  return {
+    subject: `Your bruh. Pro subscription was canceled`,
+    html: baseTemplate(`
+      <h1>Your subscription was canceled</h1>
+      <p>${what} was canceled because we couldn't collect payment after several tries. Your account is still here, now on the free plan, with all your data intact.</p>
+
+      <p>Want Pro back? Resubscribe anytime, it takes about 20 seconds.</p>
+
+      <a href="${payLink}" class="button">Resubscribe</a>
+
+      <hr class="divider">
+
+      <p class="muted">No hard feelings. bruh.</p>
+    `),
+  };
+}
+
 // Admin email (sent from admin dashboard)
 export function adminEmail({
   message,
