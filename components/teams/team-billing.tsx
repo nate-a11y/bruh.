@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { trackEvent } from "@/lib/analytics";
 import { teamMonthlyCents, TEAM_SEAT_DISPLAY, PRICE_DISPLAY } from "@/lib/plans";
 
 interface TeamBillingProps {
@@ -25,6 +26,7 @@ export function TeamBilling({
 
   async function handleClick() {
     setLoading(true);
+    trackEvent("checkout_started", { plan: "team", active });
     try {
       const res = await fetch("/api/stripe/team-checkout", {
         method: "POST",

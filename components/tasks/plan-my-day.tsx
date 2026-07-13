@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { CalendarClock } from "lucide-react";
 import { toast } from "sonner";
+import { trackEvent } from "@/lib/analytics";
 
 /**
  * AI "plan my day" ritual: one tap arranges today's unscheduled tasks into time
@@ -19,6 +20,7 @@ export function PlanMyDay({ taskIds }: { taskIds: string[] }) {
 
   async function plan() {
     setLoading(true);
+    trackEvent("feature_used", { feature: "plan_my_day" });
     try {
       const res = await fetch("/api/tasks/auto-schedule", {
         method: "POST",

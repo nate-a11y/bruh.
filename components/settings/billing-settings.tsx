@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Loader2, CreditCard, Crown, Clock, Gift, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import { trackEvent } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +28,7 @@ export function BillingSettings({ subscription, access }: BillingSettingsProps) 
 
   const handleSubscribe = async () => {
     setLoading(true);
+    trackEvent("checkout_started", { plan: "pro" });
     try {
       const response = await fetch("/api/stripe/checkout", { method: "POST" });
       const data = await response.json();
