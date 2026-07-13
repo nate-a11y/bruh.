@@ -15,7 +15,7 @@ export default function TermsPage() {
         </Link>
       </nav>
 
-      <main className="max-w-4xl mx-auto px-6 py-12 prose prose-invert">
+      <main className="max-w-3xl mx-auto px-6 py-12 prose">
         <h1>Terms of Service</h1>
         <p className="text-muted-foreground">Last updated: July 12, 2026</p>
 

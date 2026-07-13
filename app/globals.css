@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 @layer base {
   :root {
@@ -199,3 +200,30 @@
     transform: scale(0.98);
   }
 }
+
+/* Legal / long-form pages: make @tailwindcss/typography follow the app theme
+   (colors flip with .dark via the CSS variables), with comfortable spacing. */
+.prose {
+  --tw-prose-body: rgb(var(--text-secondary));
+  --tw-prose-headings: rgb(var(--foreground));
+  --tw-prose-lead: rgb(var(--text-secondary));
+  --tw-prose-links: rgb(var(--primary));
+  --tw-prose-bold: rgb(var(--foreground));
+  --tw-prose-counters: rgb(var(--muted-foreground));
+  --tw-prose-bullets: rgb(var(--muted-foreground));
+  --tw-prose-hr: rgb(var(--border));
+  --tw-prose-quotes: rgb(var(--foreground));
+  --tw-prose-quote-borders: rgb(var(--border));
+  --tw-prose-code: rgb(var(--foreground));
+  --tw-prose-th-borders: rgb(var(--border));
+  --tw-prose-td-borders: rgb(var(--border));
+  max-width: none;
+}
+.prose h1 { letter-spacing: -0.02em; }
+.prose h2 {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgb(var(--border));
+}
+.prose a { text-decoration: none; font-weight: 500; }
+.prose a:hover { text-decoration: underline; }
