@@ -162,11 +162,26 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 }
 
+// Stripe moved current_period_start/end off the subscription onto each
+// subscription item as of API version 2025-03-31. Read from the item first,
+// then fall back to the legacy top-level field for older API versions.
+function subscriptionPeriod(subscription: Stripe.Subscription) {
+  const sub = subscription as any;
+  const item = sub.items?.data?.[0] ?? {};
+  const startUnix = item.current_period_start ?? sub.current_period_start ?? null;
+  const endUnix = item.current_period_end ?? sub.current_period_end ?? null;
+  return {
+    current_period_start: startUnix ? new Date(startUnix * 1000).toISOString() : null,
+    current_period_end: endUnix ? new Date(endUnix * 1000).toISOString() : null,
+  };
+}
+
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const customerId = typeof subscription.customer === 'string'
     ? subscription.customer
     : subscription.customer.id;
   const sub0 = subscription as any;
+  const period = subscriptionPeriod(subscription);
 
   // Map Stripe status to our status
   let status: string;
@@ -196,9 +211,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       .update({
         subscription_status: status,
         stripe_subscription_id: subscription.id,
-        current_period_end: sub0.current_period_end
-          ? new Date(sub0.current_period_end * 1000).toISOString()
-          : null,
+        current_period_end: period.current_period_end,
         updated_at: new Date().toISOString(),
       })
       .eq('id', teamId);
@@ -206,20 +219,14 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     return;
   }
 
-  // Cast subscription to any for fields that exist but aren't in current types
-  const sub = subscription as any;
   const { error } = await (getSupabaseAdmin() as any)
     .from('zeroed_subscriptions')
     .update({
       status,
       stripe_subscription_id: subscription.id,
       stripe_price_id: subscription.items.data[0]?.price.id,
-      current_period_start: sub.current_period_start
-        ? new Date(sub.current_period_start * 1000).toISOString()
-        : null,
-      current_period_end: sub.current_period_end
-        ? new Date(sub.current_period_end * 1000).toISOString()
-        : null,
+      current_period_start: period.current_period_start,
+      current_period_end: period.current_period_end,
       cancel_at_period_end: subscription.cancel_at_period_end,
       canceled_at: subscription.canceled_at
         ? new Date(subscription.canceled_at * 1000).toISOString()
