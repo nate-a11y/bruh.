@@ -44,8 +44,16 @@ export default function NativeBridge() {
           window.location.replace("/login");
           return;
         }
-        // Session cookies are set; drop the tokens from history and enter the app.
-        window.location.replace("/today");
+        // Mark this WebView session as embedded in the native app so the
+        // dashboard renders without its own nav chrome (the native tab bar
+        // owns navigation). Readable (not httpOnly) so it round-trips here.
+        document.cookie = "bruh_native=1; path=/; max-age=31536000; samesite=lax";
+        // Enter the requested route (each native tab bridges into its own path).
+        // Only allow same-origin app paths to avoid an open redirect.
+        const params = new URLSearchParams(window.location.search);
+        const rawNext = params.get("next") || "/today";
+        const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/today";
+        window.location.replace(next);
       } catch {
         window.location.replace("/login");
       }
