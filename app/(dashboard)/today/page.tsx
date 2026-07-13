@@ -4,6 +4,7 @@ import { Header } from "@/components/dashboard/header";
 import { TaskList } from "@/components/tasks/task-list";
 import { QuickCaptureBar } from "@/components/tasks/quick-capture-bar";
 import { WhatsNext } from "@/components/tasks/whats-next";
+import { PlanMyDay } from "@/components/tasks/plan-my-day";
 import { TodayExtras } from "@/components/dashboard/today-extras";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -83,6 +84,9 @@ export default async function DashboardPage() {
   // Separate completed tasks for ritual
   const completedTasksList = todayTasks?.filter((t) => t.status === "completed") || [];
   const pendingTasksList = todayTasks?.filter((t) => t.status !== "completed") || [];
+  const unscheduledTaskIds = pendingTasksList
+    .filter((t) => !t.due_time)
+    .map((t) => t.id);
 
   return (
     <div className="flex flex-col h-full">
@@ -154,9 +158,12 @@ export default async function DashboardPage() {
           </div>
         )}
 
-        {/* Task-paralysis breaker */}
-        <div className="mb-6">
-          <WhatsNext />
+        {/* ADHD helpers: task-paralysis breaker + plan-my-day */}
+        <div className="mb-6 space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <WhatsNext />
+            <PlanMyDay taskIds={unscheduledTaskIds} />
+          </div>
         </div>
 
         {/* Today's Tasks */}
