@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { PLANS, PRICE_DISPLAY, TRIAL_DAYS } from "@/lib/plans";
+import { PLANS, PRICE_DISPLAY } from "@/lib/plans";
 
 interface UpgradeModalProps {
   /** Controlled open state. */
@@ -78,9 +78,7 @@ export function UpgradeModal({
         <div className="flex items-baseline justify-center gap-1 rounded-lg bg-muted/50 py-3">
           <span className="text-2xl font-bold text-foreground">{PRICE_DISPLAY}</span>
           <span className="text-sm text-muted-foreground">{PLANS.pro.period}</span>
-          <span className="ml-2 text-sm text-muted-foreground">
-            {TRIAL_DAYS}-day free trial
-          </span>
+          <span className="ml-2 text-sm text-muted-foreground">billed monthly</span>
         </div>
 
         <DialogFooter className="flex-col gap-2 sm:flex-col">
@@ -94,7 +92,7 @@ export function UpgradeModal({
             ) : (
               <Crown className="h-4 w-4" aria-hidden="true" />
             )}
-            {loading ? "Starting checkout…" : `Start your ${TRIAL_DAYS}-day free trial`}
+            {loading ? "Starting checkout…" : "Upgrade to Pro"}
           </Button>
           <Button
             variant="ghost"
@@ -107,7 +105,7 @@ export function UpgradeModal({
         </DialogFooter>
 
         <p className="text-center text-xs text-muted-foreground">
-          No card charged today. Cancel anytime.
+          Cancel anytime, no long-term commitment.
         </p>
       </DialogContent>
     </Dialog>
