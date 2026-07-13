@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { ShareWin } from "./share-win";
 import type { Task } from "@/lib/supabase/types";
 
 interface FocusCompleteModalProps {
@@ -20,6 +21,7 @@ interface FocusCompleteModalProps {
   onContinue: () => void;
   task: Task | null;
   sessionsCompleted: number;
+  completedMinutes: number;
   isLongBreak: boolean;
 }
 
@@ -41,6 +43,7 @@ export function FocusCompleteModal({
   onContinue,
   task,
   sessionsCompleted,
+  completedMinutes,
   isLongBreak,
 }: FocusCompleteModalProps) {
   // Use useMemo to compute message once when modal opens
@@ -81,6 +84,11 @@ export function FocusCompleteModal({
             <Zap className="mr-2 h-4 w-4" />
             Continue Working
           </Button>
+          <ShareWin
+            minutes={completedMinutes}
+            sessions={sessionsCompleted}
+            className="h-12"
+          />
         </div>
 
         <p className="text-center text-sm text-muted-foreground mt-4">
