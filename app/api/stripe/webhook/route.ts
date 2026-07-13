@@ -4,6 +4,7 @@ import { stripe, STRIPE_CONFIG } from '@/lib/stripe';
 import { createClient } from '@supabase/supabase-js';
 import { DUNNING_GRACE_DAYS, sendPaymentFailedEmail } from '@/lib/billing/dunning';
 import { handleDisputeCreated, handleDisputeClosed } from '@/lib/billing/disputes';
+import { grantReferralRewardOnConversion } from '@/lib/referrals';
 import type Stripe from 'stripe';
 
 // Lazy initialization to avoid build-time errors
@@ -179,6 +180,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   if (error) {
     console.error('Error provisioning subscription on checkout:', error);
+  }
+
+  // If this paying user was referred, reward the referrer one free month.
+  if (userId) {
+    await grantReferralRewardOnConversion(getSupabaseAdmin() as any, userId);
   }
 }
 

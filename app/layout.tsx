@@ -3,6 +3,7 @@ import { ThemeProvider } from "@/components/theme/theme-provider";
 import { Toaster } from "sonner";
 import { Analytics } from "@vercel/analytics/next";
 import { PwaRoot } from "@/components/pwa/pwa-root";
+import { RefCapture } from "@/components/referral/ref-capture";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -95,6 +96,7 @@ export default function RootLayout({
           {children}
           <Toaster richColors position="bottom-right" />
           <PwaRoot />
+          <RefCapture />
         </ThemeProvider>
         <Analytics />
       </body>
